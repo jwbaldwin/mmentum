@@ -1,0 +1,40 @@
+<.header>
+  Listing Logs
+  <:actions>
+    <.link patch={~p"/logs/new"}>
+      <.button>New Log</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="logs"
+  rows={@streams.logs}
+  row_click={fn {_id, log} -> JS.navigate(~p"/logs/#{log}") end}
+>
+  <:action :let={{_id, log}}>
+    <div class="sr-only">
+      <.link navigate={~p"/logs/#{log}"}>Show</.link>
+    </div>
+    <.link patch={~p"/logs/#{log}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, log}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: log.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="log-modal" show on_cancel={JS.patch(~p"/logs")}>
+  <.live_component
+    module={MmentumWeb.LogLive.FormComponent}
+    id={@log.id || :new}
+    title={@page_title}
+    action={@live_action}
+    log={@log}
+    patch={~p"/logs"}
+  />
+</.modal>
