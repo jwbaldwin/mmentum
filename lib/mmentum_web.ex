@@ -86,6 +86,7 @@ defmodule MmentumWeb do
       # Core UI components and translation
       import MmentumWeb.CoreComponents
       import MmentumWeb.Gettext
+      import MmentumWeb.LiveHelpers
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

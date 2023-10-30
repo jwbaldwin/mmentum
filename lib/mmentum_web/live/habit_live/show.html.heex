@@ -1,6 +1,6 @@
 <.header>
-  Habit <%= @habit.id %>
-  <:subtitle>This is a habit record from your database.</:subtitle>
+  <%= @habit.name %>
+  <:subtitle>Edit the habit, and view your logs</:subtitle>
   <:actions>
     <.link patch={~p"/habits/#{@habit}/show/edit"} phx-click={JS.push_focus()}>
       <.button>Edit habit</.button>
@@ -11,11 +11,17 @@
 <.list>
   <:item title="Name"><%= @habit.name %></:item>
   <:item title="Iterations"><%= @habit.iterations %></:item>
+  <:item title="Periodicity"><%= @habit.periodicity %></:item>
 </.list>
 
-<.back navigate={~p"/habits"}>Back to habits</.back>
+<.back navigate={~p"/"}>Back to habits</.back>
 
-<.modal :if={@live_action == :edit} id="habit-modal" show on_cancel={JS.patch(~p"/habits/#{@habit}")}>
+<.modal
+  :if={@live_action == :edit}
+  id="habit-modal"
+  show
+  on_cancel={JS.patch(~p"/habits/#{@habit}")}
+>
   <.live_component
     module={MmentumWeb.HabitLive.FormComponent}
     id={@habit.id}

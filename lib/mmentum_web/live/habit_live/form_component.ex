@@ -9,7 +9,9 @@ defmodule MmentumWeb.HabitLive.FormComponent do
     <div>
       <.header>
         <%= @title %>
-        <:subtitle>Use this form to manage habit records in your database.</:subtitle>
+        <:subtitle>
+          Let's start building momentum
+        </:subtitle>
       </.header>
 
       <.simple_form
@@ -19,8 +21,18 @@ defmodule MmentumWeb.HabitLive.FormComponent do
         phx-change="validate"
         phx-submit="save"
       >
-        <.input field={@form[:name]} type="text" label="Name" />
-        <.input field={@form[:iterations]} type="number" label="Iterations" />
+        <.input field={@form[:name]} type="text" label="Habit" class="max-w-sm" />
+        <div class="grid grid-cols-3 gap-3 place-items-end">
+          <.input field={@form[:iterations]} type="number" label="Iterations" max={31} min={1} />
+          <p class="text-zinc-600 font-semibold px-2 py-2">times a</p>
+          <.input
+            field={@form[:periodicity]}
+            type="select"
+            label="Periodicity"
+            options={[Day: :day, Week: :week, Month: :month]}
+            value={:week}
+          />
+        </div>
         <:actions>
           <.button phx-disable-with="Saving...">Save Habit</.button>
         </:actions>
@@ -69,7 +81,9 @@ defmodule MmentumWeb.HabitLive.FormComponent do
   end
 
   defp save_habit(socket, :new, habit_params) do
-    case Habits.create_habit(habit_params) do
+    user = get_current_user(socket)
+
+    case Habits.create_habit(user, habit_params) do
       {:ok, habit} ->
         notify_parent({:saved, habit})
 

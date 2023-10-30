@@ -38,6 +38,7 @@ defmodule MmentumWeb.CoreComponents do
   """
   attr :id, :string, required: true
   attr :show, :boolean, default: false
+  attr :size, :string, default: "max-w-3xl"
   attr :on_cancel, JS, default: %JS{}
   slot :inner_block, required: true
 
@@ -60,7 +61,7 @@ defmodule MmentumWeb.CoreComponents do
         tabindex="0"
       >
         <div class="flex min-h-full items-center justify-center">
-          <div class="w-full max-w-3xl p-4 sm:p-6 lg:py-8">
+          <div class={["w-full p-4 sm:p-6 lg:py-8", @size]}>
             <.focus_wrap
               id={"#{@id}-container"}
               phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
@@ -187,7 +188,7 @@ defmodule MmentumWeb.CoreComponents do
   attr :as, :any, default: nil, doc: "the server side parameter to collect all input under"
 
   attr :rest, :global,
-    include: ~w(autocomplete name rel action enctype method novalidate target multipart),
+    include: ~w(autocomplete name rel action enctype method novalidate target multipart class),
     doc: "the arbitrary HTML attributes to apply to the form tag"
 
   slot :inner_block, required: true
@@ -265,6 +266,7 @@ defmodule MmentumWeb.CoreComponents do
   attr :name, :any
   attr :label, :string, default: nil
   attr :value, :any
+  attr :class, :string, default: nil
 
   attr :type, :string,
     default: "text",
@@ -326,7 +328,10 @@ defmodule MmentumWeb.CoreComponents do
       <select
         id={@id}
         name={@name}
-        class="mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm"
+        class={[
+          "mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm",
+          @class
+        ]}
         multiple={@multiple}
         {@rest}
       >
@@ -349,7 +354,8 @@ defmodule MmentumWeb.CoreComponents do
           "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
           "min-h-[6rem] phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
           @errors == [] && "border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400"
+          @errors != [] && "border-rose-400 focus:border-rose-400",
+          @class
         ]}
         {@rest}
       ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
@@ -372,7 +378,8 @@ defmodule MmentumWeb.CoreComponents do
           "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
           "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
           @errors == [] && "border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400"
+          @errors != [] && "border-rose-400 focus:border-rose-400",
+          @class
         ]}
         {@rest}
       />

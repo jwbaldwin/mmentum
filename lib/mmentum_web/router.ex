@@ -38,7 +38,7 @@ defmodule MmentumWeb.Router do
   scope "/", MmentumWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
-    live_session :redirect_if_user_is_authenticated,
+    live_session :unauthenticated,
       on_mount: [{MmentumWeb.UserAuth, :redirect_if_user_is_authenticated}] do
       live "/users/register", UserRegistrationLive, :new
       live "/users/log_in", UserLoginLive, :new
@@ -52,7 +52,7 @@ defmodule MmentumWeb.Router do
   scope "/", MmentumWeb do
     pipe_through [:browser, :require_authenticated_user]
 
-    live_session :require_authenticated_user,
+    live_session :authenticated,
       on_mount: [{MmentumWeb.UserAuth, :ensure_authenticated}] do
       live "/", HabitLive.Index, :index
       live "/habits/new", HabitLive.Index, :new

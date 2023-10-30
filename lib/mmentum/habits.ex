@@ -6,6 +6,7 @@ defmodule Mmentum.Habits do
   import Ecto.Query, warn: false
   alias Mmentum.Repo
 
+  alias Mmentum.Accounts.User
   alias Mmentum.Habits.Habit
 
   @doc """
@@ -42,15 +43,15 @@ defmodule Mmentum.Habits do
 
   ## Examples
 
-      iex> create_habit(%{field: value})
+      iex> create_habit(%{field: value}, %User{})
       {:ok, %Habit{}}
 
-      iex> create_habit(%{field: bad_value})
+      iex> create_habit(%{field: bad_value}, %User{})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_habit(attrs \\ %{}) do
-    %Habit{}
+  def create_habit(%User{} = user, attrs \\ %{}) do
+    Ecto.build_assoc(user, :habits)
     |> Habit.changeset(attrs)
     |> Repo.insert()
   end
