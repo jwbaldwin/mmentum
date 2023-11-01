@@ -4,21 +4,37 @@ defmodule Mmentum.Logs do
   """
 
   import Ecto.Query, warn: false
-  alias Mmentum.Repo
 
+  alias Mmentum.Accounts.User
+  alias Mmentum.Habits.Habit
   alias Mmentum.Logs.Log
+  alias Mmentum.Repo
+  alias Mmentum.Time
 
   @doc """
-  Returns the list of logs.
-
-  ## Examples
-
-      iex> list_logs()
-      [%Log{}, ...]
-
+  List the logs for a user
   """
-  def list_logs do
-    Repo.all(Log)
+  def list_logs_by_user(%User{} = user) do
+    Log
+    |> where(user_id: ^user.id)
+    |> Repo.all()
+  end
+
+  @doc """
+  List all logs for a habit
+  """
+  def list_logs_by_habit(%User{} = user, %Habit{} = habit) do
+    Log
+    |> where(habit_id: ^habit.id, user_id: ^user.id)
+    |> Repo.all()
+  end
+
+  def base_logs_range_query(range) do
+    start_of_range = Time.start_of_range(range)
+    end_of_range = Time.end_of_range(range)
+
+    from l in Log,
+      where: l.inserted_at >= ^start_of_range and l.inserted_at <= ^end_of_range
   end
 
   @doc """
@@ -87,6 +103,25 @@ defmodule Mmentum.Logs do
   """
   def delete_log(%Log{} = log) do
     Repo.delete(log)
+  end
+
+  def delete_most_recent_log(habit_id) do
+    habit_id
+    |> get_most_recent_log()
+    |> case do
+      nil -> {:error, "No logs found for this habit"}
+      log -> delete_log(log)
+    end
+  end
+
+  defp get_most_recent_log(habit_id) do
+    Repo.one(
+      from(log in Log,
+        where: log.habit_id == ^habit_id,
+        order_by: [desc: log.inserted_at],
+        limit: 1
+      )
+    )
   end
 
   @doc """

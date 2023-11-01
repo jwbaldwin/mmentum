@@ -3,13 +3,14 @@ defmodule MmentumWeb.HabitLive.Index do
 
   alias Mmentum.Habits
   alias Mmentum.Habits.Habit
+  alias Mmentum.Logs
   alias Mmentum.Time
 
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> stream(:habits, Habits.list_habits())
+     |> assign(:habits, list_habits(socket))
      |> assign_day_info()}
   end
 
@@ -37,8 +38,8 @@ defmodule MmentumWeb.HabitLive.Index do
   end
 
   @impl true
-  def handle_info({MmentumWeb.HabitLive.FormComponent, {:saved, habit}}, socket) do
-    {:noreply, stream_insert(socket, :habits, habit)}
+  def handle_info({MmentumWeb.HabitLive.FormComponent, {:saved, _habit}}, socket) do
+    {:noreply, assign(socket, :habits, list_habits(socket))}
   end
 
   @impl true
@@ -46,7 +47,37 @@ defmodule MmentumWeb.HabitLive.Index do
     habit = Habits.get_habit!(id)
     {:ok, _} = Habits.delete_habit(habit)
 
-    {:noreply, stream_delete(socket, :habits, habit)}
+    {:noreply, assign(socket, :habits, list_habits(socket))}
+  end
+
+  def handle_event("add_log", %{"id" => habit_id}, socket) do
+    user = get_current_user(socket)
+
+    case Logs.create_log(%{user_id: user.id, habit_id: habit_id}) do
+      {:ok, _log} ->
+        {:noreply, assign(socket, :habits, list_habits(socket))}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, changeset: changeset)}
+    end
+  end
+
+  def handle_event("remove_log", %{"id" => habit_id}, socket) do
+    habit_id
+    |> Logs.delete_most_recent_log()
+    |> case do
+      {:ok, _} ->
+        {:noreply, assign(socket, :habits, list_habits(socket))}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, changeset: changeset)}
+    end
+  end
+
+  defp list_habits(socket) do
+    socket
+    |> get_current_user()
+    |> Habits.list_habits_with_range(:week)
   end
 
   defp assign_day_info(socket) do
@@ -71,8 +102,8 @@ defmodule MmentumWeb.HabitLive.Index do
       0 ->
         "Happy #{current_day}, a new week starts tomorrow!"
 
-      2 = days_until_end_of_week ->
-        "Happy #{current_day}, the weekend is close! #{days_until_end_of_week} days left in the week."
+      2 ->
+        "Happy #{current_day}, the weekend is close!"
 
       days_until_end_of_week ->
         "Happy #{current_day}, the week ends in #{days_until_end_of_week} days"

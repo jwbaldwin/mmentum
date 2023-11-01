@@ -72,7 +72,7 @@ defmodule MmentumWeb.HabitLive.FormComponent do
 
         {:noreply,
          socket
-         |> put_flash(:info, "Habit updated successfully")
+         |> put_flash(:success, "Habit updated successfully")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -89,7 +89,7 @@ defmodule MmentumWeb.HabitLive.FormComponent do
 
         {:noreply,
          socket
-         |> put_flash(:info, "Habit created successfully")
+         |> put_flash(:success, "Habit created successfully")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->

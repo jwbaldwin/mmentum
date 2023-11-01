@@ -19,7 +19,6 @@ defmodule MmentumWeb.LogLive.FormComponent do
         phx-change="validate"
         phx-submit="save"
       >
-
         <:actions>
           <.button phx-disable-with="Saving...">Save Log</.button>
         </:actions>
@@ -74,7 +73,7 @@ defmodule MmentumWeb.LogLive.FormComponent do
 
         {:noreply,
          socket
-         |> put_flash(:info, "Log created successfully")
+         |> put_flash(:success, "Log created successfully")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->

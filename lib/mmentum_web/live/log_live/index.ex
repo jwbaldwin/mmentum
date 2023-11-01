@@ -6,7 +6,7 @@ defmodule MmentumWeb.LogLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, stream(socket, :logs, Logs.list_logs())}
+    {:ok, stream(socket, :logs, Logs.list_logs_by_user(get_current_user(socket)))}
   end
 
   @impl true

@@ -35,7 +35,7 @@ defmodule MmentumWeb.UserConfirmationLive do
       {:ok, _} ->
         {:noreply,
          socket
-         |> put_flash(:info, "User confirmed successfully.")
+         |> put_flash(:success, "User confirmed successfully.")
          |> redirect(to: ~p"/")}
 
       :error ->

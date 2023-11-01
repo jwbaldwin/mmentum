@@ -8,18 +8,30 @@ defmodule Mmentum.Habits do
 
   alias Mmentum.Accounts.User
   alias Mmentum.Habits.Habit
+  alias Mmentum.Logs
+  alias Mmentum.Repo
+
+  @allowed_ranges [:year, :month, :week, :day]
 
   @doc """
-  Returns the list of habits.
-
-  ## Examples
-
-      iex> list_habits()
-      [%Habit{}, ...]
-
+  Retrieve the user's list of habits
   """
-  def list_habits do
-    Repo.all(Habit)
+  def list_habits(%User{id: user_id} = _user) do
+    Habit
+    |> where(user_id: ^user_id)
+    |> preload(:logs)
+    |> Repo.all()
+  end
+
+  @doc """
+  Retrieve the user's list of habits with all logs in the current week
+  """
+  def list_habits_with_range(%User{id: user_id} = _user, range \\ :week)
+      when range in @allowed_ranges do
+    Habit
+    |> where(user_id: ^user_id)
+    |> preload(logs: ^Logs.base_logs_range_query(range))
+    |> Repo.all()
   end
 
   @doc """

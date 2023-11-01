@@ -1,6 +1,6 @@
 <.header>
-  <h1 class="text-3xl font-semibold prose-2xl ~text-slate-900"><%= @greeting %>!</h1>
-  <p class="leading-10 prose-xl ~text-slate-400"><%= @day_info %></p>
+  <h1 class="text-3xl font-semibold prose-2xl text-zinc-900"><%= @greeting %>!</h1>
+  <p class="leading-10 prose-xl text-zinc-400"><%= @day_info %></p>
   <:actions>
     <.link patch={~p"/habits/new"}>
       <.button>New Habit</.button>
@@ -8,29 +8,98 @@
   </:actions>
 </.header>
 
-<.table
-  id="habits"
-  rows={@streams.habits}
-  row_click={fn {_id, habit} -> JS.navigate(~p"/habits/#{habit}") end}
->
-  <:col :let={{_id, habit}} label="Name"><%= habit.name %></:col>
-  <:col :let={{_id, habit}} label="Iterations"><%= habit.iterations %></:col>
-  <:col :let={{_id, habit}} label="Periodicity"><%= habit.periodicity %></:col>
-  <:action :let={{_id, habit}}>
-    <div class="sr-only">
-      <.link navigate={~p"/habits/#{habit}"}>Show</.link>
+<div id="habits" class="pt-8 mt-8 space-y-12">
+  <div :for={habit <- @habits} id={"habit-#{habit.id}"} class="grid w-full grid-cols-12">
+    <div class="col-span-12 pb-4 text-3xl font-semibold text-zinc-900 flex">
+      <div class="group">
+        <.link patch={~p"/habits/#{habit}"} phx-click={JS.push_focus()} class="flex items-center">
+          <.icon
+            name="hero-pencil-solid"
+            class="w-5 h-5 text-zinc-600 opacity-0 group-hover:opacity-100 transition-all duration-300"
+          />
+          <p class="-translate-x-5 group-hover:translate-x-1 transition-all duration-300">
+            <%= habit.name %>
+          </p>
+        </.link>
+      </div>
     </div>
-    <.link patch={~p"/habits/#{habit}/edit"}>Edit</.link>
-  </:action>
-  <:action :let={{id, habit}}>
-    <.link
-      phx-click={JS.push("delete", value: %{id: habit.id}) |> hide("##{id}")}
-      data-confirm="Are you sure?"
-    >
-      Delete
-    </.link>
-  </:action>
-</.table>
+    <div class="relative col-span-11">
+      <div class="flex w-full">
+        <div
+          :for={{_log, i} <- Enum.with_index(habit.logs, 1)}
+          class={[
+            "flex items-center hover:animate-pulse",
+            i != habit.iterations && "w-full"
+          ]}
+        >
+          <div class="w-12 h-12 transition-all duration-300 border-2 rounded-full bg-zinc-900 border-zinc-900" />
+          <%= if i != habit.iterations do %>
+            <div class="w-full flex-1 h-1.5 transition-all duration-300 transform bg-zinc-900 border-t border-b border-zinc-900" />
+          <% end %>
+        </div>
+        <%= if (length(habit.logs) - habit.iterations) != 0 do %>
+          <div
+            :for={i <- (length(habit.logs) + 1)..habit.iterations}
+            class={[
+              "flex items-center hover:animate-pulse",
+              i != habit.iterations && "w-full"
+            ]}
+          >
+            <div class="w-12 h-12 transition-all duration-300 border-2 rounded-full bg-zinc-200 border-zinc-200" />
+            <%= if i != habit.iterations do %>
+              <div class="w-full flex-1 h-1.5 transition-all duration-300 transform border-t border-b bg-zinc-200 border-zinc-200">
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    <div class="flex col-span-1 justify-evenly">
+      <button
+        phx-click="remove_log"
+        phx-value-id={habit.id}
+        type="button"
+        class={[
+          "h-12 text-zinc-700 hover:text-zinc-900",
+          length(habit.logs) == 0 && "disabled:text-zinc-200 cursor-not-allowed"
+        ]}
+        disabled={length(habit.logs) == 0}
+      >
+        <.icon name="hero-chevron-double-left-mini" class="h-6 w-6" />
+      </button>
+      <button
+        phx-click="add_log"
+        phx-value-id={habit.id}
+        type="button"
+        class="text-zinc-700 hover:text-zinc-900"
+        class="h-12"
+        class={[
+          "h-12 text-zinc-700 hover:text-zinc-900",
+          length(habit.logs) == habit.iterations &&
+            "disabled:text-zinc-200 cursor-not-allowed"
+        ]}
+        disabled={length(habit.logs) == habit.iterations}
+      >
+        <.icon name="hero-chevron-double-right-mini" class="h-6 w-6" />
+      </button>
+    </div>
+  </div>
+  <div class="col-span-3 pt-4 space-x-2"></div>
+</div>
+<div :if={length(@habits) == 0} class="empty-state text-center">
+  <%= case @time_of_day do %>
+    <% :morning -> %>
+      <.icon name="hero-sun-mini" class="mx-auto h-12 w-12 text-gray-700" />
+    <% :afternoon -> %>
+      <.icon name="hero-sparkles-mini" class="mx-auto h-12 w-12 text-gray-700" />
+    <% :evening -> %>
+      <.icon name="hero-moon-mini" class="mx-auto h-12 w-12 text-gray-700" />
+  <% end %>
+  <h3 class="mt-2 text-sm font-medium text-zinc-900">No habits</h3>
+  <p class="mt-1 text-sm text-zinc-500">
+    Get started by adding a new habit
+  </p>
+</div>
 
 <.modal
   :if={@live_action in [:new, :edit]}

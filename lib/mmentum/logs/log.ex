@@ -12,7 +12,7 @@ defmodule Mmentum.Logs.Log do
   @doc false
   def changeset(log, attrs) do
     log
-    |> cast(attrs, [])
-    |> validate_required([])
+    |> cast(attrs, [:user_id, :habit_id])
+    |> validate_required([:user_id, :habit_id])
   end
 end

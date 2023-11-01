@@ -8,9 +8,6 @@
     <div class="flex items-center gap-4 font-semibold leading-6 text-zinc-900">
       <ul class="relative z-10 flex items-center gap-4 px-4 sm:px-6 lg:px-8 justify-end">
         <%= if @current_user do %>
-          <li class="text-[0.8125rem] leading-6 text-zinc-700 px-2 py-1 bg-zinc-100 rounded-lg border border-zinc-300">
-            <%= @current_user.email %>
-          </li>
           <li>
             <.link
               href={~p"/users/settings"}
@@ -27,6 +24,9 @@
             >
               Log out
             </.link>
+          </li>
+          <li class="text-[0.8125rem] leading-6 text-zinc-700 px-2 py-1 bg-zinc-50 shadow-sm rounded-lg border border-zinc-200">
+            <%= @current_user.full_name %>
           </li>
         <% else %>
           <li>
