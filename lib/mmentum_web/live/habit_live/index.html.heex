@@ -15,7 +15,7 @@
         <.link patch={~p"/habits/#{habit}"} phx-click={JS.push_focus()} class="flex items-center">
           <.icon
             name="hero-pencil-solid"
-            class="w-5 h-5 text-zinc-600 opacity-0 group-hover:opacity-100 transition-all duration-300"
+            class="w-5 h-5 text-zinc-700 opacity-0 group-hover:opacity-100 transition-all duration-300"
           />
           <p class="-translate-x-5 group-hover:translate-x-1 transition-all duration-300">
             <%= habit.name %>
@@ -65,7 +65,7 @@
         ]}
         disabled={length(habit.logs) == 0}
       >
-        <.icon name="hero-chevron-double-left-mini" class="h-6 w-6" />
+        <.icon name="hero-backward-solid" class="h-6 w-6" />
       </button>
       <button
         phx-click="add_log"
@@ -80,7 +80,7 @@
         ]}
         disabled={length(habit.logs) == habit.iterations}
       >
-        <.icon name="hero-chevron-double-right-mini" class="h-6 w-6" />
+        <.icon name="hero-forward-solid" class="h-6 w-6" />
       </button>
     </div>
   </div>

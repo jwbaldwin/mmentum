@@ -24,8 +24,12 @@ defmodule Mmentum.Logs do
   List all logs for a habit
   """
   def list_logs_by_habit(%User{} = user, %Habit{} = habit) do
+    list_logs_by_habit(user, habit.id)
+  end
+
+  def list_logs_by_habit(%User{} = user, habit_id) do
     Log
-    |> where(habit_id: ^habit.id, user_id: ^user.id)
+    |> where(habit_id: ^habit_id, user_id: ^user.id)
     |> Repo.all()
   end
 

@@ -14,6 +14,44 @@
   <:item title="Periodicity"><%= @habit.periodicity %></:item>
 </.list>
 
+<div class="flow-root">
+  <h3 class="font-semibold text-base text-zinc-700 mt-20 mb-8">
+    <%= @habit.name %> activity logs
+  </h3>
+  <ul role="list" class="space-y-6">
+    <%= for {row_id, log} <- @streams.logs do %>
+      <li class="relative flex gap-x-4" id={row_id}>
+        <div class="absolute left-0 top-0 flex w-6 justify-center -bottom-6">
+          <div class="w-px bg-zinc-200"></div>
+        </div>
+        <div class="relative flex h-6 w-6 flex-none items-center justify-center bg-white">
+          <div class="h-1.5 w-1.5 rounded-full bg-zinc-100 ring-1 ring-zinc-300"></div>
+        </div>
+        <p class="flex-auto py-0.5 text-xs leading-5 text-zinc-500">
+          <span class="font-medium text-zinc-900"><%= @habit.name %></span> activity logged.
+        </p>
+        <time datetime={log.inserted_at} class="flex-none py-0.5 text-xs leading-5 text-zinc-500">
+          <%= Time.to_human_relative(log.inserted_at) %>
+        </time>
+      </li>
+    <% end %>
+    <li class="relative flex gap-x-4" id={"habit-created-#{@habit.id}"}>
+      <div class="absolute left-0 top-0 flex w-6 justify-center h-6">
+        <div class="w-px bg-zinc-200"></div>
+      </div>
+      <div class="relative flex h-6 w-6 flex-none items-center justify-center bg-white">
+        <.icon name="hero-sparkles-solid" class="w-4 h-4 text-zinc-400" />
+      </div>
+      <p class="flex-auto py-0.5 text-xs leading-5 text-zinc-500">
+        <span class="font-medium text-zinc-900"><%= @habit.name %></span> habit created.
+      </p>
+      <time datetime={@habit.inserted_at} class="flex-none py-0.5 text-xs leading-5 text-zinc-500">
+        <%= Time.to_human_relative(@habit.inserted_at) %>
+      </time>
+    </li>
+  </ul>
+</div>
+
 <.back navigate={~p"/"}>Back to habits</.back>
 
 <.modal

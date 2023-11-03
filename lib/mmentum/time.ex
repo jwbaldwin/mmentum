@@ -152,6 +152,7 @@ defmodule Mmentum.Time do
   >> 13 minutes ago
   """
   def to_human_relative(logged_time) do
+    logged_time = DateTime.from_naive!(logged_time, "Etc/UTC")
     time_difference = Timex.diff(logged_time, current_time(), :minutes)
 
     if time_difference > -90 do
