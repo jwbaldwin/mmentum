@@ -103,10 +103,13 @@ defmodule MmentumWeb.HabitLive.Index do
         "Happy #{current_day}, a new week starts tomorrow!"
 
       2 ->
-        "Happy #{current_day}, the weekend is close!"
+        "Happy #{current_day}, best day of the week!"
 
-      days_until_end_of_week ->
-        "Happy #{current_day}, the week ends in #{days_until_end_of_week} days"
+      6 ->
+        "Happy #{current_day}, a fresh week ahead!"
+
+      4 ->
+        "Happy #{current_day}, make this hump-day count!"
     end
   end
 end
