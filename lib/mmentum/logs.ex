@@ -33,6 +33,16 @@ defmodule Mmentum.Logs do
     |> Repo.all()
   end
 
+  @doc """
+  List all logs for a habit by habit_id only
+  """
+  def list_logs_by_habit_id(habit_id) do
+    Log
+    |> where(habit_id: ^habit_id)
+    |> order_by([l], asc: l.inserted_at)
+    |> Repo.all()
+  end
+
   def base_logs_range_query(range) do
     start_of_range = Time.start_of_range(range)
     end_of_range = Time.end_of_range(range)

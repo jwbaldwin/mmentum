@@ -55,12 +55,6 @@ defmodule MmentumWeb.HabitLive.Index do
 
     case Logs.create_log(%{user_id: user.id, habit_id: habit_id}) do
       {:ok, _log} ->
-        # TODO: don't do this here man...multi...
-        habit = Habits.get_habit!(habit_id)
-        Habits.update_momentum_on_log_removed(habit)
-
-        {:noreply, assign(socket, :habits, list_habits(socket))}
-
         habit = Habits.get_habit!(habit_id)
         Habits.update_momentum_on_log_added(habit)
 

@@ -146,24 +146,21 @@ defmodule Mmentum.Habits do
   # TODO: make this much less shitty
   @doc """
   Updates the momentum for a habit when a log is removed.
-  Simply applies decay from last update to current time (no boost).
+  Recalculates momentum from scratch based on remaining logs.
   """
   def update_momentum_on_log_removed(%Habit{} = habit) do
     current_time = Momentum.current_timestamp()
     half_life = Momentum.get_default_half_life(habit.periodicity)
 
-    current_score =
-      Momentum.calculate_current_score(
-        habit.momentum_score || 0.0,
-        habit.momentum_last_updated,
-        current_time,
-        half_life
-      )
+    logs = Logs.list_logs_by_habit_id(habit.id)
+
+    # Recalculate momentum from scratch based on remaining logs
+    {new_score, new_timestamp} = recalculate_momentum_from_logs(logs, half_life, current_time)
 
     habit
     |> Habit.changeset(%{
-      momentum_score: current_score,
-      momentum_last_updated: current_time
+      momentum_score: new_score,
+      momentum_last_updated: new_timestamp
     })
     |> Repo.update()
   end
@@ -192,5 +189,43 @@ defmodule Mmentum.Habits do
       momentum_score: 0.0
     })
     |> Repo.update()
+  end
+
+  # TODO: make this much less shitty
+  @doc """
+  Recalculates momentum from scratch based on a list of logs.
+  Simulates adding each log in chronological order.
+  """
+  defp recalculate_momentum_from_logs([], _half_life, current_time) do
+    {0.0, current_time}
+  end
+
+  defp recalculate_momentum_from_logs(logs, half_life, current_time) do
+    boost_amount = 60.0
+
+    logs
+    |> Enum.reduce({0.0, nil}, fn log, {score, last_updated} ->
+      log_time = DateTime.to_unix(log.inserted_at, :millisecond)
+
+      Momentum.record_completion(
+        score,
+        last_updated,
+        log_time,
+        half_life,
+        boost_amount
+      )
+    end)
+    |> then(fn {final_score, last_log_time} ->
+      # Apply decay from last log to current time
+      current_score =
+        Momentum.calculate_current_score(
+          final_score,
+          last_log_time,
+          current_time,
+          half_life
+        )
+
+      {current_score, current_time}
+    end)
   end
 end
