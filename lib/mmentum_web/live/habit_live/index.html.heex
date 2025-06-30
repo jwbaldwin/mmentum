@@ -1,6 +1,6 @@
 <.header>
-  <h1 class="text-3xl font-semibold prose-2xl text-zinc-900"><%= @greeting %>!</h1>
-  <p class="leading-10 prose-xl text-zinc-400"><%= @day_info %></p>
+  <h1 class="text-3xl font-semibold prose-2xl text-zinc-900">{@greeting}!</h1>
+  <p class="leading-10 prose-xl text-zinc-400">{@day_info}</p>
   <:actions>
     <.link patch={~p"/habits/new"}>
       <.button>New Habit</.button>
@@ -10,7 +10,7 @@
 
 <div id="habits" class="pt-8 mt-8 space-y-12">
   <div :for={habit <- @habits} id={"habit-#{habit.id}"} class="grid w-full grid-cols-12">
-    <div class="col-span-12 pb-4 text-3xl font-semibold text-zinc-900 flex">
+    <div class="col-span-12 pb-4 text-3xl font-semibold text-zinc-900 flex items-baseline justify-between">
       <div class="group">
         <.link patch={~p"/habits/#{habit}"} phx-click={JS.push_focus()} class="flex items-center">
           <.icon
@@ -18,9 +18,21 @@
             class="w-5 h-5 text-zinc-700 opacity-0 group-hover:opacity-100 transition-all duration-300"
           />
           <p class="-translate-x-5 group-hover:translate-x-1 transition-all duration-300">
-            <%= habit.name %>
+            {habit.name}
           </p>
         </.link>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="text-sm text-zinc-500 font-normal">
+          {habit.iterations} times per {habit.periodicity}
+        </div>
+        <%= if habit.momentum_score > 0 do %>
+          <div class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium">
+            <span class="text-xs opacity-75">
+              ({Float.round(habit.momentum_score, 2)})
+            </span>
+          </div>
+        <% end %>
       </div>
     </div>
     <div class="relative col-span-11">

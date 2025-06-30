@@ -7,12 +7,17 @@ defmodule Mmentum.HabitsTest do
     alias Mmentum.Habits.Habit
 
     import Mmentum.HabitsFixtures
+    import Mmentum.AccountsFixtures
 
-    @invalid_attrs %{iterations: nil, name: nil}
+    @invalid_attrs %{iterations: nil, name: nil, periodicity: nil}
 
-    test "list_habits/0 returns all habits" do
-      habit = habit_fixture()
-      assert Habits.list_habits() == [habit]
+    test "list_habits/1 returns all habits for user" do
+      user = user_fixture()
+      habit = habit_fixture(user: user)
+      [returned_habit] = Habits.list_habits(user)
+      assert returned_habit.id == habit.id
+      assert returned_habit.name == habit.name
+      assert returned_habit.logs == []
     end
 
     test "get_habit!/1 returns the habit with given id" do
@@ -20,16 +25,19 @@ defmodule Mmentum.HabitsTest do
       assert Habits.get_habit!(habit.id) == habit
     end
 
-    test "create_habit/1 with valid data creates a habit" do
-      valid_attrs = %{iterations: 42, name: "some name"}
+    test "create_habit/2 with valid data creates a habit" do
+      user = user_fixture()
+      valid_attrs = %{iterations: 42, name: "some name", periodicity: :week}
 
-      assert {:ok, %Habit{} = habit} = Habits.create_habit(valid_attrs)
+      assert {:ok, %Habit{} = habit} = Habits.create_habit(user, valid_attrs)
       assert habit.iterations == 42
       assert habit.name == "some name"
+      assert habit.periodicity == :week
     end
 
-    test "create_habit/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Habits.create_habit(@invalid_attrs)
+    test "create_habit/2 with invalid data returns error changeset" do
+      user = user_fixture()
+      assert {:error, %Ecto.Changeset{}} = Habits.create_habit(user, @invalid_attrs)
     end
 
     test "update_habit/2 with valid data updates the habit" do

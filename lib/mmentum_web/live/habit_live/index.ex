@@ -55,6 +55,15 @@ defmodule MmentumWeb.HabitLive.Index do
 
     case Logs.create_log(%{user_id: user.id, habit_id: habit_id}) do
       {:ok, _log} ->
+        # TODO: don't do this here man...multi...
+        habit = Habits.get_habit!(habit_id)
+        Habits.update_momentum_on_log_removed(habit)
+
+        {:noreply, assign(socket, :habits, list_habits(socket))}
+
+        habit = Habits.get_habit!(habit_id)
+        Habits.update_momentum_on_log_added(habit)
+
         {:noreply, assign(socket, :habits, list_habits(socket))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -67,6 +76,11 @@ defmodule MmentumWeb.HabitLive.Index do
     |> Logs.delete_most_recent_log()
     |> case do
       {:ok, _} ->
+        # TODO: don't do this here man... this should be a multi...
+        # also it doesn't even work when deleting logs?
+        habit = Habits.get_habit!(habit_id)
+        Habits.update_momentum_on_log_removed(habit)
+
         {:noreply, assign(socket, :habits, list_habits(socket))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -75,9 +89,10 @@ defmodule MmentumWeb.HabitLive.Index do
   end
 
   defp list_habits(socket) do
-    socket
-    |> get_current_user()
-    |> Habits.list_habits_with_range(:week)
+    habits =
+      socket
+      |> get_current_user()
+      |> Habits.list_habits_with_range()
   end
 
   defp assign_day_info(socket) do

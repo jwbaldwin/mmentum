@@ -8,6 +8,7 @@ defmodule Mmentum.Habits do
 
   alias Mmentum.Accounts.User
   alias Mmentum.Habits.Habit
+  alias Mmentum.Habits.Momentum
   alias Mmentum.Logs
   alias Mmentum.Repo
 
@@ -24,7 +25,7 @@ defmodule Mmentum.Habits do
   end
 
   @doc """
-  Retrieve the user's list of habits with all logs in the current week
+  Retrieve the user's list of habits with all logs in the specified range
   """
   def list_habits_with_range(%User{id: user_id} = _user, range \\ :week)
       when range in @allowed_ranges do
@@ -113,5 +114,83 @@ defmodule Mmentum.Habits do
   """
   def change_habit(%Habit{} = habit, attrs \\ %{}) do
     Habit.changeset(habit, attrs)
+  end
+
+  # TODO: make this much less shitty
+  @doc """
+  Updates the momentum for a habit when a log is added.
+  Applies exponential decay and then adds a boost with diminishing returns.
+  """
+  def update_momentum_on_log_added(%Habit{} = habit) do
+    current_time = Momentum.current_timestamp()
+    half_life = Momentum.get_default_half_life(habit.periodicity)
+    boost_amount = 60.0
+
+    {new_score, new_timestamp} =
+      Momentum.record_completion(
+        habit.momentum_score || 0.0,
+        habit.momentum_last_updated,
+        current_time,
+        half_life,
+        boost_amount
+      )
+
+    habit
+    |> Habit.changeset(%{
+      momentum_score: new_score,
+      momentum_last_updated: new_timestamp
+    })
+    |> Repo.update()
+  end
+
+  # TODO: make this much less shitty
+  @doc """
+  Updates the momentum for a habit when a log is removed.
+  Simply applies decay from last update to current time (no boost).
+  """
+  def update_momentum_on_log_removed(%Habit{} = habit) do
+    current_time = Momentum.current_timestamp()
+    half_life = Momentum.get_default_half_life(habit.periodicity)
+
+    current_score =
+      Momentum.calculate_current_score(
+        habit.momentum_score || 0.0,
+        habit.momentum_last_updated,
+        current_time,
+        half_life
+      )
+
+    habit
+    |> Habit.changeset(%{
+      momentum_score: current_score,
+      momentum_last_updated: current_time
+    })
+    |> Repo.update()
+  end
+
+  @doc """
+  Gets the current momentum score for a habit by applying decay from last update.
+  """
+  def get_current_momentum(%Habit{} = habit) do
+    current_time = Momentum.current_timestamp()
+    half_life = Momentum.get_default_half_life(habit.periodicity)
+
+    Momentum.calculate_current_score(
+      habit.momentum_score || 0.0,
+      habit.momentum_last_updated,
+      current_time,
+      half_life
+    )
+  end
+
+  @doc """
+  Initializes momentum fields for a habit if they're not set.
+  """
+  def initialize_momentum(%Habit{} = habit) do
+    habit
+    |> Habit.changeset(%{
+      momentum_score: 0.0
+    })
+    |> Repo.update()
   end
 end

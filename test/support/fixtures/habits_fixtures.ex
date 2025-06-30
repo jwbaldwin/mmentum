@@ -8,13 +8,18 @@ defmodule Mmentum.HabitsFixtures do
   Generate a habit.
   """
   def habit_fixture(attrs \\ %{}) do
+    attrs = Enum.into(attrs, %{})
+    user = attrs[:user] || Mmentum.AccountsFixtures.user_fixture()
+
     {:ok, habit} =
       attrs
+      |> Map.drop([:user])
       |> Enum.into(%{
         iterations: 42,
-        name: "some name"
+        name: "some name",
+        periodicity: :week
       })
-      |> Mmentum.Habits.create_habit()
+      |> then(&Mmentum.Habits.create_habit(user, &1))
 
     habit
   end
