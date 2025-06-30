@@ -14,8 +14,9 @@ A clean, modern, minimal UX-focused habit builder that helps users build momentu
 - Periodicity support (day/week/month) - though implementation seems incomplete
 
 ### ❌ Key Issues Found
-- ~~Periodicity logic isn't fully implemented (habits show weekly view regardless)~~ ✅ **FIXED**
-- ~~No streak tracking or momentum visualization~~ ✅ **REPLACED WITH MOMENTUM SYSTEM**
+- ~~No streak tracking~~ ✅ **REPLACED WITH MOMENTUM SYSTEM**
+- No momentum visualization
+- Cannot log more habits than the defined X per Day/Week/Month
 - No progress analytics or insights
 - Missing habit completion states
 - No habit categories or organization
@@ -27,32 +28,21 @@ A clean, modern, minimal UX-focused habit builder that helps users build momentu
 **Goal:** Fix fundamental functionality and add core momentum tracking
 
 1. **Fix Periodicity Logic** ✅ **COMPLETED**
-   - ✅ Make daily/weekly/monthly periods actually work
-   - ✅ Update UI to show correct time ranges
-   - ✅ Fix habit progress calculation per period
-   - ✅ Added `list_habits_with_range/1` function
-   - ✅ Updated UI to display periodicity information
 
 2. **Momentum Score System** ✅ **COMPLETED** *(Replaced Streak Tracking)*
-   - ✅ Implemented continuous momentum scoring (0-100) with exponential decay
-   - ✅ Added completion boost with diminishing returns to prevent gaming
-   - ✅ Created momentum tier system: "On Fire 🔥", "Rolling", "Warming Up", "Cooling Off"
-   - ✅ Database migration replacing streak fields with momentum fields
-   - ✅ Configurable half-life and boost parameters per habit periodicity
-   - ✅ Visual momentum indicators with color-coded tiers and emojis
-   - ✅ Comprehensive test coverage for momentum calculations
 
 3. **Habit Completion States** 🔄 **NEXT UP**
    - Visual feedback when habits are completed for the current period
-   - Different states: incomplete, in-progress, completed, overdue
-   - Celebration animations for completions
+   - Beautiful animations for completions
    - Integration with momentum system for enhanced feedback
+   - Add notes to log entries
 
 4. **Progress Analytics**
    - Simple completion percentages per habit
-   - ✅ Momentum indicators (current score and tier display)
+   - ✅ Momentum indicators (current score)
    - Weekly/monthly completion rates
-   - Momentum trend analysis and decay visualization
+   - Momentum trend analysis and decay visualization (momentum curves)
+   - Github-like contribution graph
 
 ### Phase 2: Enhanced UX (2-3 weeks)
 **Goal:** Improve user experience and reduce friction
@@ -64,7 +54,6 @@ A clean, modern, minimal UX-focused habit builder that helps users build momentu
 
 6. **Habit Templates**
    - Pre-built habit suggestions
-   - Categories: Health, Productivity, Learning, etc.
    - One-click habit creation from templates
 
 7. **Better Mobile Experience**
