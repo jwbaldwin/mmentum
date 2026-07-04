@@ -14,7 +14,7 @@ defmodule MmentumWeb do
 
   Do NOT define functions inside the quoted expressions
   below. Instead, define additional modules and import
-  those modules here.
+  those modules here
   """
 
   def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
@@ -106,7 +106,7 @@ defmodule MmentumWeb do
   end
 
   @doc """
-  When used, dispatch to the appropriate controller/view/etc.
+  When used, dispatch to the appropriate controller/view/etc
   """
   defmacro __using__(which) when is_atom(which) do
     apply(__MODULE__, which, [])
