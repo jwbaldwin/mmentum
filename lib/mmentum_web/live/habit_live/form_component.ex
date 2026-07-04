@@ -8,7 +8,7 @@ defmodule MmentumWeb.HabitLive.FormComponent do
     ~H"""
     <div>
       <.header>
-        <%= @title %>
+        {@title}
         <:subtitle>
           Let's start building momentum
         </:subtitle>

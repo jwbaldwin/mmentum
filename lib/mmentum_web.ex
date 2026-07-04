@@ -43,7 +43,7 @@ defmodule MmentumWeb do
         layouts: [html: MmentumWeb.Layouts]
 
       import Plug.Conn
-      import MmentumWeb.Gettext
+      use Gettext, backend: MmentumWeb.Gettext
 
       unquote(verified_routes())
     end
@@ -85,7 +85,7 @@ defmodule MmentumWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import MmentumWeb.CoreComponents
-      import MmentumWeb.Gettext
+      use Gettext, backend: MmentumWeb.Gettext
       import MmentumWeb.LiveHelpers
 
       # Shortcut for generating JS commands

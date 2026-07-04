@@ -12,6 +12,9 @@
   rows={@streams.logs}
   row_click={fn {_id, log} -> JS.navigate(~p"/logs/#{log}") end}
 >
+  <:col :let={{_id, log}} label="ID">{log.id}</:col>
+  <:col :let={{_id, log}} label="Habit">{log.habit_id}</:col>
+  <:col :let={{_id, log}} label="Logged">{log.inserted_at}</:col>
   <:action :let={{_id, log}}>
     <div class="sr-only">
       <.link navigate={~p"/logs/#{log}"}>Show</.link>

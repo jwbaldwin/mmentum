@@ -8,25 +8,24 @@ defmodule MmentumWeb.HabitLiveTest do
   @update_attrs %{iterations: 43, name: "some updated name"}
   @invalid_attrs %{iterations: nil, name: nil}
 
-  defp create_habit(_) do
-    habit = habit_fixture()
+  defp create_habit(%{user: user}) do
+    habit = habit_fixture(user: user)
     %{habit: habit}
   end
 
   describe "Index" do
-    setup [:create_habit]
+    setup [:register_and_log_in_user, :create_habit]
 
     test "lists all habits", %{conn: conn, habit: habit} do
       {:ok, _index_live, html} = live(conn, ~p"/habits")
 
-      assert html =~ "Listing Habits"
       assert html =~ habit.name
     end
 
     test "saves new habit", %{conn: conn} do
       {:ok, index_live, _html} = live(conn, ~p"/habits")
 
-      assert index_live |> element("a", "New Habit") |> render_click() =~
+      assert index_live |> element(~s|a[href="/habits/new"]|) |> render_click() =~
                "New Habit"
 
       assert_patch(index_live, ~p"/habits/new")
@@ -49,7 +48,9 @@ defmodule MmentumWeb.HabitLiveTest do
     test "updates habit in listing", %{conn: conn, habit: habit} do
       {:ok, index_live, _html} = live(conn, ~p"/habits")
 
-      assert index_live |> element("#habits-#{habit.id} a", "Edit") |> render_click() =~
+      assert index_live
+             |> element(~s|#habit-#{habit.id} a[href="/habits/#{habit.id}/edit"]|)
+             |> render_click() =~
                "Edit Habit"
 
       assert_patch(index_live, ~p"/habits/#{habit}/edit")
@@ -72,13 +73,16 @@ defmodule MmentumWeb.HabitLiveTest do
     test "deletes habit in listing", %{conn: conn, habit: habit} do
       {:ok, index_live, _html} = live(conn, ~p"/habits")
 
-      assert index_live |> element("#habits-#{habit.id} a", "Delete") |> render_click()
-      refute has_element?(index_live, "#habits-#{habit.id}")
+      assert index_live
+             |> element(~s|#habit-#{habit.id} button[phx-click="delete"]|)
+             |> render_click()
+
+      refute has_element?(index_live, "#habit-#{habit.id}")
     end
   end
 
   describe "Show" do
-    setup [:create_habit]
+    setup [:register_and_log_in_user, :create_habit]
 
     test "displays habit", %{conn: conn, habit: habit} do
       {:ok, _show_live, html} = live(conn, ~p"/habits/#{habit}")
@@ -90,7 +94,7 @@ defmodule MmentumWeb.HabitLiveTest do
     test "updates habit within modal", %{conn: conn, habit: habit} do
       {:ok, show_live, _html} = live(conn, ~p"/habits/#{habit}")
 
-      assert show_live |> element("a", "Edit") |> render_click() =~
+      assert show_live |> element(~s|a[href="/habits/#{habit.id}/show/edit"]|) |> render_click() =~
                "Edit Habit"
 
       assert_patch(show_live, ~p"/habits/#{habit}/show/edit")

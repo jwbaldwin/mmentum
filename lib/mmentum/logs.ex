@@ -12,6 +12,13 @@ defmodule Mmentum.Logs do
   alias Mmentum.Time
 
   @doc """
+  List all logs.
+  """
+  def list_logs do
+    Repo.all(Log)
+  end
+
+  @doc """
   List the logs for a user
   """
   def list_logs_by_user(%User{} = user) do

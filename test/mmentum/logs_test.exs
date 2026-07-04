@@ -8,7 +8,7 @@ defmodule Mmentum.LogsTest do
 
     import Mmentum.LogsFixtures
 
-    @invalid_attrs %{}
+    @invalid_attrs %{user_id: nil, habit_id: nil}
 
     test "list_logs/0 returns all logs" do
       log = log_fixture()
@@ -21,9 +21,13 @@ defmodule Mmentum.LogsTest do
     end
 
     test "create_log/1 with valid data creates a log" do
-      valid_attrs = %{}
+      user = Mmentum.AccountsFixtures.user_fixture()
+      habit = Mmentum.HabitsFixtures.habit_fixture(user: user)
+      valid_attrs = %{user_id: user.id, habit_id: habit.id}
 
       assert {:ok, %Log{} = log} = Logs.create_log(valid_attrs)
+      assert log.user_id == user.id
+      assert log.habit_id == habit.id
     end
 
     test "create_log/1 with invalid data returns error changeset" do
@@ -34,7 +38,8 @@ defmodule Mmentum.LogsTest do
       log = log_fixture()
       update_attrs = %{}
 
-      assert {:ok, %Log{} = log} = Logs.update_log(log, update_attrs)
+      assert {:ok, %Log{} = updated_log} = Logs.update_log(log, update_attrs)
+      assert updated_log.id == log.id
     end
 
     test "update_log/2 with invalid data returns error changeset" do

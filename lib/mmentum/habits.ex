@@ -191,11 +191,7 @@ defmodule Mmentum.Habits do
     |> Repo.update()
   end
 
-  # TODO: make this much less shitty
-  @doc """
-  Recalculates momentum from scratch based on a list of logs.
-  Simulates adding each log in chronological order.
-  """
+  # Recalculates momentum from scratch based on logs in chronological order.
   defp recalculate_momentum_from_logs([], _half_life, current_time) do
     {0.0, current_time}
   end
@@ -205,7 +201,10 @@ defmodule Mmentum.Habits do
 
     logs
     |> Enum.reduce({0.0, nil}, fn log, {score, last_updated} ->
-      log_time = DateTime.to_unix(log.inserted_at, :millisecond)
+      log_time =
+        log.inserted_at
+        |> DateTime.from_naive!("Etc/UTC")
+        |> DateTime.to_unix(:millisecond)
 
       Momentum.record_completion(
         score,

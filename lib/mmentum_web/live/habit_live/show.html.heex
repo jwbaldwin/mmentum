@@ -1,5 +1,5 @@
 <.header>
-  <%= @habit.name %>
+  {@habit.name}
   <:subtitle>Edit the habit, and view your logs</:subtitle>
   <:actions>
     <.link patch={~p"/habits/#{@habit}/show/edit"} phx-click={JS.push_focus()}>
@@ -9,14 +9,14 @@
 </.header>
 
 <.list>
-  <:item title="Name"><%= @habit.name %></:item>
-  <:item title="Iterations"><%= @habit.iterations %></:item>
-  <:item title="Periodicity"><%= @habit.periodicity %></:item>
+  <:item title="Name">{@habit.name}</:item>
+  <:item title="Iterations">{@habit.iterations}</:item>
+  <:item title="Periodicity">{@habit.periodicity}</:item>
 </.list>
 
 <div class="flow-root">
   <h3 class="font-semibold text-base text-zinc-700 mt-20 mb-8">
-    <%= @habit.name %> activity logs
+    {@habit.name} activity logs
   </h3>
   <ul role="list" class="space-y-6">
     <%= for {row_id, log} <- @streams.logs do %>
@@ -28,10 +28,10 @@
           <div class="h-1.5 w-1.5 rounded-full bg-zinc-100 ring-1 ring-zinc-300"></div>
         </div>
         <p class="flex-auto py-0.5 text-xs leading-5 text-zinc-500">
-          <span class="font-medium text-zinc-900"><%= @habit.name %></span> activity logged.
+          <span class="font-medium text-zinc-900">{@habit.name}</span> activity logged.
         </p>
         <time datetime={log.inserted_at} class="flex-none py-0.5 text-xs leading-5 text-zinc-500">
-          <%= Time.to_human_relative(log.inserted_at) %>
+          {Time.to_human_relative(log.inserted_at)}
         </time>
       </li>
     <% end %>
@@ -43,10 +43,10 @@
         <.icon name="hero-sparkles-solid" class="w-4 h-4 text-zinc-400" />
       </div>
       <p class="flex-auto py-0.5 text-xs leading-5 text-zinc-500">
-        <span class="font-medium text-zinc-900"><%= @habit.name %></span> habit created.
+        <span class="font-medium text-zinc-900">{@habit.name}</span> habit created.
       </p>
       <time datetime={@habit.inserted_at} class="flex-none py-0.5 text-xs leading-5 text-zinc-500">
-        <%= Time.to_human_relative(@habit.inserted_at) %>
+        {Time.to_human_relative(@habit.inserted_at)}
       </time>
     </li>
   </ul>

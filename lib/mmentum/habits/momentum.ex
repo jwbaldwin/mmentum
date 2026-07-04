@@ -75,6 +75,14 @@ defmodule Mmentum.Habits.Momentum do
   def get_default_half_life(:month), do: 18.0
 
   @doc """
+  Converts a momentum score into a user-facing tier label.
+  """
+  def get_momentum_tier(score) when score >= 80.0, do: "On Fire 🔥"
+  def get_momentum_tier(score) when score >= 50.0, do: "Rolling"
+  def get_momentum_tier(score) when score >= 20.0, do: "Warming Up"
+  def get_momentum_tier(_score), do: "Cooling Off"
+
+  @doc """
   Gets current Unix timestamp in milliseconds.
   """
   def current_timestamp do

@@ -83,10 +83,9 @@ defmodule MmentumWeb.HabitLive.Index do
   end
 
   defp list_habits(socket) do
-    habits =
-      socket
-      |> get_current_user()
-      |> Habits.list_habits_with_range()
+    socket
+    |> get_current_user()
+    |> Habits.list_habits_with_range()
   end
 
   defp assign_day_info(socket) do
@@ -119,6 +118,9 @@ defmodule MmentumWeb.HabitLive.Index do
 
       4 ->
         "Happy #{current_day}, make this hump-day count!"
+
+      _ ->
+        "Happy #{current_day}, keep your momentum going!"
     end
   end
 end

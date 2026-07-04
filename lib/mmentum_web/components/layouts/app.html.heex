@@ -26,7 +26,7 @@
             </.link>
           </li>
           <li class="text-[0.8125rem] leading-6 text-zinc-700 px-2 py-1 bg-zinc-50 shadow-sm rounded-lg border border-zinc-200">
-            <%= @current_user.full_name %>
+            {@current_user.full_name}
           </li>
         <% else %>
           <li>
@@ -53,6 +53,6 @@
 <main class="px-4 py-6 sm:px-6 lg:px-8">
   <div class="mx-auto max-w-4xl">
     <.flash_group flash={@flash} />
-    <%= @inner_content %>
+    {@inner_content}
   </div>
 </main>

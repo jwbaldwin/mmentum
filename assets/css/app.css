@@ -1,5 +1,11 @@
-@import "tailwindcss/base";
-@import "tailwindcss/components";
-@import "tailwindcss/utilities";
+@import "tailwindcss" source(none);
+@source "../js";
+@source "../../lib/mmentum_web";
+
+@theme {
+  --color-brand: #fd4f00;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
+}
 
 /* This file is for your main application CSS */

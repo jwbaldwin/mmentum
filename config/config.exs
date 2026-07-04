@@ -10,6 +10,8 @@ import Config
 config :mmentum,
   ecto_repos: [Mmentum.Repo]
 
+config :elixir, :time_zone_database, Tz.TimeZoneDatabase
+
 # Configures the endpoint
 config :mmentum, MmentumWeb.Endpoint,
   url: [host: "localhost"],
@@ -31,7 +33,7 @@ config :mmentum, Mmentum.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)
 config :esbuild,
-  version: "0.17.11",
+  version: "0.28.1",
   default: [
     args:
       ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
@@ -41,10 +43,9 @@ config :esbuild,
 
 # Configure tailwind (the version is required)
 config :tailwind,
-  version: "3.3.2",
+  version: "4.3.2",
   default: [
     args: ~w(
-      --config=tailwind.config.js
       --input=css/app.css
       --output=../priv/static/assets/app.css
     ),

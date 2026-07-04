@@ -5,7 +5,7 @@ defmodule Mmentum.MixProject do
     [
       app: :mmentum,
       version: "0.1.0",
-      elixir: "~> 1.18",
+      elixir: "~> 1.20",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -33,25 +33,26 @@ defmodule Mmentum.MixProject do
   defp deps do
     [
       {:bcrypt_elixir, "~> 3.2"},
-      {:phoenix, "~> 1.7"},
-      {:phoenix_ecto, "~> 4.6"},
-      {:ecto_sql, "~> 3.12"},
-      {:postgrex, ">= 0.0.0"},
-      {:phoenix_html, "~> 4.1"},
-      {:phoenix_live_reload, "~> 1.5", only: :dev},
-      {:phoenix_live_view, "~> 1.0"},
-      {:floki, ">= 0.36.0", only: :test},
+      {:phoenix, "~> 1.8"},
+      {:phoenix_ecto, "~> 4.7"},
+      {:ecto_sql, "~> 3.14"},
+      {:postgrex, "~> 0.22"},
+      {:phoenix_html, "~> 4.3"},
+      {:phoenix_live_reload, "~> 1.6", only: :dev},
+      {:phoenix_live_view, "~> 1.2"},
+      {:floki, "~> 0.38", only: :test},
+      {:lazy_html, ">= 0.1.0", only: :test},
       {:phoenix_live_dashboard, "~> 0.8"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
-      {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
-      {:swoosh, "~> 1.17"},
-      {:finch, "~> 0.19"},
+      {:tailwind, "~> 0.5", runtime: Mix.env() == :dev},
+      {:swoosh, "~> 1.26"},
+      {:finch, "~> 0.23"},
       {:telemetry_metrics, "~> 1.0"},
-      {:telemetry_poller, "~> 1.1"},
-      {:timex, "~> 3.7"},
-      {:gettext, "~> 0.26"},
+      {:telemetry_poller, "~> 1.3"},
+      {:tz, "~> 0.28"},
+      {:gettext, "~> 1.0"},
       {:jason, "~> 1.4"},
-      {:plug_cowboy, "~> 2.7"}
+      {:bandit, "~> 1.12"}
     ]
   end
 

@@ -41,7 +41,13 @@ defmodule MmentumWeb.UserRegistrationLiveTest do
       {:ok, lv, _html} = live(conn, ~p"/users/register")
 
       email = unique_user_email()
-      form = form(lv, "#registration_form", user: valid_user_attributes(email: email))
+      full_name = "Updated User"
+
+      form =
+        form(lv, "#registration_form",
+          user: valid_user_attributes(email: email, full_name: full_name)
+        )
+
       render_submit(form)
       conn = follow_trigger_action(form, conn)
 
@@ -50,7 +56,7 @@ defmodule MmentumWeb.UserRegistrationLiveTest do
       # Now do a logged in request and assert on the menu
       conn = get(conn, "/")
       response = html_response(conn, 200)
-      assert response =~ email
+      assert response =~ full_name
       assert response =~ "Settings"
       assert response =~ "Log out"
     end
@@ -77,7 +83,7 @@ defmodule MmentumWeb.UserRegistrationLiveTest do
 
       {:ok, _login_live, login_html} =
         lv
-        |> element(~s|main a:fl-contains("Sign in")|)
+        |> element(~s|main a[href="/users/log_in"]|)
         |> render_click()
         |> follow_redirect(conn, ~p"/users/log_in")
 

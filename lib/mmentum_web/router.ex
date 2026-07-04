@@ -55,11 +55,19 @@ defmodule MmentumWeb.Router do
     live_session :authenticated,
       on_mount: [{MmentumWeb.UserAuth, :ensure_authenticated}] do
       live "/", HabitLive.Index, :index
+      live "/habits", HabitLive.Index, :index
       live "/habits/new", HabitLive.Index, :new
       live "/habits/:id/edit", HabitLive.Index, :edit
 
       live "/habits/:id", HabitLive.Show, :show
       live "/habits/:id/show/edit", HabitLive.Show, :edit
+
+      live "/logs", LogLive.Index, :index
+      live "/logs/new", LogLive.Index, :new
+      live "/logs/:id/edit", LogLive.Index, :edit
+
+      live "/logs/:id", LogLive.Show, :show
+      live "/logs/:id/show/edit", LogLive.Show, :edit
 
       live "/users/settings", UserSettingsLive, :edit
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email

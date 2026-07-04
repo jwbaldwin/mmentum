@@ -2,11 +2,10 @@
 <html lang="en" class="[scrollbar-gutter:stable]">
   <head>
     <meta charset="utf-8" />
-    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
     <.live_title suffix=" | Mmentum">
-      <%= assigns[:page_title] || "Home" %>
+      {assigns[:page_title] || "Home"}
     </.live_title>
     <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
     <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}>
@@ -21,8 +20,7 @@
       property="og:description"
       content="Accomplish your goals and create habits that last. A simple way to build and keep your momentum."
     />
-    <meta property="og:image" content={~p"/og_image.png"} />
-    <meta property="og:image" content={~p"/og_image.png"} />
+    <meta property="og:image" content={~p"/images/og_image.png"} />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@jwbaldwin" />
@@ -32,7 +30,7 @@
       name="twitter:description"
       content="Accomplish your goals and create habits that last. A simple way to build and keep your momentum."
     />
-    <meta name="twitter:image" content={~p"/og_image.png"} />
+    <meta name="twitter:image" content={~p"/images/og_image.png"} />
     <meta name="keywords" content="Mmentum, Habit, Habit tracker, momentum, productivity" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -42,9 +40,10 @@
       rel="stylesheet"
     />
 
-    <script async src="https://cdn.splitbee.io/sb.js"></script>
+    <script async src="https://cdn.splitbee.io/sb.js">
+    </script>
   </head>
   <body class="bg-white antialiased">
-    <%= @inner_content %>
+    {@inner_content}
   </body>
 </html>

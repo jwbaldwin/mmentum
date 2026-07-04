@@ -1,5 +1,5 @@
 <.header>
-  Log <%= @log.id %>
+  Log {@log.id}
   <:subtitle>This is a log record from your database.</:subtitle>
   <:actions>
     <.link patch={~p"/logs/#{@log}/show/edit"} phx-click={JS.push_focus()}>
@@ -9,6 +9,9 @@
 </.header>
 
 <.list>
+  <:item title="ID">{@log.id}</:item>
+  <:item title="Habit">{@log.habit_id}</:item>
+  <:item title="Logged">{@log.inserted_at}</:item>
 </.list>
 
 <.back navigate={~p"/logs"}>Back to logs</.back>

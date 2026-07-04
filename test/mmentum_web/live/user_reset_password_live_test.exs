@@ -64,7 +64,7 @@ defmodule MmentumWeb.UserResetPasswordLiveTest do
         |> follow_redirect(conn, ~p"/users/log_in")
 
       refute get_session(conn, :user_token)
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Password reset successfully"
+      assert Phoenix.Flash.get(conn.assigns.flash, :success) =~ "Password reset successfully"
       assert Accounts.get_user_by_email_and_password(user.email, "new valid password")
     end
 
@@ -93,7 +93,7 @@ defmodule MmentumWeb.UserResetPasswordLiveTest do
 
       {:ok, conn} =
         lv
-        |> element(~s|main a:fl-contains("Log in")|)
+        |> element(~s|main a[href="/users/log_in"]|)
         |> render_click()
         |> follow_redirect(conn, ~p"/users/log_in")
 
@@ -108,7 +108,7 @@ defmodule MmentumWeb.UserResetPasswordLiveTest do
 
       {:ok, conn} =
         lv
-        |> element(~s|main a:fl-contains("Register")|)
+        |> element(~s|main a[href="/users/register"]|)
         |> render_click()
         |> follow_redirect(conn, ~p"/users/register")
 

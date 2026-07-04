@@ -4,17 +4,13 @@ defmodule Mmentum.Time do
   Operates in local time.
   """
 
-  alias Timex.Format.DateTime.Formatters.Relative
-
   @greetings %{
     early: "Good morning",
     middle: "Good afternoon",
     late: "Good evening"
   }
 
-  @weekstart :mon
-
-  @human_format "%A at %l:%M%P"
+  @utc_timezone "Etc/UTC"
 
   @doc """
   Returns the day of the week
@@ -23,14 +19,21 @@ defmodule Mmentum.Time do
   """
   @spec current_day() :: String.t()
   def current_day do
-    Timex.local() |> Timex.weekday() |> Timex.day_name()
+    current_time()
+    |> DateTime.to_date()
+    |> Date.day_of_week()
+    |> day_name()
   end
 
   @doc """
   Returns the current time with timezone information
   """
   def current_time do
-    Timex.local()
+    DateTime.now(current_timezone())
+    |> case do
+      {:ok, time} -> time
+      {:error, _reason} -> DateTime.utc_now()
+    end
   end
 
   @doc """
@@ -38,7 +41,7 @@ defmodule Mmentum.Time do
   >> "
   """
   def current_timezone do
-    Timex.Timezone.local()
+    System.get_env("TZ") || @utc_timezone
   end
 
   @doc """
@@ -50,11 +53,9 @@ defmodule Mmentum.Time do
   end
 
   def greeting_for_time_of_day(%DateTime{} = time) do
-    hours_left = Timex.diff(Timex.end_of_day(time), time, :hours)
-
     cond do
-      is_morning(hours_left) -> @greetings[:early]
-      is_afternoon(hours_left) -> @greetings[:middle]
+      time.hour in 4..10 -> @greetings[:early]
+      time.hour in 11..17 -> @greetings[:middle]
       true -> @greetings[:late]
     end
   end
@@ -68,39 +69,21 @@ defmodule Mmentum.Time do
   end
 
   def time_of_day(%DateTime{} = time) do
-    hours_left = Timex.diff(Timex.end_of_day(time), time, :hours)
-
     cond do
-      is_morning(hours_left) -> :morning
-      is_afternoon(hours_left) -> :afternoon
+      time.hour in 4..10 -> :morning
+      time.hour in 11..17 -> :afternoon
       true -> :evening
     end
   end
 
-  # Checks if hours left is between 4am (24 - 4 = 20) and 11am (24 - 11 = 13)
-  defp is_morning(hours_left) do
-    hours_left < 20 && hours_left >= 13
-  end
-
-  # Checks if hours left is between 11am (24 - 11 = 13) and 6pm (24 - 18 = 6)
-  defp is_afternoon(hours_left) do
-    hours_left < 13 && hours_left >= 6
-  end
-
   def days_to_end(:week) do
-    end_of_week =
-      current_time()
-      |> Timex.end_of_week(@weekstart)
-
-    Timex.diff(end_of_week, current_time(), :days)
+    current_date = DateTime.to_date(current_time())
+    Date.diff(end_of_week(current_date), current_date)
   end
 
   def days_to_end(:month) do
-    end_of_month =
-      current_time()
-      |> Timex.end_of_month()
-
-    Timex.diff(end_of_month, current_time(), :hours)
+    current_date = DateTime.to_date(current_time())
+    Date.diff(Date.end_of_month(current_date), current_date)
   end
 
   def days_to_end do
@@ -111,38 +94,18 @@ defmodule Mmentum.Time do
   Returns the date time for the start of some range in [:year, :month, :week, :day]
   """
   def start_of_range(range) do
-    case range do
-      :year ->
-        Timex.beginning_of_year(Timex.now())
-
-      :month ->
-        Timex.beginning_of_month(Timex.now())
-
-      :week ->
-        Timex.beginning_of_week(Timex.now(), @weekstart)
-
-      :day ->
-        Timex.beginning_of_day(Timex.now())
-    end
+    current_time()
+    |> beginning_of_range(range)
+    |> to_utc_naive()
   end
 
   @doc """
   Returns the date time for the end of some range in [:year, :month, :week, :day]
   """
   def end_of_range(range) do
-    case range do
-      :year ->
-        Timex.end_of_year(Timex.now())
-
-      :month ->
-        Timex.end_of_month(Timex.now())
-
-      :week ->
-        Timex.end_of_week(Timex.now(), @weekstart)
-
-      :day ->
-        Timex.end_of_day(Timex.now())
-    end
+    current_time()
+    |> end_of_range_for_time(range)
+    |> to_utc_naive()
   end
 
   @doc """
@@ -152,8 +115,8 @@ defmodule Mmentum.Time do
   >> 13 minutes ago
   """
   def to_human_relative(logged_time) do
-    logged_time = DateTime.from_naive!(logged_time, "Etc/UTC")
-    time_difference = Timex.diff(logged_time, current_time(), :minutes)
+    logged_time = DateTime.from_naive!(logged_time, @utc_timezone)
+    time_difference = DateTime.diff(logged_time, DateTime.utc_now(), :minute)
 
     if time_difference > -90 do
       to_human_relative(logged_time, :relative)
@@ -163,16 +126,111 @@ defmodule Mmentum.Time do
   end
 
   defp to_human_relative(logged_time, :default) do
-    Timex.Timezone.convert(logged_time, current_timezone())
-    |> Timex.format!(@human_format, :strftime)
+    logged_time
+    |> to_current_timezone()
+    |> format_human_time()
   end
 
   defp to_human_relative(logged_time, :relative) do
-    Timex.Timezone.convert(logged_time, current_timezone())
-    |> Relative.format("{relative}")
-    |> case do
-      {:ok, time} -> time
-      {:error, _} -> to_human_relative(logged_time, :default)
+    minutes_ago = max(DateTime.diff(DateTime.utc_now(), logged_time, :minute), 0)
+
+    cond do
+      minutes_ago == 0 -> "just now"
+      minutes_ago == 1 -> "1 minute ago"
+      minutes_ago < 60 -> "#{minutes_ago} minutes ago"
+      true -> "1 hour ago"
     end
   end
+
+  defp beginning_of_range(%DateTime{} = time, :year) do
+    time.year
+    |> Date.new!(1, 1)
+    |> DateTime.new!(~T[00:00:00], time.time_zone)
+  end
+
+  defp beginning_of_range(%DateTime{} = time, :month) do
+    time
+    |> DateTime.to_date()
+    |> Date.beginning_of_month()
+    |> DateTime.new!(~T[00:00:00], time.time_zone)
+  end
+
+  defp beginning_of_range(%DateTime{} = time, :week) do
+    time
+    |> DateTime.to_date()
+    |> beginning_of_week()
+    |> DateTime.new!(~T[00:00:00], time.time_zone)
+  end
+
+  defp beginning_of_range(%DateTime{} = time, :day) do
+    time
+    |> DateTime.to_date()
+    |> DateTime.new!(~T[00:00:00], time.time_zone)
+  end
+
+  defp end_of_range_for_time(%DateTime{} = time, :year) do
+    time.year
+    |> Date.new!(12, 31)
+    |> DateTime.new!(~T[23:59:59.999999], time.time_zone)
+  end
+
+  defp end_of_range_for_time(%DateTime{} = time, :month) do
+    time
+    |> DateTime.to_date()
+    |> Date.end_of_month()
+    |> DateTime.new!(~T[23:59:59.999999], time.time_zone)
+  end
+
+  defp end_of_range_for_time(%DateTime{} = time, :week) do
+    time
+    |> DateTime.to_date()
+    |> end_of_week()
+    |> DateTime.new!(~T[23:59:59.999999], time.time_zone)
+  end
+
+  defp end_of_range_for_time(%DateTime{} = time, :day) do
+    time
+    |> DateTime.to_date()
+    |> DateTime.new!(~T[23:59:59.999999], time.time_zone)
+  end
+
+  defp beginning_of_week(date), do: Date.add(date, 1 - Date.day_of_week(date))
+  defp end_of_week(date), do: Date.add(beginning_of_week(date), 6)
+
+  defp to_utc_naive(%DateTime{} = time) do
+    time
+    |> DateTime.shift_zone!(@utc_timezone)
+    |> DateTime.to_naive()
+  end
+
+  defp to_current_timezone(%DateTime{} = time) do
+    DateTime.shift_zone(time, current_timezone())
+    |> case do
+      {:ok, local_time} -> local_time
+      {:error, _reason} -> time
+    end
+  end
+
+  defp format_human_time(%DateTime{} = time) do
+    hour =
+      time.hour
+      |> rem(12)
+      |> case do
+        0 -> 12
+        hour -> hour
+      end
+
+    minute = time.minute |> Integer.to_string() |> String.pad_leading(2, "0")
+    meridiem = if time.hour < 12, do: "am", else: "pm"
+
+    "#{day_name(Date.day_of_week(DateTime.to_date(time)))} at #{hour}:#{minute}#{meridiem}"
+  end
+
+  defp day_name(1), do: "Monday"
+  defp day_name(2), do: "Tuesday"
+  defp day_name(3), do: "Wednesday"
+  defp day_name(4), do: "Thursday"
+  defp day_name(5), do: "Friday"
+  defp day_name(6), do: "Saturday"
+  defp day_name(7), do: "Sunday"
 end
