@@ -14,6 +14,7 @@ config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
 # Configures the endpoint
 config :mmentum, MmentumWeb.Endpoint,
+  adapter: Bandit.PhoenixAdapter,
   url: [host: "localhost"],
   render_errors: [
     formats: [html: MmentumWeb.ErrorHTML, json: MmentumWeb.ErrorJSON],
