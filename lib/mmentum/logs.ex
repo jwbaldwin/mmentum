@@ -1,6 +1,6 @@
 defmodule Mmentum.Logs do
   @moduledoc """
-  Queries completion activity.
+  Queries completion activity
   """
 
   import Ecto.Query, warn: false
