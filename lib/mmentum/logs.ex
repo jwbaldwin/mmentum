@@ -9,7 +9,6 @@ defmodule Mmentum.Logs do
   alias Mmentum.Habits.Habit
   alias Mmentum.Logs.Log
   alias Mmentum.Repo
-  alias Mmentum.Time
 
   @doc """
   List all logs.
@@ -50,10 +49,7 @@ defmodule Mmentum.Logs do
     |> Repo.all()
   end
 
-  def base_logs_range_query(range) do
-    start_of_range = Time.start_of_range(range)
-    end_of_range = Time.end_of_range(range)
-
+  def base_logs_range_query(start_of_range, end_of_range) do
     from l in Log,
       where: l.inserted_at >= ^start_of_range and l.inserted_at <= ^end_of_range
   end

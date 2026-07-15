@@ -16,6 +16,23 @@ defmodule MmentumWeb.HabitLiveTest do
   describe "Index" do
     setup [:register_and_log_in_user, :create_habit]
 
+    test "saves the browser time zone once", %{conn: conn, user: user} do
+      {:ok, user} = Mmentum.Accounts.update_user_time_zone(user, nil)
+      conn = log_in_user(conn, user)
+
+      conn
+      |> put_connect_params(%{"time_zone" => "America/New_York"})
+      |> live(~p"/habits")
+
+      assert Mmentum.Accounts.get_user!(user.id).time_zone == "America/New_York"
+
+      conn
+      |> put_connect_params(%{"time_zone" => "America/Chicago"})
+      |> live(~p"/habits")
+
+      assert Mmentum.Accounts.get_user!(user.id).time_zone == "America/New_York"
+    end
+
     test "lists all habits", %{conn: conn, habit: habit} do
       {:ok, _index_live, html} = live(conn, ~p"/habits")
 
@@ -33,6 +50,9 @@ defmodule MmentumWeb.HabitLiveTest do
       assert index_live
              |> form("#habit-form", habit: @invalid_attrs)
              |> render_change() =~ "can&#39;t be blank"
+
+      assert has_element?(index_live, "#habit_name[aria-invalid=true]")
+      assert has_element?(index_live, "#habit_iterations[aria-invalid=true]")
 
       assert index_live
              |> form("#habit-form", habit: @create_attrs)
@@ -68,6 +88,17 @@ defmodule MmentumWeb.HabitLiveTest do
       html = render(index_live)
       assert html =~ "Habit updated successfully"
       assert html =~ "some updated name"
+    end
+
+    test "shows the habit's current periodicity when editing", %{conn: conn, habit: habit} do
+      {:ok, habit} = Mmentum.Habits.update_habit(habit, %{periodicity: :month})
+      {:ok, index_live, _html} = live(conn, ~p"/habits")
+
+      index_live
+      |> element(~s|#habit-#{habit.id} a[href="/habits/#{habit.id}/edit"]|)
+      |> render_click()
+
+      assert has_element?(index_live, "#habit_periodicity option[value=month][selected]")
     end
 
     test "deletes habit in listing", %{conn: conn, habit: habit} do

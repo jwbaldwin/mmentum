@@ -8,10 +8,11 @@ defmodule MmentumWeb.HabitLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok,
-     socket
-     |> assign(:habits, list_habits(socket))
-     |> assign_day_info()}
+    if get_current_user(socket).time_zone do
+      {:ok, assign_dashboard(socket)}
+    else
+      {:ok, assign(socket, habits: [], day_info: nil, greeting: nil, time_of_day: nil)}
+    end
   end
 
   @impl true
@@ -83,30 +84,31 @@ defmodule MmentumWeb.HabitLive.Index do
   end
 
   defp list_habits(socket) do
-    socket
-    |> get_current_user()
-    |> Habits.list_habits_with_range()
+    user = get_current_user(socket)
+    Habits.list_habits_with_range(user, Time.current_time(user.time_zone))
   end
 
-  defp assign_day_info(socket) do
+  defp assign_dashboard(socket) do
+    user = get_current_user(socket)
+    current_time = Time.current_time(user.time_zone)
+
     assign(socket, %{
-      day_info: build_day_info(),
-      current_time: Time.current_time(),
-      greeting: greeting_for_time_of_day(socket),
-      time_of_day: Time.time_of_day()
+      habits: Habits.list_habits_with_range(user, current_time),
+      day_info: build_day_info(current_time),
+      greeting: greeting_for_time_of_day(user, current_time),
+      time_of_day: Time.time_of_day(current_time)
     })
   end
 
-  defp greeting_for_time_of_day(socket) do
-    user = get_current_user(socket)
+  defp greeting_for_time_of_day(user, current_time) do
     [partial_name, _rest] = String.split(user.full_name, " ")
-    Time.greeting_for_time_of_day() <> ", " <> partial_name
+    Time.greeting_for_time_of_day(current_time) <> ", " <> partial_name
   end
 
-  defp build_day_info do
-    current_day = Time.current_day()
+  defp build_day_info(current_time) do
+    current_day = Time.current_day(current_time)
 
-    case Time.days_to_end(:week) do
+    case Time.days_to_end(:week, current_time) do
       0 ->
         "Happy #{current_day}, a new week starts tomorrow!"
 

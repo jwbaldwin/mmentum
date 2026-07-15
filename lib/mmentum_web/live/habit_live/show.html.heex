@@ -57,6 +57,7 @@
 <.modal
   :if={@live_action == :edit}
   id="habit-modal"
+  size="max-w-xl"
   show
   on_cancel={JS.patch(~p"/habits/#{@habit}")}
 >

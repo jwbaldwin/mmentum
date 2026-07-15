@@ -14,6 +14,7 @@ defmodule MmentumWeb.UserSettingsLiveTest do
 
       assert html =~ "Change Email"
       assert html =~ "Change Password"
+      assert html =~ "Save time zone"
     end
 
     test "redirects if user is not logged in", %{conn: conn} do
@@ -22,6 +23,20 @@ defmodule MmentumWeb.UserSettingsLiveTest do
       assert {:redirect, %{to: path, flash: flash}} = redirect
       assert path == ~p"/users/log_in"
       assert %{"error" => "You must log in to access this page."} = flash
+    end
+  end
+
+  describe "update time zone form" do
+    test "updates the user's time zone", %{conn: conn} do
+      user = user_fixture(%{time_zone: "America/Chicago"})
+      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/users/settings")
+
+      lv
+      |> form("#time_zone_form", user: %{time_zone: "America/New_York"})
+      |> render_submit()
+
+      assert Accounts.get_user!(user.id).time_zone == "America/New_York"
+      assert has_element?(lv, ~s|#time_zone_form input[value="America/New_York"]|)
     end
   end
 

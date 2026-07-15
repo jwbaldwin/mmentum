@@ -17,9 +17,9 @@ defmodule Mmentum.Time do
   > current_day()
   >> Monday
   """
-  @spec current_day() :: String.t()
-  def current_day do
-    current_time()
+  @spec current_day(DateTime.t()) :: String.t()
+  def current_day(%DateTime{} = time) do
+    time
     |> DateTime.to_date()
     |> Date.day_of_week()
     |> day_name()
@@ -28,13 +28,8 @@ defmodule Mmentum.Time do
   @doc """
   Returns the current time with timezone information
   """
-  def current_time do
-    DateTime.now(current_timezone())
-    |> case do
-      {:ok, time} -> time
-      {:error, _reason} -> DateTime.utc_now()
-    end
-  end
+  @spec current_time(String.t()) :: DateTime.t()
+  def current_time(time_zone), do: DateTime.now!(time_zone)
 
   @doc """
   Returns the current timezone information
@@ -47,11 +42,7 @@ defmodule Mmentum.Time do
   @doc """
   Returns a pre-written greeting for the time of day
   """
-  def greeting_for_time_of_day do
-    current_time()
-    |> greeting_for_time_of_day()
-  end
-
+  @spec greeting_for_time_of_day(DateTime.t()) :: String.t()
   def greeting_for_time_of_day(%DateTime{} = time) do
     cond do
       time.hour in 4..10 -> @greetings[:early]
@@ -63,11 +54,7 @@ defmodule Mmentum.Time do
   @doc """
   Returns :morning, :afternoon, :evening
   """
-  def time_of_day do
-    current_time()
-    |> time_of_day()
-  end
-
+  @spec time_of_day(DateTime.t()) :: :morning | :afternoon | :evening
   def time_of_day(%DateTime{} = time) do
     cond do
       time.hour in 4..10 -> :morning
@@ -76,25 +63,21 @@ defmodule Mmentum.Time do
     end
   end
 
-  def days_to_end(:week) do
-    current_date = DateTime.to_date(current_time())
+  def days_to_end(:week, %DateTime{} = time) do
+    current_date = DateTime.to_date(time)
     Date.diff(end_of_week(current_date), current_date)
   end
 
-  def days_to_end(:month) do
-    current_date = DateTime.to_date(current_time())
+  def days_to_end(:month, %DateTime{} = time) do
+    current_date = DateTime.to_date(time)
     Date.diff(Date.end_of_month(current_date), current_date)
-  end
-
-  def days_to_end do
-    IO.puts("This method needs an atom of either :week or :month")
   end
 
   @doc """
   Returns the date time for the start of some range in [:year, :month, :week, :day]
   """
-  def start_of_range(range) do
-    current_time()
+  def start_of_range(%DateTime{} = time, range) do
+    time
     |> beginning_of_range(range)
     |> to_utc_naive()
   end
@@ -102,8 +85,8 @@ defmodule Mmentum.Time do
   @doc """
   Returns the date time for the end of some range in [:year, :month, :week, :day]
   """
-  def end_of_range(range) do
-    current_time()
+  def end_of_range(%DateTime{} = time, range) do
+    time
     |> end_of_range_for_time(range)
     |> to_utc_naive()
   end

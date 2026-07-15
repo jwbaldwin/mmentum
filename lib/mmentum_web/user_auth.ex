@@ -148,7 +148,7 @@ defmodule MmentumWeb.UserAuth do
   end
 
   def on_mount(:ensure_authenticated, _params, session, socket) do
-    socket = mount_current_user(socket, session)
+    socket = socket |> mount_current_user(session) |> save_initial_time_zone()
 
     if socket.assigns.current_user do
       {:cont, socket}
@@ -178,6 +178,18 @@ defmodule MmentumWeb.UserAuth do
         Accounts.get_user_by_session_token(user_token)
       end
     end)
+  end
+
+  defp save_initial_time_zone(socket) do
+    user = socket.assigns.current_user
+
+    if Phoenix.LiveView.connected?(socket) && user && is_nil(user.time_zone) do
+      %{"time_zone" => time_zone} = Phoenix.LiveView.get_connect_params(socket)
+      {:ok, user} = Accounts.update_user_time_zone(user, time_zone)
+      Phoenix.Component.assign(socket, :current_user, user)
+    else
+      socket
+    end
   end
 
   @doc """

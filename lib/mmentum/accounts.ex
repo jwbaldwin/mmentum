@@ -108,6 +108,12 @@ defmodule Mmentum.Accounts do
     User.email_changeset(user, attrs, validate_email: false)
   end
 
+  def update_user_time_zone(user, time_zone) do
+    user
+    |> Ecto.Changeset.change(time_zone: time_zone)
+    |> Repo.update()
+  end
+
   @doc """
   Emulates that the email will change without actually changing
   it in the database.

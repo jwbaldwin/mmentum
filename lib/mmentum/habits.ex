@@ -10,7 +10,7 @@ defmodule Mmentum.Habits do
   alias Mmentum.Habits.Habit
   alias Mmentum.Habits.Momentum
   alias Mmentum.Logs
-  alias Mmentum.Repo
+  alias Mmentum.Time
 
   @allowed_ranges [:year, :month, :week, :day]
 
@@ -27,11 +27,14 @@ defmodule Mmentum.Habits do
   @doc """
   Retrieve the user's list of habits with all logs in the specified range
   """
-  def list_habits_with_range(%User{id: user_id} = _user, range \\ :week)
+  def list_habits_with_range(%User{id: user_id}, %DateTime{} = current_time, range \\ :week)
       when range in @allowed_ranges do
+    start_of_range = Time.start_of_range(current_time, range)
+    end_of_range = Time.end_of_range(current_time, range)
+
     Habit
     |> where(user_id: ^user_id)
-    |> preload(logs: ^Logs.base_logs_range_query(range))
+    |> preload(logs: ^Logs.base_logs_range_query(start_of_range, end_of_range))
     |> Repo.all()
   end
 

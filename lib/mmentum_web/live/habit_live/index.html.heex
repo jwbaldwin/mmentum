@@ -1,4 +1,4 @@
-<.header>
+<.header :if={@greeting}>
   <h1 class="text-3xl font-semibold prose-2xl text-zinc-900">{@greeting}!</h1>
   <p class="leading-10 prose-xl text-zinc-400">{@day_info}</p>
   <:actions>
@@ -111,7 +111,7 @@
   </div>
   <div class="col-span-3 pt-4 space-x-2"></div>
 </div>
-<div :if={length(@habits) == 0} class="empty-state text-center">
+<div :if={@time_of_day && length(@habits) == 0} class="empty-state text-center">
   <%= case @time_of_day do %>
     <% :morning -> %>
       <.icon name="hero-sun-mini" class="mx-auto h-12 w-12 text-gray-700" />

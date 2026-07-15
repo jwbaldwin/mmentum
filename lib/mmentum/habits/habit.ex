@@ -4,7 +4,7 @@ defmodule Mmentum.Habits.Habit do
 
   schema "habits" do
     field :iterations, :integer
-    field :periodicity, Ecto.Enum, values: [:day, :week, :month]
+    field :periodicity, Ecto.Enum, values: [:day, :week, :month], default: :week
     field :name, :string
 
     field :momentum_score, :float, default: 0.0

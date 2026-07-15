@@ -16,11 +16,15 @@ defmodule Mmentum.AccountsFixtures do
   end
 
   def user_fixture(attrs \\ %{}) do
+    time_zone = Map.get(attrs, :time_zone, "Etc/UTC")
+
     {:ok, user} =
       attrs
+      |> Map.delete(:time_zone)
       |> valid_user_attributes()
       |> Mmentum.Accounts.register_user()
 
+    {:ok, user} = Mmentum.Accounts.update_user_time_zone(user, time_zone)
     user
   end
 

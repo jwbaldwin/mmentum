@@ -71,20 +71,20 @@ defmodule MmentumWeb.CoreComponents do
         aria-modal="true"
         tabindex="0"
       >
-        <div class="flex min-h-full items-center justify-center">
-          <div class={["w-full p-4 sm:p-6 lg:py-8", @size]}>
+        <div class="flex min-h-full items-center justify-center p-4 sm:p-6">
+          <div class={["w-full", @size]}>
             <.focus_wrap
               id={"#{@id}-container"}
               phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
               phx-key="escape"
               phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-              class="shadow-zinc-700/10 ring-zinc-700/10 relative hidden rounded-2xl bg-white p-14 shadow-lg ring-1 transition"
+              class="shadow-zinc-700/10 ring-zinc-700/10 relative hidden rounded-3xl bg-white p-6 shadow-xl ring-1 transition sm:p-8"
             >
-              <div class="absolute top-6 right-5">
+              <div class="absolute right-4 top-4 sm:right-5 sm:top-5">
                 <button
                   phx-click={JS.exec("data-cancel", to: "##{@id}")}
                   type="button"
-                  class="-m-3 flex-none p-3 opacity-20 hover:opacity-40"
+                  class="flex h-9 w-9 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:ring-offset-2"
                   aria-label={gettext("close")}
                 >
                   <.icon name="hero-x-mark-solid" class="h-5 w-5" />
@@ -346,14 +346,18 @@ defmodule MmentumWeb.CoreComponents do
   def input(%{type: "select"} = assigns) do
     ~H"""
     <div phx-feedback-for={@name}>
-      <.label for={@id}>{@label}</.label>
+      <.label :if={@label} for={@id}>{@label}</.label>
       <select
         id={@id}
         name={@name}
         class={[
-          "mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm",
+          "mt-2 block w-full rounded-md border bg-white shadow-sm focus:ring-0 sm:text-sm",
+          "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
+          @errors == [] && "border-zinc-300 focus:border-zinc-400",
+          @errors != [] && "border-rose-400 focus:border-rose-400",
           @class
         ]}
+        aria-invalid={to_string(@errors != [])}
         multiple={@multiple}
         {@rest}
       >
@@ -368,7 +372,7 @@ defmodule MmentumWeb.CoreComponents do
   def input(%{type: "textarea"} = assigns) do
     ~H"""
     <div phx-feedback-for={@name}>
-      <.label for={@id}>{@label}</.label>
+      <.label :if={@label} for={@id}>{@label}</.label>
       <textarea
         id={@id}
         name={@name}
@@ -379,6 +383,7 @@ defmodule MmentumWeb.CoreComponents do
           @errors != [] && "border-rose-400 focus:border-rose-400",
           @class
         ]}
+        aria-invalid={to_string(@errors != [])}
         {@rest}
       ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
       <.error :for={msg <- @errors}>{msg}</.error>
@@ -390,7 +395,7 @@ defmodule MmentumWeb.CoreComponents do
   def input(assigns) do
     ~H"""
     <div phx-feedback-for={@name}>
-      <.label for={@id}>{@label}</.label>
+      <.label :if={@label} for={@id}>{@label}</.label>
       <input
         type={@type}
         name={@name}
@@ -403,6 +408,7 @@ defmodule MmentumWeb.CoreComponents do
           @errors != [] && "border-rose-400 focus:border-rose-400",
           @class
         ]}
+        aria-invalid={to_string(@errors != [])}
         {@rest}
       />
       <.error :for={msg <- @errors}>{msg}</.error>
@@ -431,8 +437,8 @@ defmodule MmentumWeb.CoreComponents do
 
   def error(assigns) do
     ~H"""
-    <p class="mt-3 flex gap-3 text-sm leading-6 text-rose-600 phx-no-feedback:hidden">
-      <.icon name="hero-exclamation-circle-mini" class="mt-0.5 h-5 w-5 flex-none" />
+    <p class="mt-2 flex items-center gap-2 text-xs font-medium leading-5 text-rose-600 phx-no-feedback:hidden">
+      <.icon name="hero-exclamation-circle-mini" class="h-4 w-4 flex-none" />
       {render_slot(@inner_block)}
     </p>
     """

@@ -7,36 +7,63 @@ defmodule MmentumWeb.HabitLive.FormComponent do
   def render(assigns) do
     ~H"""
     <div>
-      <.header>
-        {@title}
-        <:subtitle>
-          Let's start building momentum
-        </:subtitle>
-      </.header>
+      <header class="pr-8 sm:pr-10">
+        <h1 class="mt-2 text-2xl font-semibold tracking-tight text-zinc-900">
+          {if @action == :new, do: "Who are you?", else: "Refine"}
+        </h1>
+        <p class="mt-2 text-sm leading-6 text-zinc-500">
+          {if @action == :new,
+            do: "Every action is a vote for who you want to be",
+            else: "Adjust your habit"}
+        </p>
+      </header>
 
-      <.simple_form
+      <.form
         for={@form}
         id="habit-form"
         phx-target={@myself}
         phx-change="validate"
         phx-submit="save"
+        class="mt-7 space-y-6"
       >
-        <.input field={@form[:name]} type="text" label="Habit" class="max-w-sm" />
-        <div class="grid grid-cols-3 gap-3 place-items-end">
-          <.input field={@form[:iterations]} type="number" label="Iterations" max={31} min={1} />
-          <p class="text-zinc-600 font-semibold px-2 py-2">times a</p>
-          <.input
-            field={@form[:periodicity]}
-            type="select"
-            label="Periodicity"
-            options={[Day: :day, Week: :week, Month: :month]}
-            value={:week}
-          />
-        </div>
-        <:actions>
-          <.button phx-disable-with="Saving...">Save Habit</.button>
-        </:actions>
-      </.simple_form>
+        <.input
+          field={@form[:name]}
+          type="text"
+          label="I am becoming someone who..."
+          placeholder="e.g. reads before bed"
+          autocomplete="off"
+          class="h-12 rounded-xl bg-zinc-50/60 px-4 text-base shadow-none placeholder:text-zinc-400 focus:bg-white focus:ring-4 focus:ring-zinc-900/5"
+        />
+
+        <fieldset class="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
+          <legend class="px-1 text-sm font-semibold text-zinc-900">Cadence</legend>
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-[9rem_1fr]">
+            <.input
+              field={@form[:iterations]}
+              type="number"
+              label="Votes"
+              max={31}
+              min={1}
+              class="h-11 rounded-xl bg-white px-3 text-center text-base font-medium shadow-sm focus:ring-4 focus:ring-zinc-900/5"
+            />
+            <.input
+              field={@form[:periodicity]}
+              type="select"
+              label="Per"
+              options={[Day: :day, Week: :week, Month: :month]}
+              class="h-11 rounded-xl bg-white py-0 pl-3 pr-9 text-base font-medium shadow-sm focus:ring-4 focus:ring-zinc-900/5"
+            />
+          </div>
+        </fieldset>
+
+        <.button
+          phx-disable-with="Saving..."
+          class="flex h-12 w-full items-center justify-center gap-2 rounded-xl text-base shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2"
+        >
+          {if @action == :new, do: "Start becoming", else: "Save changes"}
+          <.icon name="hero-arrow-right-mini" class="h-4 w-4" />
+        </.button>
+      </.form>
     </div>
     """
   end

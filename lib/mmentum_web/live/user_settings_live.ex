@@ -12,6 +12,19 @@ defmodule MmentumWeb.UserSettingsLive do
 
     <div class="space-y-12 divide-y">
       <div>
+        <.simple_form for={@time_zone_form} id="time_zone_form" phx-submit="update_time_zone">
+          <.input
+            field={@time_zone_form[:time_zone]}
+            type="text"
+            label="Time zone"
+            placeholder="America/New_York"
+          />
+          <:actions>
+            <.button phx-disable-with="Saving...">Save time zone</.button>
+          </:actions>
+        </.simple_form>
+      </div>
+      <div>
         <.simple_form
           for={@email_form}
           id="email_form"
@@ -90,6 +103,7 @@ defmodule MmentumWeb.UserSettingsLive do
     user = socket.assigns.current_user
     email_changeset = Accounts.change_user_email(user)
     password_changeset = Accounts.change_user_password(user)
+    time_zone_form = to_form(%{"time_zone" => user.time_zone}, as: :user)
 
     socket =
       socket
@@ -98,9 +112,19 @@ defmodule MmentumWeb.UserSettingsLive do
       |> assign(:current_email, user.email)
       |> assign(:email_form, to_form(email_changeset))
       |> assign(:password_form, to_form(password_changeset))
+      |> assign(:time_zone_form, time_zone_form)
       |> assign(:trigger_submit, false)
 
     {:ok, socket}
+  end
+
+  def handle_event("update_time_zone", %{"user" => %{"time_zone" => time_zone}}, socket) do
+    {:ok, user} = Accounts.update_user_time_zone(socket.assigns.current_user, time_zone)
+
+    {:noreply,
+     socket
+     |> assign(:current_user, user)
+     |> assign(:time_zone_form, to_form(%{"time_zone" => time_zone}, as: :user))}
   end
 
   def handle_event("validate_email", params, socket) do
