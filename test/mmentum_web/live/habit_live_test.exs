@@ -26,7 +26,7 @@ defmodule MmentumWeb.HabitLiveTest do
       {:ok, index_live, _html} = live(conn, ~p"/habits")
 
       assert index_live |> element(~s|a[href="/habits/new"]|) |> render_click() =~
-               "New Habit"
+               "New habit"
 
       assert_patch(index_live, ~p"/habits/new")
 
