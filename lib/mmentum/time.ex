@@ -1,7 +1,7 @@
 defmodule Mmentum.Time do
   @moduledoc """
   A set of helpers for working with dates and providing human readable output.
-  Operates in local time.
+  Operates in local time
   """
 
   @greetings %{
