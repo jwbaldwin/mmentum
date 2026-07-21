@@ -1,5 +1,11 @@
 # Mmentum
 
+Momentum turns identity-based habits into a calm daily practice.
+
+A habit can be as simple as a yes/no question or as rich as a scheduled plan. The application shows only what matters today, records meaningful evidence, and visualizes consistency without requireing perfection.
+
+## Installation
+
 To start your Phoenix server:
 
   * Run `mix setup` to install and setup dependencies

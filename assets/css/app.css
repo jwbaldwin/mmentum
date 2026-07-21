@@ -3,6 +3,7 @@
 
 @source "../js";
 @source "../../lib/mmentum_web";
+@source "../../deps/live_toast/lib";
 
 @theme {
   --color-brand: #fd4f00;

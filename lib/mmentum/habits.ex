@@ -20,6 +20,7 @@ defmodule Mmentum.Habits do
   def list_habits(%User{id: user_id} = _user) do
     Habit
     |> where(user_id: ^user_id)
+    |> order_by([habit], asc: habit.inserted_at, asc: habit.id)
     |> preload(:logs)
     |> Repo.all()
   end
@@ -34,6 +35,7 @@ defmodule Mmentum.Habits do
 
     Habit
     |> where(user_id: ^user_id)
+    |> order_by([habit], asc: habit.inserted_at, asc: habit.id)
     |> preload(logs: ^Logs.base_logs_range_query(start_of_range, end_of_range))
     |> Repo.all()
   end

@@ -1,0 +1,3 @@
+- rethink satisyfin visual display and animation of mmentum orbs
+  - think about mobile display
+- habit activity page with log
