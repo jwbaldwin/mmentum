@@ -140,62 +140,69 @@ body {
   --progress-inner-radius: max(0px, calc(var(--progress-dot-radius) - 2px));
   --progress-step: calc(var(--progress-step-percent) - var(--progress-dot-share));
   --progress-fill: calc(var(--progress-fill-percent) - var(--progress-fill-dot-offset));
+  --progress-outer-mask:
+    radial-gradient(
+        circle var(--progress-dot-radius) at var(--progress-dot-radius) 50%,
+        #000 calc(100% - 0.5px),
+        transparent 100%
+      )
+      0 0 / var(--progress-step) 100% repeat-x,
+    linear-gradient(#000 0 0) 0 50% / 100% var(--progress-arm-size) no-repeat;
+  --progress-inner-mask:
+    radial-gradient(
+        circle var(--progress-inner-radius) at var(--progress-dot-radius) 50%,
+        #000 calc(100% - 0.5px),
+        transparent 100%
+      )
+      0 0 / var(--progress-step) 100% repeat-x,
+    linear-gradient(#000 0 0) 0 50% / 100% var(--progress-inner-arm-size) no-repeat;
 
   position: relative;
   width: 100%;
   min-width: var(--progress-min-width-mobile);
   height: var(--progress-dot-size);
   overflow: hidden;
-  background: var(--color-zinc-200);
+  filter: url("#habit-progress-metaball");
   isolation: isolate;
-  -webkit-mask:
-    radial-gradient(
-        circle var(--progress-dot-radius) at var(--progress-dot-radius) 50%,
-        #000 calc(100% - 0.5px),
-        transparent 100%
-      )
-      0 0 / var(--progress-step) 100% repeat-x,
-    linear-gradient(#000 0 0) 0 50% / 100% var(--progress-arm-size) no-repeat;
-  mask:
-    radial-gradient(
-        circle var(--progress-dot-radius) at var(--progress-dot-radius) 50%,
-        #000 calc(100% - 0.5px),
-        transparent 100%
-      )
-      0 0 / var(--progress-step) 100% repeat-x,
-    linear-gradient(#000 0 0) 0 50% / 100% var(--progress-arm-size) no-repeat;
 }
 
-.habit-progress::before,
-.habit-progress::after {
+.habit-progress__shape {
   position: absolute;
   inset: 0;
-  content: "";
+  background: var(--color-zinc-200);
+  -webkit-mask: var(--progress-outer-mask);
+  mask: var(--progress-outer-mask);
 }
 
-.habit-progress::before {
+.habit-progress__fill,
+.habit-progress__fill-shape {
+  position: absolute;
+  inset: 0;
+}
+
+.habit-progress__inner {
+  position: absolute;
+  inset: 0;
+  filter: url("#habit-progress-metaball");
+}
+
+.habit-progress__inner-shape {
+  position: absolute;
+  inset: 0;
   background: var(--color-zinc-100);
-  -webkit-mask:
-    radial-gradient(
-        circle var(--progress-inner-radius) at var(--progress-dot-radius) 50%,
-        #000 calc(100% - 0.5px),
-        transparent 100%
-      )
-      0 0 / var(--progress-step) 100% repeat-x,
-    linear-gradient(#000 0 0) 0 50% / 100% var(--progress-inner-arm-size) no-repeat;
-  mask:
-    radial-gradient(
-        circle var(--progress-inner-radius) at var(--progress-dot-radius) 50%,
-        #000 calc(100% - 0.5px),
-        transparent 100%
-      )
-      0 0 / var(--progress-step) 100% repeat-x,
-    linear-gradient(#000 0 0) 0 50% / 100% var(--progress-inner-arm-size) no-repeat;
+  -webkit-mask: var(--progress-inner-mask);
+  mask: var(--progress-inner-mask);
 }
 
-.habit-progress::after {
+.habit-progress__fill {
+  filter: url("#habit-progress-metaball");
+}
+
+.habit-progress__fill-shape {
   background: var(--color-action);
   clip-path: inset(0 calc(100% - var(--progress-fill)) 0 0);
+  -webkit-mask: var(--progress-outer-mask);
+  mask: var(--progress-outer-mask);
   transition: clip-path var(--progress-duration) var(--progress-ease);
 }
 
@@ -425,7 +432,7 @@ body {
     transform: none !important;
   }
 
-  .habit-progress::after {
+  .habit-progress__fill-shape {
     transition-duration: 0ms;
   }
 }
