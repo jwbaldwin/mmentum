@@ -132,78 +132,149 @@ body {
 .habit-progress {
   --progress-duration: 560ms;
   --progress-ease: cubic-bezier(0.65, 0, 0.35, 1);
-  --progress-dot-size: 2.25rem;
-  --progress-dot-radius: calc(var(--progress-dot-size) / 2);
-  --progress-dot-share: var(--progress-dot-share-mobile);
-  --progress-fill-dot-offset: var(--progress-fill-dot-offset-mobile);
-  --progress-inner-arm-size: max(0px, calc(var(--progress-arm-size) - 2px));
-  --progress-inner-radius: max(0px, calc(var(--progress-dot-radius) - 2px));
-  --progress-step: calc(var(--progress-step-percent) - var(--progress-dot-share));
-  --progress-fill: calc(var(--progress-fill-percent) - var(--progress-fill-dot-offset));
-  --progress-outer-mask:
-    radial-gradient(
-        circle var(--progress-dot-radius) at var(--progress-dot-radius) 50%,
-        #000 calc(100% - 0.5px),
-        transparent 100%
-      )
-      0 0 / var(--progress-step) 100% repeat-x,
-    linear-gradient(#000 0 0) 0 50% / 100% var(--progress-arm-size) no-repeat;
-  --progress-inner-mask:
-    radial-gradient(
-        circle var(--progress-inner-radius) at var(--progress-dot-radius) 50%,
-        #000 calc(100% - 0.5px),
-        transparent 100%
-      )
-      0 0 / var(--progress-step) 100% repeat-x,
-    linear-gradient(#000 0 0) 0 50% / 100% var(--progress-inner-arm-size) no-repeat;
+  --progress-dot-size: 1.75rem;
+  --progress-gap: 0.25rem;
+  --progress-track-size: 0.375rem;
+  --progress-pending: color-mix(
+    in srgb,
+    var(--color-zinc-100) 65%,
+    var(--color-zinc-200)
+  );
+  --progress-fill-offset: var(--progress-fill-offset-narrow);
 
   position: relative;
   width: 100%;
-  min-width: var(--progress-min-width-mobile);
+  min-width: max-content;
   height: var(--progress-dot-size);
-  overflow: hidden;
-  filter: url("#habit-progress-metaball");
   isolation: isolate;
 }
 
 .habit-progress__shape {
-  position: absolute;
-  inset: 0;
-  background: var(--color-zinc-200);
-  -webkit-mask: var(--progress-outer-mask);
-  mask: var(--progress-outer-mask);
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  min-width: max-content;
+  height: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--progress-gap);
+  filter: url("#habit-progress-fluid");
 }
 
-.habit-progress__fill,
-.habit-progress__fill-shape {
+.habit-progress__track {
   position: absolute;
-  inset: 0;
+  z-index: 0;
+  top: 50%;
+  right: calc(var(--progress-dot-size) / 2);
+  left: calc(var(--progress-dot-size) / 2);
+  height: var(--progress-track-size);
+  border-radius: 9999px;
+  background: var(--progress-pending);
+  transform: translateY(-50%);
 }
 
-.habit-progress__inner {
-  position: absolute;
-  inset: 0;
-  filter: url("#habit-progress-metaball");
-}
-
-.habit-progress__inner-shape {
-  position: absolute;
-  inset: 0;
-  background: var(--color-zinc-100);
-  -webkit-mask: var(--progress-inner-mask);
-  mask: var(--progress-inner-mask);
+.habit-progress__step {
+  position: relative;
+  z-index: 1;
+  display: block;
+  flex: 0 0 var(--progress-dot-size);
+  width: var(--progress-dot-size);
+  height: var(--progress-dot-size);
+  border-radius: 9999px;
+  background: var(--progress-pending);
 }
 
 .habit-progress__fill {
-  filter: url("#habit-progress-metaball");
+  --progress-fill-lead: 0px;
+  --progress-fill-right: calc(
+    var(--progress-fill-right-percent) - var(--progress-fill-offset) -
+      var(--progress-fill-lead)
+  );
+
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  clip-path: inset(-0.5rem var(--progress-fill-right) -0.5rem -0.5rem);
+  pointer-events: none;
+  transition: clip-path var(--progress-duration) var(--progress-ease);
+  will-change: clip-path;
 }
 
-.habit-progress__fill-shape {
+.habit-progress__fill--partial {
+  --progress-fill-lead: 0.375rem;
+  --progress-fill-feather: 0.375rem;
+
+  -webkit-mask-image: linear-gradient(
+    to right,
+    #000 calc(100% - var(--progress-fill-feather)),
+    transparent 100%
+  );
+  -webkit-mask-position: 0 -0.5rem;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: calc(100% - var(--progress-fill-right)) calc(100% + 1rem);
+  mask-image: linear-gradient(
+    to right,
+    #000 calc(100% - var(--progress-fill-feather)),
+    transparent 100%
+  );
+  mask-position: 0 -0.5rem;
+  mask-repeat: no-repeat;
+  mask-size: calc(100% - var(--progress-fill-right)) calc(100% + 1rem);
+}
+
+.habit-progress__fill-fluid,
+.habit-progress__fill-beads {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--progress-gap);
+}
+
+.habit-progress__fill-fluid {
+  filter: url("#habit-progress-fluid");
+}
+
+.habit-progress__fill-fluid::before {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  right: calc(var(--progress-dot-size) / 2);
+  left: calc(var(--progress-dot-size) / 2);
+  height: var(--progress-track-size);
+  border-radius: 9999px;
   background: var(--color-action);
-  clip-path: inset(0 calc(100% - var(--progress-fill)) 0 0);
-  -webkit-mask: var(--progress-outer-mask);
-  mask: var(--progress-outer-mask);
-  transition: clip-path var(--progress-duration) var(--progress-ease);
+  content: "";
+  transform: translateY(-50%);
+}
+
+.habit-progress__fill-fluid-step,
+.habit-progress__fill-step {
+  position: relative;
+  z-index: 1;
+  display: block;
+  flex: 0 0 var(--progress-dot-size);
+  width: var(--progress-dot-size);
+  height: var(--progress-dot-size);
+}
+
+.habit-progress__fill-fluid-step::before {
+  position: absolute;
+  inset: 2px;
+  border-radius: 9999px;
+  background: var(--color-action);
+  content: "";
+}
+
+.habit-progress__fill-beads {
+  z-index: 2;
+}
+
+.habit-progress__fill-step {
+  border-radius: 9999px;
+  background: var(--color-action);
 }
 
 .mmentum-toast > button {
@@ -432,18 +503,29 @@ body {
     transform: none !important;
   }
 
-  .habit-progress__fill-shape {
-    transition-duration: 0ms;
+  .habit-progress__fill {
+    transition: none;
+  }
+}
+
+@media (min-width: 24rem) {
+  .habit-progress {
+    --progress-dot-size: 2rem;
+    --progress-gap: 0.375rem;
+    --progress-fill-offset: var(--progress-fill-offset-mobile);
   }
 }
 
 @media (min-width: 40rem) {
   .habit-progress {
     --progress-dot-size: 2.75rem;
-    --progress-dot-share: var(--progress-dot-share-desktop);
-    --progress-fill-dot-offset: var(--progress-fill-dot-offset-desktop);
+    --progress-gap: 0.75rem;
+    --progress-fill-offset: var(--progress-fill-offset-desktop);
+  }
 
-    min-width: var(--progress-min-width-desktop);
+  .habit-progress__fill--partial {
+    --progress-fill-lead: 0.5rem;
+    --progress-fill-feather: 0.5rem;
   }
 
   .type-display-title {

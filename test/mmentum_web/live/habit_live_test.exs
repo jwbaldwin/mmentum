@@ -161,14 +161,23 @@ defmodule MmentumWeb.HabitLiveTest do
     } do
       {:ok, index_live, _html} = live(conn, ~p"/habits")
       progress = "#habit-#{habit.id}-progress"
+      first_step = "#habit-#{habit.id}-progress-step-1"
 
       assert has_element?(index_live, ~s|#{progress}[data-completed="0"]|)
+      assert has_element?(index_live, ~s|#{first_step}[data-state="pending"]|)
 
       index_live
       |> element(~s|#habit-#{habit.id} button[phx-click="add_log"]|)
       |> render_click()
 
       assert has_element?(index_live, ~s|#{progress}[data-completed="1"]|)
+
+      assert has_element?(
+               index_live,
+               ~s|#{progress}[style*="--progress-fill-offset-desktop: 44.0px"]|
+             )
+
+      assert has_element?(index_live, ~s|#{first_step}[data-state="complete"]|)
     end
 
     test "does not edit another user's habit", %{conn: conn} do

@@ -113,38 +113,23 @@ defmodule MmentumWeb.HabitLive.Index do
     end
   end
 
-  defp progress_style(habit) do
-    iterations = habit.iterations
-    completed = min(length(habit.logs), iterations)
-    steps = max(iterations - 1, 1)
-    linked? = iterations > 1
-    complete? = completed == iterations
-
-    step_percent = if linked?, do: Float.round(100 / steps, 4), else: 100
-    dot_share_mobile = if linked?, do: Float.round(36 / steps, 4), else: 0
-    dot_share_desktop = if linked?, do: Float.round(44 / steps, 4), else: 0
-
-    fill_percent =
-      if complete?, do: 100, else: Float.round(completed * 100 / steps, 4)
-
-    fill_dot_offset_mobile =
-      if complete?, do: 0, else: Float.round(completed * 36 / steps, 4)
-
-    fill_dot_offset_desktop =
-      if complete?, do: 0, else: Float.round(completed * 44 / steps, 4)
+  defp progress_style(iterations, completed) do
+    total_connections = max(iterations - 1, 1)
+    completed_connections = min(max(completed - 1, 0), total_connections)
+    remaining = if completed == 0, do: 1.0, else: 1 - completed_connections / total_connections
+    fill_offset = if completed == 0, do: 0.0, else: remaining
 
     [
-      "--progress-step-percent: #{step_percent}%",
-      "--progress-dot-share-mobile: #{dot_share_mobile}px",
-      "--progress-dot-share-desktop: #{dot_share_desktop}px",
-      "--progress-fill-percent: #{fill_percent}%",
-      "--progress-fill-dot-offset-mobile: #{fill_dot_offset_mobile}px",
-      "--progress-fill-dot-offset-desktop: #{fill_dot_offset_desktop}px",
-      "--progress-min-width-mobile: #{iterations * 36 + max(iterations - 1, 0) * 12}px",
-      "--progress-min-width-desktop: #{iterations * 44 + max(iterations - 1, 0) * 12}px",
-      "--progress-arm-size: #{if(linked?, do: 6, else: 0)}px"
+      "--progress-fill-right-percent: #{Float.round(remaining * 100, 4)}%",
+      "--progress-fill-offset-narrow: #{Float.round(fill_offset * 28, 4)}px",
+      "--progress-fill-offset-mobile: #{Float.round(fill_offset * 32, 4)}px",
+      "--progress-fill-offset-desktop: #{Float.round(fill_offset * 44, 4)}px"
     ]
     |> Enum.join("; ")
+  end
+
+  defp progress_state(step, completed) when is_integer(step) and is_integer(completed) do
+    if step <= completed, do: "complete", else: "pending"
   end
 
   defp habit_not_found(socket), do: put_flash(socket, :error, "Habit not found.")
