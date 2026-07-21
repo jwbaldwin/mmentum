@@ -22,6 +22,6 @@ defmodule MmentumWeb.HabitLive.Show do
      |> stream(:logs, Logs.list_logs_by_habit(user, habit))}
   end
 
-  defp page_title(:show), do: "Show Habit"
-  defp page_title(:edit), do: "Edit Habit"
+  defp page_title(:show), do: "Habit details"
+  defp page_title(:edit), do: "Edit habit"
 end

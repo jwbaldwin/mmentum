@@ -12,8 +12,8 @@ defmodule MmentumWeb.UserForgotPasswordLiveTest do
       {:ok, lv, html} = live(conn, ~p"/users/reset_password")
 
       assert html =~ "Forgot your password?"
-      assert has_element?(lv, ~s|a[href="#{~p"/users/register"}"]|, "Register")
-      assert has_element?(lv, ~s|a[href="#{~p"/users/log_in"}"]|, "Log in")
+      assert has_element?(lv, ~s|a[href="#{~p"/users/register"}"]|, "Create account")
+      assert has_element?(lv, ~s|a[href="#{~p"/login"}"]|, "Log in")
     end
 
     test "redirects if already logged in", %{conn: conn} do
@@ -39,9 +39,9 @@ defmodule MmentumWeb.UserForgotPasswordLiveTest do
         lv
         |> form("#reset_password_form", user: %{"email" => user.email})
         |> render_submit()
-        |> follow_redirect(conn, ~p"/users/log_in")
+        |> follow_redirect(conn, ~p"/login")
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If an account matches that email"
 
       assert Repo.get_by!(Accounts.UserToken, user_id: user.id).context ==
                "reset_password"
@@ -54,9 +54,9 @@ defmodule MmentumWeb.UserForgotPasswordLiveTest do
         lv
         |> form("#reset_password_form", user: %{"email" => "unknown@example.com"})
         |> render_submit()
-        |> follow_redirect(conn, ~p"/users/log_in")
+        |> follow_redirect(conn, ~p"/login")
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If an account matches that email"
       assert Repo.all(Accounts.UserToken) == []
     end
   end

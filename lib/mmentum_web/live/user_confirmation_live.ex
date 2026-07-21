@@ -6,7 +6,7 @@ defmodule MmentumWeb.UserConfirmationLive do
   def render(%{live_action: :edit} = assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
-      <.header class="text-center">Confirm Account</.header>
+      <.header class="text-center">Confirm your account</.header>
 
       <.simple_form for={@form} id="confirmation_form" phx-submit="confirm_account">
         <.input field={@form[:token]} type="hidden" />
@@ -15,8 +15,10 @@ defmodule MmentumWeb.UserConfirmationLive do
         </:actions>
       </.simple_form>
 
-      <p class="text-center mt-4">
-        <.link href={~p"/users/register"}>Register</.link> | <.link href={~p"/users/log_in"}>Log in</.link>
+      <p class="mt-5 flex items-center justify-center gap-4 type-body">
+        <.link href={~p"/users/register"} class="text-link">Create account</.link>
+        <span aria-hidden="true" class="text-zinc-300">/</span>
+        <.link href={~p"/login"} class="text-link">Log in</.link>
       </p>
     </div>
     """
@@ -34,8 +36,8 @@ defmodule MmentumWeb.UserConfirmationLive do
       {:ok, _} ->
         {:noreply,
          socket
-         |> put_flash(:success, "User confirmed successfully.")
-         |> redirect(to: ~p"/users/log_in")}
+         |> put_flash(:info, "Account confirmed.")
+         |> redirect(to: ~p"/login")}
 
       :error ->
         # If there is a current user and the account was already confirmed,
@@ -49,8 +51,8 @@ defmodule MmentumWeb.UserConfirmationLive do
           %{} ->
             {:noreply,
              socket
-             |> put_flash(:error, "User confirmation link is invalid or it has expired.")
-             |> redirect(to: ~p"/users/log_in")}
+             |> put_flash(:error, "This confirmation link is invalid or has expired.")
+             |> redirect(to: ~p"/login")}
         end
     end
   end

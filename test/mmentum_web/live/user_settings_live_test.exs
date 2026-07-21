@@ -12,8 +12,8 @@ defmodule MmentumWeb.UserSettingsLiveTest do
         |> log_in_user(user_fixture())
         |> live(~p"/users/settings")
 
-      assert html =~ "Change Email"
-      assert html =~ "Change Password"
+      assert html =~ "Change email"
+      assert html =~ "Change password"
       assert html =~ "Save time zone"
     end
 
@@ -21,8 +21,8 @@ defmodule MmentumWeb.UserSettingsLiveTest do
       assert {:error, redirect} = live(conn, ~p"/users/settings")
 
       assert {:redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/users/log_in"
-      assert %{"error" => "You must log in to access this page."} = flash
+      assert path == ~p"/login"
+      assert flash == %{}
     end
   end
 
@@ -76,7 +76,7 @@ defmodule MmentumWeb.UserSettingsLiveTest do
           "user" => %{"email" => "with spaces"}
         })
 
-      assert result =~ "Change Email"
+      assert result =~ "Change email"
       assert result =~ "must have the @ sign and no spaces"
     end
 
@@ -91,7 +91,7 @@ defmodule MmentumWeb.UserSettingsLiveTest do
         })
         |> render_submit()
 
-      assert result =~ "Change Email"
+      assert result =~ "Change email"
       assert result =~ "did not change"
       assert result =~ "is not valid"
     end
@@ -127,8 +127,8 @@ defmodule MmentumWeb.UserSettingsLiveTest do
 
       assert get_session(new_password_conn, :user_token) != get_session(conn, :user_token)
 
-      assert Phoenix.Flash.get(new_password_conn.assigns.flash, :success) =~
-               "Password updated successfully"
+      assert Phoenix.Flash.get(new_password_conn.assigns.flash, :info) =~
+               "Password updated."
 
       assert Accounts.get_user_by_email_and_password(user.email, new_password)
     end
@@ -147,7 +147,7 @@ defmodule MmentumWeb.UserSettingsLiveTest do
           }
         })
 
-      assert result =~ "Change Password"
+      assert result =~ "Change password"
       assert result =~ "should be at least 12 character(s)"
       assert result =~ "does not match password"
     end
@@ -166,7 +166,7 @@ defmodule MmentumWeb.UserSettingsLiveTest do
         })
         |> render_submit()
 
-      assert result =~ "Change Password"
+      assert result =~ "Change password"
       assert result =~ "should be at least 12 character(s)"
       assert result =~ "does not match password"
       assert result =~ "is not valid"
@@ -192,7 +192,7 @@ defmodule MmentumWeb.UserSettingsLiveTest do
       assert {:live_redirect, %{to: path, flash: flash}} = redirect
       assert path == ~p"/users/settings"
       assert %{"info" => message} = flash
-      assert message == "Email changed successfully."
+      assert message == "Email changed."
       refute Accounts.get_user_by_email(user.email)
       assert Accounts.get_user_by_email(email)
 
@@ -201,7 +201,7 @@ defmodule MmentumWeb.UserSettingsLiveTest do
       assert {:live_redirect, %{to: path, flash: flash}} = redirect
       assert path == ~p"/users/settings"
       assert %{"error" => message} = flash
-      assert message == "Email change link is invalid or it has expired."
+      assert message == "This email change link is invalid or has expired."
     end
 
     test "does not update email with invalid token", %{conn: conn, user: user} do
@@ -209,7 +209,7 @@ defmodule MmentumWeb.UserSettingsLiveTest do
       assert {:live_redirect, %{to: path, flash: flash}} = redirect
       assert path == ~p"/users/settings"
       assert %{"error" => message} = flash
-      assert message == "Email change link is invalid or it has expired."
+      assert message == "This email change link is invalid or has expired."
       assert Accounts.get_user_by_email(user.email)
     end
 
@@ -217,9 +217,8 @@ defmodule MmentumWeb.UserSettingsLiveTest do
       conn = build_conn()
       {:error, redirect} = live(conn, ~p"/users/settings/confirm_email/#{token}")
       assert {:redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/users/log_in"
-      assert %{"error" => message} = flash
-      assert message == "You must log in to access this page."
+      assert path == ~p"/login"
+      assert flash == %{}
     end
   end
 end

@@ -8,13 +8,13 @@ defmodule MmentumWeb.HabitLive.FormComponent do
     ~H"""
     <div>
       <header class="pr-8 sm:pr-10">
-        <h1 class="mt-2 text-2xl font-semibold tracking-tight text-zinc-900">
-          {if @action == :new, do: "Who are you?", else: "Refine"}
-        </h1>
-        <p class="mt-2 text-sm leading-6 text-zinc-500">
+        <h2 class="type-page-title">
+          {if @action == :new, do: "New habit", else: "Edit habit"}
+        </h2>
+        <p class="mt-2 type-body text-muted">
           {if @action == :new,
-            do: "Every action is a vote for who you want to be",
-            else: "Adjust your habit"}
+            do: "Choose an action you can repeat.",
+            else: "Adjust this habit's name or cadence."}
         </p>
       </header>
 
@@ -24,43 +24,40 @@ defmodule MmentumWeb.HabitLive.FormComponent do
         phx-target={@myself}
         phx-change="validate"
         phx-submit="save"
-        class="mt-7 space-y-6"
+        class="mt-7 space-y-5"
       >
         <.input
           field={@form[:name]}
           type="text"
-          label="I am becoming someone who..."
-          placeholder="e.g. reads before bed"
+          label="Habit"
+          placeholder="Read before bed"
           autocomplete="off"
-          class="h-12 rounded-xl bg-zinc-50/60 px-4 text-base shadow-none placeholder:text-zinc-400 focus:bg-white focus:ring-4 focus:ring-zinc-900/5"
         />
 
-        <fieldset class="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
-          <legend class="px-1 text-sm font-semibold text-zinc-900">Cadence</legend>
+        <fieldset class="rounded-panel border border-zinc-200 bg-zinc-50/70 p-4">
+          <legend class="px-1 type-label text-zinc-900">Cadence</legend>
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-[9rem_1fr]">
             <.input
               field={@form[:iterations]}
               type="number"
-              label="Votes"
+              label="Times"
               max={31}
               min={1}
-              class="h-11 rounded-xl bg-white px-3 text-center text-base font-medium shadow-sm focus:ring-4 focus:ring-zinc-900/5"
             />
             <.input
               field={@form[:periodicity]}
               type="select"
               label="Per"
               options={[Day: :day, Week: :week, Month: :month]}
-              class="h-11 rounded-xl bg-white py-0 pl-3 pr-9 text-base font-medium shadow-sm focus:ring-4 focus:ring-zinc-900/5"
             />
           </div>
         </fieldset>
 
         <.button
           phx-disable-with="Saving..."
-          class="flex h-12 w-full items-center justify-center gap-2 rounded-xl text-base shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2"
+          class="w-full"
         >
-          {if @action == :new, do: "Start becoming", else: "Save changes"}
+          {if @action == :new, do: "Create habit", else: "Save changes"}
           <.icon name="hero-arrow-right-mini" class="h-4 w-4" />
         </.button>
       </.form>
@@ -99,7 +96,7 @@ defmodule MmentumWeb.HabitLive.FormComponent do
 
         {:noreply,
          socket
-         |> put_flash(:success, "Habit updated successfully")
+         |> put_flash(:info, "Habit updated.")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -108,7 +105,7 @@ defmodule MmentumWeb.HabitLive.FormComponent do
       {:error, :not_found} ->
         {:noreply,
          socket
-         |> put_flash(:error, "Habit not found")
+         |> put_flash(:error, "Habit not found.")
          |> push_patch(to: socket.assigns.patch)}
     end
   end
@@ -122,7 +119,7 @@ defmodule MmentumWeb.HabitLive.FormComponent do
 
         {:noreply,
          socket
-         |> put_flash(:success, "Habit created successfully")
+         |> put_flash(:info, "Habit created.")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->

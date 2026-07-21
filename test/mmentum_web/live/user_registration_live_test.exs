@@ -8,7 +8,7 @@ defmodule MmentumWeb.UserRegistrationLiveTest do
     test "renders registration page", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/users/register")
 
-      assert html =~ "Register"
+      assert html =~ "Create your account"
       assert html =~ "Log in"
     end
 
@@ -30,7 +30,7 @@ defmodule MmentumWeb.UserRegistrationLiveTest do
         |> element("#registration_form")
         |> render_change(user: %{"email" => "with spaces", "password" => "too short"})
 
-      assert result =~ "Register"
+      assert result =~ "Create your account"
       assert result =~ "must have the @ sign and no spaces"
       assert result =~ "should be at least 12 character"
       assert result =~ "can&#39;t be blank"
@@ -82,9 +82,9 @@ defmodule MmentumWeb.UserRegistrationLiveTest do
 
       {:ok, _login_live, login_html} =
         lv
-        |> element(~s|main a[href="/users/log_in"]|)
+        |> element(~s|main a[href="/login"]|)
         |> render_click()
-        |> follow_redirect(conn, ~p"/users/log_in")
+        |> follow_redirect(conn, ~p"/login")
 
       assert login_html =~ "Log in"
     end

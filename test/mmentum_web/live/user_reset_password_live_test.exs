@@ -21,15 +21,15 @@ defmodule MmentumWeb.UserResetPasswordLiveTest do
     test "renders reset password with valid token", %{conn: conn, token: token} do
       {:ok, _lv, html} = live(conn, ~p"/users/reset_password/#{token}")
 
-      assert html =~ "Reset Password"
+      assert html =~ "Reset password"
     end
 
     test "does not render reset password with invalid token", %{conn: conn} do
       {:error, {:redirect, to}} = live(conn, ~p"/users/reset_password/invalid")
 
       assert to == %{
-               flash: %{"error" => "Reset password link is invalid or it has expired."},
-               to: ~p"/users/log_in"
+               flash: %{"error" => "This password reset link is invalid or has expired."},
+               to: ~p"/login"
              }
     end
 
@@ -59,10 +59,10 @@ defmodule MmentumWeb.UserResetPasswordLiveTest do
           }
         )
         |> render_submit()
-        |> follow_redirect(conn, ~p"/users/log_in")
+        |> follow_redirect(conn, ~p"/login")
 
       refute get_session(conn, :user_token)
-      assert Phoenix.Flash.get(conn.assigns.flash, :success) =~ "Password reset successfully"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Password reset."
       assert Accounts.get_user_by_email_and_password(user.email, "new valid password")
     end
 
@@ -79,7 +79,7 @@ defmodule MmentumWeb.UserResetPasswordLiveTest do
         )
         |> render_submit()
 
-      assert result =~ "Reset Password"
+      assert result =~ "Reset password"
       assert result =~ "should be at least 12 character(s)"
       assert result =~ "does not match password"
     end
@@ -91,9 +91,9 @@ defmodule MmentumWeb.UserResetPasswordLiveTest do
 
       {:ok, conn} =
         lv
-        |> element(~s|main a[href="/users/log_in"]|)
+        |> element(~s|main a[href="/login"]|)
         |> render_click()
-        |> follow_redirect(conn, ~p"/users/log_in")
+        |> follow_redirect(conn, ~p"/login")
 
       assert conn.resp_body =~ "Log in"
     end
@@ -110,7 +110,7 @@ defmodule MmentumWeb.UserResetPasswordLiveTest do
         |> render_click()
         |> follow_redirect(conn, ~p"/users/register")
 
-      assert conn.resp_body =~ "Register"
+      assert conn.resp_body =~ "Create your account"
     end
   end
 end

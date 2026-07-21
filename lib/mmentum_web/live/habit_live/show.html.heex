@@ -1,6 +1,6 @@
 <.header>
   {@habit.name}
-  <:subtitle>Edit the habit, and view your logs</:subtitle>
+  <:subtitle>Review this habit and its completion history</:subtitle>
   <:actions>
     <.link patch={~p"/habits/#{@habit}/show/edit"} phx-click={JS.push_focus()}>
       <.button>Edit habit</.button>
@@ -14,10 +14,8 @@
   <:item title="Periodicity">{@habit.periodicity}</:item>
 </.list>
 
-<div class="flow-root">
-  <h3 class="font-semibold text-base text-zinc-700 mt-20 mb-8">
-    {@habit.name} activity logs
-  </h3>
+<section class="mt-12 flow-root">
+  <.section_title class="mb-6">Completion activity</.section_title>
   <ul role="list" class="space-y-6">
     <%= for {row_id, log} <- @streams.logs do %>
       <li class="relative flex gap-x-4" id={row_id}>
@@ -27,10 +25,10 @@
         <div class="relative flex h-6 w-6 flex-none items-center justify-center bg-white">
           <div class="h-1.5 w-1.5 rounded-full bg-zinc-100 ring-1 ring-zinc-300"></div>
         </div>
-        <p class="flex-auto py-0.5 text-xs leading-5 text-zinc-500">
-          <span class="font-medium text-zinc-900">{@habit.name}</span> activity logged.
+        <p class="flex-auto py-0.5 type-metadata">
+          <span class="font-medium text-zinc-900">{@habit.name}</span> completion recorded
         </p>
-        <time datetime={log.inserted_at} class="flex-none py-0.5 text-xs leading-5 text-zinc-500">
+        <time datetime={log.inserted_at} class="flex-none py-0.5 type-metadata">
           {Time.to_human_relative(log.inserted_at)}
         </time>
       </li>
@@ -42,15 +40,15 @@
       <div class="relative flex h-6 w-6 flex-none items-center justify-center bg-white">
         <.icon name="hero-sparkles-solid" class="w-4 h-4 text-zinc-400" />
       </div>
-      <p class="flex-auto py-0.5 text-xs leading-5 text-zinc-500">
-        <span class="font-medium text-zinc-900">{@habit.name}</span> habit created.
+      <p class="flex-auto py-0.5 type-metadata">
+        <span class="font-medium text-zinc-900">{@habit.name}</span> habit created
       </p>
-      <time datetime={@habit.inserted_at} class="flex-none py-0.5 text-xs leading-5 text-zinc-500">
+      <time datetime={@habit.inserted_at} class="flex-none py-0.5 type-metadata">
         {Time.to_human_relative(@habit.inserted_at)}
       </time>
     </li>
   </ul>
-</div>
+</section>
 
 <.back navigate={~p"/"}>Back to habits</.back>
 

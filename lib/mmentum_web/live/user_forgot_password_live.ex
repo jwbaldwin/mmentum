@@ -8,19 +8,21 @@ defmodule MmentumWeb.UserForgotPasswordLive do
     <div class="mx-auto max-w-sm">
       <.header class="text-center">
         Forgot your password?
-        <:subtitle>We'll send a password reset link to your inbox</:subtitle>
+        <:subtitle>We'll send a reset link to your inbox</:subtitle>
       </.header>
 
       <.simple_form for={@form} id="reset_password_form" phx-submit="send_email">
-        <.input field={@form[:email]} type="email" placeholder="Email" required />
+        <.input field={@form[:email]} type="email" label="Email" required />
         <:actions>
           <.button phx-disable-with="Sending..." class="w-full">
-            Send password reset instructions
+            Send reset link
           </.button>
         </:actions>
       </.simple_form>
-      <p class="text-center text-sm mt-4">
-        <.link href={~p"/users/register"}>Register</.link> | <.link href={~p"/users/log_in"}>Log in</.link>
+      <p class="mt-5 flex items-center justify-center gap-4 type-body">
+        <.link href={~p"/users/register"} class="text-link">Create account</.link>
+        <span aria-hidden="true" class="text-zinc-300">/</span>
+        <.link href={~p"/login"} class="text-link">Log in</.link>
       </p>
     </div>
     """
@@ -39,11 +41,11 @@ defmodule MmentumWeb.UserForgotPasswordLive do
     end
 
     info =
-      "If your email is in our system, you will receive instructions to reset your password shortly."
+      "If an account matches that email, a reset link is on its way."
 
     {:noreply,
      socket
      |> put_flash(:info, info)
-     |> redirect(to: ~p"/users/log_in")}
+     |> redirect(to: ~p"/login")}
   end
 end

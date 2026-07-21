@@ -1,6 +1,6 @@
-<.header :if={@greeting}>
-  <h1 class="text-3xl font-semibold prose-2xl text-zinc-900">{@greeting}!</h1>
-  <p class="leading-10 prose-xl text-zinc-400">{@day_info}</p>
+<.header :if={@greeting} variant="dashboard">
+  {@greeting}!
+  <:subtitle>{@day_info}</:subtitle>
   <:actions>
     <.link patch={~p"/habits/new"}>
       <.button>New habit</.button>
@@ -8,118 +8,112 @@
   </:actions>
 </.header>
 
-<div id="habits" class="pt-8 mt-8 space-y-12">
-  <div :for={habit <- @habits} id={"habit-#{habit.id}"} class="grid w-full grid-cols-12">
-    <div class="col-span-12 pb-4 text-3xl font-semibold text-zinc-900 flex items-baseline justify-between">
-      <div class="group">
+<div id="habits" class="mt-10 space-y-10">
+  <section
+    :for={habit <- @habits}
+    id={"habit-#{habit.id}"}
+    class="border-b border-zinc-100 pb-10 last:border-0 last:pb-0"
+  >
+    <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div class="group min-w-0">
         <.link
           patch={~p"/habits/#{habit}/edit"}
           phx-click={JS.push_focus()}
-          class="relative flex items-center"
+          class="button-feedback inline-flex max-w-full items-center gap-2 rounded-control focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20"
         >
+          <h2 class="type-card-title truncate">{habit.name}</h2>
           <.icon
             name="hero-pencil-solid"
-            class="absolute -left-7 w-5 h-5 text-zinc-700 opacity-0 transition-opacity duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] group-hover:opacity-100 group-focus-within:opacity-100"
+            class="h-4 w-4 shrink-0 text-muted opacity-60 transition-opacity duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] group-hover:opacity-100 group-focus-within:opacity-100"
           />
-          <p>{habit.name}</p>
         </.link>
       </div>
-      <div class="flex items-center gap-4">
-        <div class="text-sm text-zinc-500 font-normal">
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <p class="type-metadata">
           {habit.iterations} times per {habit.periodicity}
-        </div>
-        <button
+        </p>
+        <span :if={habit.momentum_score > 0} class="type-metadata">
+          Momentum {Float.round(habit.momentum_score, 2)}
+        </span>
+        <.button
           type="button"
+          variant="destructive"
+          size="compact"
           phx-click="delete"
           phx-value-id={habit.id}
           data-confirm="Are you sure?"
-          class="button-feedback text-sm font-semibold text-zinc-500 hover:text-zinc-900"
+          phx-disable-with="Deleting..."
         >
           Delete
-        </button>
-        <%= if habit.momentum_score > 0 do %>
-          <div class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium">
-            <span class="text-xs opacity-75">
-              ({Float.round(habit.momentum_score, 2)})
-            </span>
-          </div>
-        <% end %>
+        </.button>
       </div>
     </div>
-    <div class="relative col-span-11">
-      <div class="flex w-full">
-        <div
-          :for={{_log, i} <- Enum.with_index(habit.logs, 1)}
-          id={"habit-#{habit.id}-completion-#{i}"}
-          class={[
-            "flex items-center",
-            i != habit.iterations && "w-full"
-          ]}
-        >
-          <div class="habit-completion w-12 h-12 border-2 rounded-full bg-zinc-900 border-zinc-900" />
-          <%= if i != habit.iterations do %>
-            <div class="habit-completion w-full flex-1 h-1.5 bg-zinc-900 border-t border-b border-zinc-900" />
-          <% end %>
-        </div>
-        <%= if (length(habit.logs) - habit.iterations) != 0 do %>
+    <div class="flex items-center gap-2 sm:gap-3">
+      <div class="min-w-0 flex-1 overflow-x-auto py-1">
+        <div class="flex min-w-full items-center">
           <div
-            :for={i <- (length(habit.logs) + 1)..habit.iterations}
+            :for={i <- 1..habit.iterations}
             id={"habit-#{habit.id}-completion-#{i}"}
+            data-complete={if(i <= length(habit.logs), do: "true", else: "false")}
             class={[
-              "flex items-center",
-              i != habit.iterations && "w-full"
+              "habit-completion-segment flex items-center",
+              i != habit.iterations && "habit-completion-segment--linked",
+              i != habit.iterations && "flex-1"
             ]}
           >
-            <div class="habit-completion w-12 h-12 border-2 rounded-full bg-zinc-200 border-zinc-200" />
+            <div class="habit-completion habit-completion-dot h-9 w-9 shrink-0 rounded-full border-2 sm:h-11 sm:w-11" />
             <%= if i != habit.iterations do %>
-              <div class="habit-completion w-full flex-1 h-1.5 border-t border-b bg-zinc-200 border-zinc-200"></div>
+              <div class="habit-completion habit-completion-connector h-1.5 min-w-3 flex-1 border-y" />
             <% end %>
           </div>
-        <% end %>
+        </div>
+      </div>
+      <div class="flex shrink-0 items-center gap-1">
+        <button
+          phx-click="remove_log"
+          phx-value-id={habit.id}
+          type="button"
+          class={[
+            "button-feedback h-12 text-zinc-700 hover:text-zinc-900",
+            length(habit.logs) == 0 && "disabled:text-zinc-200 cursor-not-allowed"
+          ]}
+          disabled={length(habit.logs) == 0}
+          aria-label={"Remove a completion from #{habit.name}"}
+          title="Remove completion"
+        >
+          <.icon name="hero-backward-solid" class="h-6 w-6" />
+        </button>
+        <button
+          phx-click="add_log"
+          phx-value-id={habit.id}
+          type="button"
+          class={[
+            "button-feedback h-12 text-zinc-700 hover:text-zinc-900",
+            length(habit.logs) == habit.iterations &&
+              "disabled:text-zinc-200 cursor-not-allowed"
+          ]}
+          disabled={length(habit.logs) == habit.iterations}
+          aria-label={"Record a completion for #{habit.name}"}
+          title="Record completion"
+        >
+          <.icon name="hero-forward-solid" class="h-6 w-6" />
+        </button>
       </div>
     </div>
-    <div class="flex col-span-1 justify-evenly">
-      <button
-        phx-click="remove_log"
-        phx-value-id={habit.id}
-        type="button"
-        class={[
-          "button-feedback h-12 text-zinc-700 hover:text-zinc-900",
-          length(habit.logs) == 0 && "disabled:text-zinc-200 cursor-not-allowed"
-        ]}
-        disabled={length(habit.logs) == 0}
-      >
-        <.icon name="hero-backward-solid" class="h-6 w-6" />
-      </button>
-      <button
-        phx-click="add_log"
-        phx-value-id={habit.id}
-        type="button"
-        class={[
-          "button-feedback h-12 text-zinc-700 hover:text-zinc-900",
-          length(habit.logs) == habit.iterations &&
-            "disabled:text-zinc-200 cursor-not-allowed"
-        ]}
-        disabled={length(habit.logs) == habit.iterations}
-      >
-        <.icon name="hero-forward-solid" class="h-6 w-6" />
-      </button>
-    </div>
-  </div>
-  <div class="col-span-3 pt-4 space-x-2"></div>
+  </section>
 </div>
-<div :if={@time_of_day && length(@habits) == 0} class="empty-state text-center">
+<div :if={@time_of_day && length(@habits) == 0} class="py-20 text-center sm:py-24">
   <%= case @time_of_day do %>
     <% :morning -> %>
-      <.icon name="hero-sun-mini" class="mx-auto h-12 w-12 text-gray-700" />
+      <.icon name="hero-sun-mini" class="mx-auto h-10 w-10 text-muted" />
     <% :afternoon -> %>
-      <.icon name="hero-sparkles-mini" class="mx-auto h-12 w-12 text-gray-700" />
+      <.icon name="hero-sparkles-mini" class="mx-auto h-10 w-10 text-muted" />
     <% :evening -> %>
-      <.icon name="hero-moon-mini" class="mx-auto h-12 w-12 text-gray-700" />
+      <.icon name="hero-moon-mini" class="mx-auto h-10 w-10 text-muted" />
   <% end %>
-  <h3 class="mt-2 text-sm font-medium text-zinc-900">No habits</h3>
-  <p class="mt-1 text-sm text-zinc-500">
-    Get started by adding a new habit
+  <h2 class="mt-3 type-section-title">No habits yet</h2>
+  <p class="mt-1 type-body text-muted">
+    Add a habit to start building momentum.
   </p>
 </div>
 

@@ -82,13 +82,13 @@ defmodule MmentumWeb.CoreComponents do
               phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
               phx-key="escape"
               phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-              class="motion-modal-panel shadow-zinc-700/10 ring-zinc-700/10 relative hidden origin-center rounded-3xl bg-white p-6 shadow-xl ring-1 sm:p-8"
+              class="motion-modal-panel relative hidden origin-center rounded-modal bg-white p-6 shadow-modal ring-1 ring-zinc-950/10 sm:p-8"
             >
               <div class="absolute right-4 top-4 sm:right-5 sm:top-5">
                 <button
                   phx-click={JS.exec("data-cancel", to: "##{@id}")}
                   type="button"
-                  class="button-feedback flex h-9 w-9 items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:ring-offset-2"
+                  class="button-feedback flex h-9 w-9 items-center justify-center rounded-control text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 focus-visible:ring-offset-2"
                   aria-label={gettext("close")}
                 >
                   <.icon name="hero-x-mark-solid" class="h-5 w-5" />
@@ -120,9 +120,10 @@ defmodule MmentumWeb.CoreComponents do
   """
   attr :for, :any, required: true, doc: "the datastructure for the form"
   attr :as, :any, default: nil, doc: "the server side parameter to collect all input under"
+  attr :class, :any, default: "mt-8"
 
   attr :rest, :global,
-    include: ~w(autocomplete name rel action enctype method novalidate target multipart class),
+    include: ~w(autocomplete name rel action enctype method novalidate target multipart),
     doc: "the arbitrary HTML attributes to apply to the form tag"
 
   slot :inner_block, required: true
@@ -130,10 +131,10 @@ defmodule MmentumWeb.CoreComponents do
 
   def simple_form(assigns) do
     ~H"""
-    <.form :let={f} for={@for} as={@as} {@rest}>
-      <div class="mt-10 space-y-8 bg-white">
+    <.form :let={f} for={@for} as={@as} class={@class} {@rest}>
+      <div class="space-y-5">
         {render_slot(@inner_block, f)}
-        <div :for={action <- @actions} class="mt-2 flex items-center justify-between gap-6">
+        <div :for={action <- @actions} class="flex items-center justify-between gap-4 pt-1">
           {render_slot(action, f)}
         </div>
       </div>
@@ -150,7 +151,9 @@ defmodule MmentumWeb.CoreComponents do
       <.button phx-click="go" class="ml-2">Send!</.button>
   """
   attr :type, :string, default: nil
-  attr :class, :string, default: nil
+  attr :variant, :string, default: "primary", values: ~w(primary destructive)
+  attr :size, :string, default: "default", values: ~w(default compact)
+  attr :class, :any, default: nil
   attr :rest, :global, include: ~w(disabled form name value)
 
   slot :inner_block, required: true
@@ -160,8 +163,11 @@ defmodule MmentumWeb.CoreComponents do
     <button
       type={@type}
       class={[
-        "button-feedback phx-submit-loading:opacity-75 rounded-md bg-zinc-900 hover:bg-zinc-700 py-2 px-3",
-        "disabled:cursor-not-allowed disabled:opacity-75 text-sm font-semibold leading-6 text-white active:text-white/80",
+        "button-feedback inline-flex items-center justify-center gap-2 rounded-control type-label",
+        "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/25 focus-visible:ring-offset-2",
+        "disabled:cursor-not-allowed disabled:opacity-50 phx-submit-loading:cursor-wait phx-submit-loading:opacity-65",
+        button_size(@size),
+        button_variant(@variant),
         @class
       ]}
       {@rest}
@@ -170,6 +176,17 @@ defmodule MmentumWeb.CoreComponents do
     </button>
     """
   end
+
+  defp button_variant("primary") do
+    "bg-action text-white shadow-control hover:bg-action-hover active:text-white/80"
+  end
+
+  defp button_variant("destructive") do
+    "text-danger hover:bg-danger-soft active:text-rose-800"
+  end
+
+  defp button_size("default"), do: "min-h-11 px-4 py-2.5"
+  defp button_size("compact"), do: "min-h-9 px-2.5 py-1.5"
 
   @doc """
   Renders an input with label and error messages.
@@ -235,7 +252,7 @@ defmodule MmentumWeb.CoreComponents do
 
     ~H"""
     <div phx-feedback-for={@name}>
-      <label class="flex items-center gap-4 text-sm leading-6 text-zinc-600">
+      <label class="flex items-center gap-3 type-body text-zinc-600">
         <input type="hidden" name={@name} value="false" />
         <input
           type="checkbox"
@@ -243,7 +260,7 @@ defmodule MmentumWeb.CoreComponents do
           name={@name}
           value="true"
           checked={@checked}
-          class="rounded border-zinc-300 text-zinc-900 focus:ring-0"
+          class="h-4 w-4 rounded border-zinc-300 text-action shadow-control focus:ring-3 focus:ring-focus/20 disabled:cursor-not-allowed disabled:opacity-50"
           {@rest}
         />
         {@label}
@@ -260,13 +277,7 @@ defmodule MmentumWeb.CoreComponents do
       <select
         id={@id}
         name={@name}
-        class={[
-          "mt-2 block w-full rounded-md border bg-white shadow-sm focus:ring-0 sm:text-sm",
-          "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
-          @errors == [] && "border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400",
-          @class
-        ]}
+        class={field_classes(@errors, @class, "h-11 py-0 pr-9")}
         aria-invalid={to_string(@errors != [])}
         multiple={@multiple}
         {@rest}
@@ -286,13 +297,7 @@ defmodule MmentumWeb.CoreComponents do
       <textarea
         id={@id}
         name={@name}
-        class={[
-          "mt-2 block w-full rounded-md text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
-          "min-h-[6rem] phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
-          @errors == [] && "border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400",
-          @class
-        ]}
+        class={field_classes(@errors, @class, "min-h-28 resize-y py-3")}
         aria-invalid={to_string(@errors != [])}
         {@rest}
       ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
@@ -311,19 +316,26 @@ defmodule MmentumWeb.CoreComponents do
         name={@name}
         id={@id}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-        class={[
-          "mt-2 block w-full rounded-md text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
-          "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
-          @errors == [] && "border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400",
-          @class
-        ]}
+        class={field_classes(@errors, @class, "h-11")}
         aria-invalid={to_string(@errors != [])}
         {@rest}
       />
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
+  end
+
+  defp field_classes(errors, class, sizing) do
+    [
+      "mt-2 block w-full rounded-control border bg-white px-3.5 text-base leading-6 text-zinc-900 shadow-control sm:text-sm sm:leading-5",
+      "transition-[border-color,box-shadow,background-color] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)]",
+      "placeholder:text-zinc-400 focus:outline-none focus:ring-3 focus:ring-focus/20 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-muted",
+      "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-focus",
+      errors == [] && "border-zinc-300 focus:border-focus",
+      errors != [] && "border-danger focus:border-danger focus:ring-danger/15",
+      sizing,
+      class
+    ]
   end
 
   @doc """
@@ -334,7 +346,7 @@ defmodule MmentumWeb.CoreComponents do
 
   def label(assigns) do
     ~H"""
-    <label for={@for} class="block text-sm font-semibold leading-6 text-zinc-800">
+    <label for={@for} class="block type-label text-zinc-800">
       {render_slot(@inner_block)}
     </label>
     """
@@ -347,7 +359,7 @@ defmodule MmentumWeb.CoreComponents do
 
   def error(assigns) do
     ~H"""
-    <p class="mt-2 flex items-center gap-2 text-xs font-medium leading-5 text-rose-600 phx-no-feedback:hidden">
+    <p class="mt-2 flex items-center gap-2 text-xs font-medium leading-5 text-danger phx-no-feedback:hidden">
       <.icon name="hero-exclamation-circle-mini" class="h-4 w-4 flex-none" />
       {render_slot(@inner_block)}
     </p>
@@ -358,6 +370,7 @@ defmodule MmentumWeb.CoreComponents do
   Renders a header with title.
   """
   attr :class, :string, default: nil
+  attr :variant, :string, default: "default", values: ~w(default dashboard)
 
   slot :inner_block, required: true
   slot :subtitle
@@ -365,17 +378,33 @@ defmodule MmentumWeb.CoreComponents do
 
   def header(assigns) do
     ~H"""
-    <header class={[@actions != [] && "flex items-center justify-between gap-6", @class]}>
-      <div>
-        <h1 class="text-lg font-semibold leading-8 text-zinc-800">
+    <header class={[@actions != [] && "flex items-start justify-between gap-4 sm:gap-6", @class]}>
+      <div class="min-w-0">
+        <h1 class={if(@variant == "dashboard", do: "type-display-title", else: "type-page-title")}>
           {render_slot(@inner_block)}
         </h1>
-        <p :if={@subtitle != []} class="mt-2 text-sm leading-6 text-zinc-600">
+        <p
+          :if={@subtitle != []}
+          class={[
+            "type-body text-muted",
+            if(@variant == "dashboard", do: "mt-1 sm:text-base sm:leading-7", else: "mt-2")
+          ]}
+        >
           {render_slot(@subtitle)}
         </p>
       </div>
       <div class="flex-none">{render_slot(@actions)}</div>
     </header>
+    """
+  end
+
+  @doc "Renders a section title"
+  attr :class, :any, default: nil
+  slot :inner_block, required: true
+
+  def section_title(assigns) do
+    ~H"""
+    <h2 class={["type-section-title", @class]}>{render_slot(@inner_block)}</h2>
     """
   end
 
@@ -471,11 +500,11 @@ defmodule MmentumWeb.CoreComponents do
 
   def list(assigns) do
     ~H"""
-    <div class="mt-14">
+    <div class="mt-10">
       <dl class="-my-4 divide-y divide-zinc-100">
-        <div :for={item <- @item} class="flex gap-4 py-4 text-sm leading-6 sm:gap-8">
-          <dt class="w-1/4 flex-none text-zinc-500">{item.title}</dt>
-          <dd class="text-zinc-700">{render_slot(item)}</dd>
+        <div :for={item <- @item} class="flex gap-4 py-4 type-body sm:gap-8">
+          <dt class="w-1/3 flex-none text-muted sm:w-1/4">{item.title}</dt>
+          <dd class="text-zinc-800">{render_slot(item)}</dd>
         </div>
       </dl>
     </div>
@@ -494,16 +523,47 @@ defmodule MmentumWeb.CoreComponents do
 
   def back(assigns) do
     ~H"""
-    <div class="mt-16">
+    <div class="mt-12">
       <.link
         navigate={@navigate}
-        class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
+        class="button-feedback inline-flex items-center gap-1.5 rounded-control type-label text-zinc-700 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20"
       >
         <.icon name="hero-arrow-left-solid" class="h-3 w-3" />
         {render_slot(@inner_block)}
       </.link>
     </div>
     """
+  end
+
+  @doc false
+  def toast_group_class(assigns) do
+    [
+      "pointer-events-none fixed z-50 grid max-h-screen w-full p-4 sm:max-w-[26rem]",
+      assigns[:corner] == :bottom_left && "bottom-0 left-0 items-end flex-col-reverse",
+      assigns[:corner] == :bottom_right && "bottom-0 right-0 items-end flex-col-reverse",
+      assigns[:corner] == :top_left && "left-0 top-0 items-start flex-col",
+      assigns[:corner] == :top_right && "right-0 top-0 items-start flex-col"
+    ]
+  end
+
+  @doc false
+  def toast_class(assigns) do
+    icon_class =
+      case {assigns[:id], assigns[:kind]} do
+        {"client-error", _kind} -> "mmentum-toast--warning"
+        {_id, :success} -> "mmentum-toast--success"
+        {_id, :warning} -> "mmentum-toast--warning"
+        {_id, :error} -> "mmentum-toast--error"
+        {_id, _kind} -> "mmentum-toast--info"
+      end
+
+    [
+      "mmentum-toast group/toast pointer-events-auto relative col-start-1 col-end-1 row-start-1 row-end-2",
+      "w-full max-w-[calc(100vw-2rem)] items-center justify-between overflow-hidden rounded-panel border border-zinc-200 bg-white p-4 pr-10 shadow-floating",
+      "[@media(scripting:enabled)]:opacity-0 [@media(scripting:enabled){[data-phx-main]_&}]:opacity-100",
+      if(assigns[:rest][:hidden] == true, do: "hidden", else: "flex"),
+      icon_class
+    ]
   end
 
   @doc """

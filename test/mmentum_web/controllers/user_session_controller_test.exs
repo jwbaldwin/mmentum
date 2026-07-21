@@ -7,10 +7,10 @@ defmodule MmentumWeb.UserSessionControllerTest do
     %{user: user_fixture()}
   end
 
-  describe "POST /users/log_in" do
+  describe "POST /login" do
     test "logs the user in", %{conn: conn, user: user} do
       conn =
-        post(conn, ~p"/users/log_in", %{
+        post(conn, ~p"/login", %{
           "user" => %{"email" => user.email, "password" => valid_user_password()}
         })
 
@@ -21,13 +21,15 @@ defmodule MmentumWeb.UserSessionControllerTest do
       conn = get(conn, ~p"/")
       response = html_response(conn, 200)
       assert response =~ user.full_name
+      assert response =~ "Welcome back!"
+      assert response =~ ~s(aria-label="close")
       assert response =~ ~p"/users/settings"
       assert response =~ ~p"/users/log_out"
     end
 
     test "logs the user in with remember me", %{conn: conn, user: user} do
       conn =
-        post(conn, ~p"/users/log_in", %{
+        post(conn, ~p"/login", %{
           "user" => %{
             "email" => user.email,
             "password" => valid_user_password(),
@@ -43,7 +45,7 @@ defmodule MmentumWeb.UserSessionControllerTest do
       conn =
         conn
         |> init_test_session(user_return_to: "/foo/bar")
-        |> post(~p"/users/log_in", %{
+        |> post(~p"/login", %{
           "user" => %{
             "email" => user.email,
             "password" => valid_user_password()
@@ -51,13 +53,13 @@ defmodule MmentumWeb.UserSessionControllerTest do
         })
 
       assert redirected_to(conn) == "/foo/bar"
-      assert Phoenix.Flash.get(conn.assigns.flash, :success) =~ "Welcome back!"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Welcome back!"
     end
 
     test "login following registration", %{conn: conn, user: user} do
       conn =
         conn
-        |> post(~p"/users/log_in", %{
+        |> post(~p"/login", %{
           "_action" => "registered",
           "user" => %{
             "email" => user.email,
@@ -66,13 +68,13 @@ defmodule MmentumWeb.UserSessionControllerTest do
         })
 
       assert redirected_to(conn) == ~p"/"
-      assert Phoenix.Flash.get(conn.assigns.flash, :success) =~ "Account created successfully"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Your account is ready."
     end
 
     test "login following password update", %{conn: conn, user: user} do
       conn =
         conn
-        |> post(~p"/users/log_in", %{
+        |> post(~p"/login", %{
           "_action" => "password_updated",
           "user" => %{
             "email" => user.email,
@@ -81,33 +83,33 @@ defmodule MmentumWeb.UserSessionControllerTest do
         })
 
       assert redirected_to(conn) == ~p"/users/settings"
-      assert Phoenix.Flash.get(conn.assigns.flash, :success) =~ "Password updated successfully"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Password updated."
     end
 
     test "redirects to login page with invalid credentials", %{conn: conn} do
       conn =
-        post(conn, ~p"/users/log_in", %{
+        post(conn, ~p"/login", %{
           "user" => %{"email" => "invalid@email.com", "password" => "invalid_password"}
         })
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
-      assert redirected_to(conn) == ~p"/users/log_in"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password."
+      assert redirected_to(conn) == ~p"/login"
     end
   end
 
   describe "DELETE /users/log_out" do
     test "logs the user out", %{conn: conn, user: user} do
       conn = conn |> log_in_user(user) |> delete(~p"/users/log_out")
-      assert redirected_to(conn) == ~p"/users/log_in"
+      assert redirected_to(conn) == ~p"/login"
       refute get_session(conn, :user_token)
-      assert Phoenix.Flash.get(conn.assigns.flash, :default) =~ "Logged out successfully"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) == "You're logged out."
     end
 
     test "succeeds even if the user is not logged in", %{conn: conn} do
       conn = delete(conn, ~p"/users/log_out")
-      assert redirected_to(conn) == ~p"/users/log_in"
+      assert redirected_to(conn) == ~p"/login"
       refute get_session(conn, :user_token)
-      assert Phoenix.Flash.get(conn.assigns.flash, :default) =~ "Logged out successfully"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) == "You're logged out."
     end
   end
 end

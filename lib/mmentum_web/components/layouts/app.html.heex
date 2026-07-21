@@ -1,9 +1,12 @@
 <header class="px-4 sm:px-6 lg:px-8">
   <div class="flex items-center justify-between border-b border-zinc-100 py-3 text-sm">
     <div class="flex items-center gap-4">
-      <a href="/">
-        <img src={~p"/images/mmentum.svg"} width="36" />
-      </a>
+      <.link
+        navigate={~p"/"}
+        class="rounded-control focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20"
+      >
+        <img src={~p"/images/mmentum.svg"} width="36" alt="Mmentum" />
+      </.link>
     </div>
     <div class="flex items-center font-semibold leading-6 text-zinc-900">
       <%= if @current_user do %>
@@ -15,25 +18,25 @@
           phx-key="escape"
         >
           <summary
-            class="account-menu__trigger flex min-w-0 cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 text-left"
+            class="account-menu__trigger"
             style="width: min(14rem, calc(100vw - 4rem)); list-style: none; user-select: none;"
           >
             <.avatar id="account-avatar" seed={@current_user.email} />
-            <span class="account-menu__identity min-w-0 flex-1">
-              <span class="account-menu__name block truncate text-sm/5 font-medium text-zinc-950">
+            <span class="account-menu__identity">
+              <span class="account-menu__name">
                 {@current_user.full_name}
               </span>
-              <span class="account-menu__email block truncate text-xs/5 font-normal text-zinc-500">
+              <span class="account-menu__email">
                 {@current_user.email}
               </span>
             </span>
             <span
               id="account-menu-chevron"
-              class="account-menu__chevron ml-auto flex shrink-0 text-zinc-500"
+              class="account-menu__chevron"
             >
               <.icon
                 name="hero-chevron-down-mini"
-                class="account-menu__chevron-icon h-4 w-4"
+                class="account-menu__chevron-icon"
               />
             </span>
           </summary>
@@ -41,46 +44,46 @@
           <div
             id="account-menu-popover"
             role="menu"
-            class="account-menu__popover absolute right-0 z-20 mt-2 overflow-hidden rounded-xl bg-white p-1 shadow-lg"
+            class="account-menu__popover"
             style="width: min(14rem, calc(100vw - 4rem));"
           >
             <.link
-              href={~p"/users/settings"}
+              navigate={~p"/users/settings"}
               role="menuitem"
-              class="account-menu__item flex items-center gap-2 rounded-lg px-3 py-2 text-sm/6 font-medium text-zinc-700 hover:bg-zinc-100"
+              class="account-menu__item"
             >
-              <.icon name="hero-user" class="account-menu__item-icon h-4 w-4" />
+              <.icon name="hero-user" class="account-menu__item-icon" />
               <span>Settings</span>
             </.link>
-            <div class="account-menu__divider mx-2 my-1 h-px bg-zinc-100"></div>
+            <div class="account-menu__divider"></div>
             <.link
               href={~p"/users/log_out"}
               method="delete"
               role="menuitem"
-              class="account-menu__item flex items-center gap-2 rounded-lg px-3 py-2 text-sm/6 font-medium text-zinc-700 hover:bg-zinc-100"
+              class="account-menu__item"
             >
               <.icon
                 name="hero-arrow-right-on-rectangle"
-                class="account-menu__item-icon h-4 w-4"
+                class="account-menu__item-icon"
               />
               <span>Log out</span>
             </.link>
           </div>
         </details>
       <% else %>
-        <ul class="relative z-10 flex items-center gap-4 px-4 sm:px-6 lg:px-8 justify-end">
+        <ul class="relative z-10 flex items-center justify-end gap-4">
           <li>
             <.link
               href={~p"/users/register"}
-              class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
+              class="button-feedback rounded-control type-label text-zinc-700 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20"
             >
-              Register
+              Create account
             </.link>
           </li>
           <li>
             <.link
-              href={~p"/users/log_in"}
-              class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
+              href={~p"/login"}
+              class="button-feedback rounded-control type-label text-zinc-700 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20"
             >
               Log in
             </.link>
@@ -90,12 +93,14 @@
     </div>
   </div>
 </header>
-<main class="px-4 py-6 sm:px-6 lg:px-8">
+<main class="px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
   <div class="mx-auto max-w-4xl">
     <LiveToast.toast_group
       flash={@flash}
       connected={assigns[:socket] != nil}
-      kinds={[:default, :info, :success, :warning, :error]}
+      kinds={[:info, :success, :warning, :error]}
+      group_class_fn={&toast_group_class/1}
+      toast_class_fn={&toast_class/1}
       toasts_sync={assigns[:toasts_sync]}
     />
     {@inner_content}

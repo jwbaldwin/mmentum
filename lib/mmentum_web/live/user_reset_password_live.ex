@@ -6,7 +6,7 @@ defmodule MmentumWeb.UserResetPasswordLive do
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
-      <.header class="text-center">Reset Password</.header>
+      <.header class="text-center">Reset password</.header>
 
       <.simple_form
         for={@form}
@@ -15,7 +15,7 @@ defmodule MmentumWeb.UserResetPasswordLive do
         phx-change="validate"
       >
         <.error :if={@form.errors != []}>
-          Oops, something went wrong! Please check the errors below.
+          Please check the highlighted fields.
         </.error>
 
         <.input field={@form[:password]} type="password" label="New password" required />
@@ -26,12 +26,14 @@ defmodule MmentumWeb.UserResetPasswordLive do
           required
         />
         <:actions>
-          <.button phx-disable-with="Resetting..." class="w-full">Reset Password</.button>
+          <.button phx-disable-with="Resetting..." class="w-full">Reset password</.button>
         </:actions>
       </.simple_form>
 
-      <p class="text-center text-sm mt-4">
-        <.link href={~p"/users/register"}>Register</.link> | <.link href={~p"/users/log_in"}>Log in</.link>
+      <p class="mt-5 flex items-center justify-center gap-4 type-body">
+        <.link href={~p"/users/register"} class="text-link">Create account</.link>
+        <span aria-hidden="true" class="text-zinc-300">/</span>
+        <.link href={~p"/login"} class="text-link">Log in</.link>
       </p>
     </div>
     """
@@ -59,8 +61,8 @@ defmodule MmentumWeb.UserResetPasswordLive do
       {:ok, _} ->
         {:noreply,
          socket
-         |> put_flash(:success, "Password reset successfully.")
-         |> redirect(to: ~p"/users/log_in")}
+         |> put_flash(:info, "Password reset.")
+         |> redirect(to: ~p"/login")}
 
       {:error, changeset} ->
         {:noreply, assign_form(socket, Map.put(changeset, :action, :insert))}
@@ -77,8 +79,8 @@ defmodule MmentumWeb.UserResetPasswordLive do
       assign(socket, user: user, token: token)
     else
       socket
-      |> put_flash(:error, "Reset password link is invalid or it has expired.")
-      |> redirect(to: ~p"/users/log_in")
+      |> put_flash(:error, "This password reset link is invalid or has expired.")
+      |> redirect(to: ~p"/login")
     end
   end
 

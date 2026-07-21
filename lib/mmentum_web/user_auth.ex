@@ -81,7 +81,7 @@ defmodule MmentumWeb.UserAuth do
     conn
     |> renew_session()
     |> delete_resp_cookie(@remember_me_cookie)
-    |> redirect(to: ~p"/users/log_in")
+    |> redirect(to: ~p"/login")
   end
 
   @doc """
@@ -153,10 +153,7 @@ defmodule MmentumWeb.UserAuth do
     if socket.assigns.current_user do
       {:cont, socket}
     else
-      socket =
-        socket
-        |> Phoenix.LiveView.put_flash(:error, "You must log in to access this page.")
-        |> Phoenix.LiveView.redirect(to: ~p"/users/log_in")
+      socket = Phoenix.LiveView.redirect(socket, to: ~p"/login")
 
       {:halt, socket}
     end
@@ -216,9 +213,8 @@ defmodule MmentumWeb.UserAuth do
       conn
     else
       conn
-      |> put_flash(:error, "You must log in to access this page.")
       |> maybe_store_return_to()
-      |> redirect(to: ~p"/users/log_in")
+      |> redirect(to: ~p"/login")
       |> halt()
     end
   end

@@ -23,13 +23,13 @@ defmodule MmentumWeb.HabitLive.Index do
     user = get_current_user(socket)
 
     socket
-    |> assign(:page_title, "Edit Habit")
+    |> assign(:page_title, "Edit habit")
     |> assign(:habit, Habits.get_habit!(user, id))
   end
 
   defp apply_action(socket, :new, _params) do
     socket
-    |> assign(:page_title, "New Habit")
+    |> assign(:page_title, "New habit")
     |> assign(:habit, %Habit{})
   end
 

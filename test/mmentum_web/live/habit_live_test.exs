@@ -43,6 +43,17 @@ defmodule MmentumWeb.HabitLiveTest do
       assert html =~ habit.name
     end
 
+    test "uses live navigation for shared authenticated links", %{conn: conn} do
+      {:ok, index_live, _html} = live(conn, ~p"/habits")
+
+      assert has_element?(index_live, ~s|header a[href="/"][data-phx-link="redirect"]|)
+
+      assert has_element?(
+               index_live,
+               ~s|#account-menu a[href="/users/settings"][data-phx-link="redirect"]|
+             )
+    end
+
     test "greets users with one-word and multi-part names" do
       for {full_name, first_name} <- [{"Prince", "Prince"}, {"James Earl Jones", "James"}] do
         user = Mmentum.AccountsFixtures.user_fixture(%{full_name: full_name})
@@ -90,7 +101,7 @@ defmodule MmentumWeb.HabitLiveTest do
       assert_patch(index_live, ~p"/habits")
 
       html = render(index_live)
-      assert html =~ "Habit created successfully"
+      assert html =~ "Habit created."
       assert html =~ "some name"
     end
 
@@ -100,7 +111,7 @@ defmodule MmentumWeb.HabitLiveTest do
       assert index_live
              |> element(~s|#habit-#{habit.id} a[href="/habits/#{habit.id}/edit"]|)
              |> render_click() =~
-               "Refine"
+               "Edit habit"
 
       assert_patch(index_live, ~p"/habits/#{habit}/edit")
 
@@ -115,7 +126,7 @@ defmodule MmentumWeb.HabitLiveTest do
       assert_patch(index_live, ~p"/habits")
 
       html = render(index_live)
-      assert html =~ "Habit updated successfully"
+      assert html =~ "Habit updated."
       assert html =~ "some updated name"
     end
 
@@ -142,6 +153,22 @@ defmodule MmentumWeb.HabitLiveTest do
              |> render_click()
 
       refute has_element?(index_live, "#habit-#{habit.id}")
+    end
+
+    test "marks the next progress segment complete after recording a completion", %{
+      conn: conn,
+      habit: habit
+    } do
+      {:ok, index_live, _html} = live(conn, ~p"/habits")
+      first_completion = "#habit-#{habit.id}-completion-1"
+
+      assert has_element?(index_live, "#{first_completion}[data-complete=false]")
+
+      index_live
+      |> element(~s|#habit-#{habit.id} button[phx-click="add_log"]|)
+      |> render_click()
+
+      assert has_element?(index_live, "#{first_completion}[data-complete=true]")
     end
 
     test "does not edit another user's habit", %{conn: conn} do
@@ -176,7 +203,7 @@ defmodule MmentumWeb.HabitLiveTest do
     test "displays habit", %{conn: conn, habit: habit} do
       {:ok, _show_live, html} = live(conn, ~p"/habits/#{habit}")
 
-      assert html =~ "Show Habit"
+      assert html =~ "Habit details"
       assert html =~ habit.name
     end
 
@@ -184,7 +211,7 @@ defmodule MmentumWeb.HabitLiveTest do
       {:ok, show_live, _html} = live(conn, ~p"/habits/#{habit}")
 
       assert show_live |> element(~s|a[href="/habits/#{habit.id}/show/edit"]|) |> render_click() =~
-               "Refine"
+               "Edit habit"
 
       assert_patch(show_live, ~p"/habits/#{habit}/show/edit")
 
@@ -199,7 +226,7 @@ defmodule MmentumWeb.HabitLiveTest do
       assert_patch(show_live, ~p"/habits/#{habit}")
 
       html = render(show_live)
-      assert html =~ "Habit updated successfully"
+      assert html =~ "Habit updated."
       assert html =~ "some updated name"
     end
 

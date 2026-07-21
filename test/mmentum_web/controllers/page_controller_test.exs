@@ -3,7 +3,7 @@ defmodule MmentumWeb.PageControllerTest do
 
   test "GET / redirects guests to login", %{conn: conn} do
     conn = get(conn, ~p"/")
-    assert redirected_to(conn) == ~p"/users/log_in"
+    assert redirected_to(conn) == ~p"/login"
   end
 
   test "log administration routes are not exposed", %{conn: conn} do

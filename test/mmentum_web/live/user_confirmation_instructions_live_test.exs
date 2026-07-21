@@ -14,7 +14,7 @@ defmodule MmentumWeb.UserConfirmationInstructionsLiveTest do
   describe "Resend confirmation" do
     test "renders the resend confirmation page", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/users/confirm")
-      assert html =~ "Resend confirmation instructions"
+      assert html =~ "Resend confirmation email"
     end
 
     test "sends a new confirmation token", %{conn: conn, user: user} do
@@ -24,10 +24,10 @@ defmodule MmentumWeb.UserConfirmationInstructionsLiveTest do
         lv
         |> form("#resend_confirmation_form", user: %{email: user.email})
         |> render_submit()
-        |> follow_redirect(conn, ~p"/users/log_in")
+        |> follow_redirect(conn, ~p"/login")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
-               "If your email is in our system"
+               "If an unconfirmed account matches that email"
 
       assert Repo.get_by!(Accounts.UserToken, user_id: user.id).context == "confirm"
     end
@@ -41,10 +41,10 @@ defmodule MmentumWeb.UserConfirmationInstructionsLiveTest do
         lv
         |> form("#resend_confirmation_form", user: %{email: user.email})
         |> render_submit()
-        |> follow_redirect(conn, ~p"/users/log_in")
+        |> follow_redirect(conn, ~p"/login")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
-               "If your email is in our system"
+               "If an unconfirmed account matches that email"
 
       refute Repo.get_by(Accounts.UserToken, user_id: user.id)
     end
@@ -56,10 +56,10 @@ defmodule MmentumWeb.UserConfirmationInstructionsLiveTest do
         lv
         |> form("#resend_confirmation_form", user: %{email: "unknown@example.com"})
         |> render_submit()
-        |> follow_redirect(conn, ~p"/users/log_in")
+        |> follow_redirect(conn, ~p"/login")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
-               "If your email is in our system"
+               "If an unconfirmed account matches that email"
 
       assert Repo.all(Accounts.UserToken) == []
     end

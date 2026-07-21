@@ -14,7 +14,7 @@ defmodule MmentumWeb.UserConfirmationLiveTest do
   describe "Confirm user" do
     test "renders confirmation page", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/users/confirm/some-token")
-      assert html =~ "Confirm Account"
+      assert html =~ "Confirm your account"
     end
 
     test "confirms the given token once", %{conn: conn, user: user} do
@@ -29,12 +29,12 @@ defmodule MmentumWeb.UserConfirmationLiveTest do
         lv
         |> form("#confirmation_form")
         |> render_submit()
-        |> follow_redirect(conn, ~p"/users/log_in")
+        |> follow_redirect(conn, ~p"/login")
 
       assert {:ok, conn} = result
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :success) =~
-               "User confirmed successfully"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
+               "Account confirmed."
 
       assert Accounts.get_user!(user.id).confirmed_at
       refute get_session(conn, :user_token)
@@ -47,12 +47,12 @@ defmodule MmentumWeb.UserConfirmationLiveTest do
         lv
         |> form("#confirmation_form")
         |> render_submit()
-        |> follow_redirect(conn, ~p"/users/log_in")
+        |> follow_redirect(conn, ~p"/login")
 
       assert {:ok, conn} = result
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
-               "User confirmation link is invalid or it has expired"
+               "This confirmation link is invalid or has expired."
 
       # when logged in
       conn =
@@ -78,10 +78,10 @@ defmodule MmentumWeb.UserConfirmationLiveTest do
         lv
         |> form("#confirmation_form")
         |> render_submit()
-        |> follow_redirect(conn, ~p"/users/log_in")
+        |> follow_redirect(conn, ~p"/login")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
-               "User confirmation link is invalid or it has expired"
+               "This confirmation link is invalid or has expired."
 
       refute Accounts.get_user!(user.id).confirmed_at
     end
