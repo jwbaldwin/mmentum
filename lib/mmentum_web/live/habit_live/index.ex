@@ -113,5 +113,39 @@ defmodule MmentumWeb.HabitLive.Index do
     end
   end
 
+  defp progress_style(habit) do
+    iterations = habit.iterations
+    completed = min(length(habit.logs), iterations)
+    steps = max(iterations - 1, 1)
+    linked? = iterations > 1
+    complete? = completed == iterations
+
+    step_percent = if linked?, do: Float.round(100 / steps, 4), else: 100
+    dot_share_mobile = if linked?, do: Float.round(36 / steps, 4), else: 0
+    dot_share_desktop = if linked?, do: Float.round(44 / steps, 4), else: 0
+
+    fill_percent =
+      if complete?, do: 100, else: Float.round(completed * 100 / steps, 4)
+
+    fill_dot_offset_mobile =
+      if complete?, do: 0, else: Float.round(completed * 36 / steps, 4)
+
+    fill_dot_offset_desktop =
+      if complete?, do: 0, else: Float.round(completed * 44 / steps, 4)
+
+    [
+      "--progress-step-percent: #{step_percent}%",
+      "--progress-dot-share-mobile: #{dot_share_mobile}px",
+      "--progress-dot-share-desktop: #{dot_share_desktop}px",
+      "--progress-fill-percent: #{fill_percent}%",
+      "--progress-fill-dot-offset-mobile: #{fill_dot_offset_mobile}px",
+      "--progress-fill-dot-offset-desktop: #{fill_dot_offset_desktop}px",
+      "--progress-min-width-mobile: #{iterations * 36 + max(iterations - 1, 0) * 12}px",
+      "--progress-min-width-desktop: #{iterations * 44 + max(iterations - 1, 0) * 12}px",
+      "--progress-arm-size: #{if(linked?, do: 6, else: 0)}px"
+    ]
+    |> Enum.join("; ")
+  end
+
   defp habit_not_found(socket), do: put_flash(socket, :error, "Habit not found.")
 end

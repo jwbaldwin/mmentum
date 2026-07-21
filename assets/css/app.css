@@ -33,7 +33,6 @@
   --motion-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --motion-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --motion-duration-press: 140ms;
-  --motion-duration-small: 180ms;
   --motion-duration-modal: 200ms;
   --motion-duration-exit: 140ms;
 }
@@ -130,40 +129,74 @@ body {
   pointer-events: none;
 }
 
-.habit-completion {
+.habit-progress {
+  --progress-duration: 560ms;
+  --progress-ease: cubic-bezier(0.65, 0, 0.35, 1);
+  --progress-dot-size: 2.25rem;
+  --progress-dot-radius: calc(var(--progress-dot-size) / 2);
+  --progress-dot-share: var(--progress-dot-share-mobile);
+  --progress-fill-dot-offset: var(--progress-fill-dot-offset-mobile);
+  --progress-inner-arm-size: max(0px, calc(var(--progress-arm-size) - 2px));
+  --progress-inner-radius: max(0px, calc(var(--progress-dot-radius) - 2px));
+  --progress-step: calc(var(--progress-step-percent) - var(--progress-dot-share));
+  --progress-fill: calc(var(--progress-fill-percent) - var(--progress-fill-dot-offset));
+
   position: relative;
+  width: 100%;
+  min-width: var(--progress-min-width-mobile);
+  height: var(--progress-dot-size);
   overflow: hidden;
-  border-color: var(--color-zinc-200);
-  background: var(--color-zinc-100);
+  background: var(--color-zinc-200);
   isolation: isolate;
-  transition-property: border-color;
-  transition-duration: 260ms;
-  transition-timing-function: var(--motion-ease-out);
+  -webkit-mask:
+    radial-gradient(
+        circle var(--progress-dot-radius) at var(--progress-dot-radius) 50%,
+        #000 calc(100% - 0.5px),
+        transparent 100%
+      )
+      0 0 / var(--progress-step) 100% repeat-x,
+    linear-gradient(#000 0 0) 0 50% / 100% var(--progress-arm-size) no-repeat;
+  mask:
+    radial-gradient(
+        circle var(--progress-dot-radius) at var(--progress-dot-radius) 50%,
+        #000 calc(100% - 0.5px),
+        transparent 100%
+      )
+      0 0 / var(--progress-step) 100% repeat-x,
+    linear-gradient(#000 0 0) 0 50% / 100% var(--progress-arm-size) no-repeat;
 }
 
-.habit-completion::after {
+.habit-progress::before,
+.habit-progress::after {
   position: absolute;
   inset: 0;
-  border-radius: inherit;
-  background: var(--color-action);
   content: "";
-  pointer-events: none;
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 260ms var(--motion-ease-out);
 }
 
-.habit-completion-segment[data-complete="true"] .habit-completion {
-  border-color: var(--color-action);
+.habit-progress::before {
+  background: var(--color-zinc-100);
+  -webkit-mask:
+    radial-gradient(
+        circle var(--progress-inner-radius) at var(--progress-dot-radius) 50%,
+        #000 calc(100% - 0.5px),
+        transparent 100%
+      )
+      0 0 / var(--progress-step) 100% repeat-x,
+    linear-gradient(#000 0 0) 0 50% / 100% var(--progress-inner-arm-size) no-repeat;
+  mask:
+    radial-gradient(
+        circle var(--progress-inner-radius) at var(--progress-dot-radius) 50%,
+        #000 calc(100% - 0.5px),
+        transparent 100%
+      )
+      0 0 / var(--progress-step) 100% repeat-x,
+    linear-gradient(#000 0 0) 0 50% / 100% var(--progress-inner-arm-size) no-repeat;
 }
 
-.habit-completion-segment[data-complete="true"] .habit-completion::after {
-  transform: scaleX(1);
-}
-
-.habit-completion-segment--linked[data-complete="true"] .habit-completion-connector,
-.habit-completion-segment--linked[data-complete="true"] .habit-completion-connector::after {
-  transition-delay: 90ms;
+.habit-progress::after {
+  background: var(--color-action);
+  clip-path: inset(0 calc(100% - var(--progress-fill)) 0 0);
+  transition: clip-path var(--progress-duration) var(--progress-ease);
 }
 
 .mmentum-toast > button {
@@ -392,14 +425,20 @@ body {
     transform: none !important;
   }
 
-  .habit-completion,
-  .habit-completion::after {
+  .habit-progress::after {
     transition-duration: 0ms;
-    transition-delay: 0ms !important;
   }
 }
 
 @media (min-width: 40rem) {
+  .habit-progress {
+    --progress-dot-size: 2.75rem;
+    --progress-dot-share: var(--progress-dot-share-desktop);
+    --progress-fill-dot-offset: var(--progress-fill-dot-offset-desktop);
+
+    min-width: var(--progress-min-width-desktop);
+  }
+
   .type-display-title {
     font-size: 2.25rem;
     line-height: 2.5rem;

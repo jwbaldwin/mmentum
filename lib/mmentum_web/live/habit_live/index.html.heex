@@ -50,23 +50,17 @@
     </div>
     <div class="flex items-center gap-2 sm:gap-3">
       <div class="min-w-0 flex-1 overflow-x-auto py-1">
-        <div class="flex min-w-full items-center">
-          <div
-            :for={i <- 1..habit.iterations}
-            id={"habit-#{habit.id}-completion-#{i}"}
-            data-complete={if(i <= length(habit.logs), do: "true", else: "false")}
-            class={[
-              "habit-completion-segment flex items-center",
-              i != habit.iterations && "habit-completion-segment--linked",
-              i != habit.iterations && "flex-1"
-            ]}
-          >
-            <div class="habit-completion habit-completion-dot h-9 w-9 shrink-0 rounded-full border-2 sm:h-11 sm:w-11" />
-            <%= if i != habit.iterations do %>
-              <div class="habit-completion habit-completion-connector h-1.5 min-w-3 flex-1 border-y" />
-            <% end %>
-          </div>
-        </div>
+        <div
+          id={"habit-#{habit.id}-progress"}
+          class="habit-progress"
+          data-completed={length(habit.logs)}
+          role="progressbar"
+          aria-label={"#{habit.name} completions"}
+          aria-valuemin="0"
+          aria-valuemax={habit.iterations}
+          aria-valuenow={length(habit.logs)}
+          style={progress_style(habit)}
+        />
       </div>
       <div class="flex shrink-0 items-center gap-1">
         <button
