@@ -1,6 +1,6 @@
 defmodule Mmentum.Logs do
   @moduledoc """
-  The Logs context.
+  Queries completion activity.
   """
 
   import Ecto.Query, warn: false
@@ -11,146 +11,35 @@ defmodule Mmentum.Logs do
   alias Mmentum.Repo
 
   @doc """
-  List all logs.
-  """
-  def list_logs do
-    Repo.all(Log)
-  end
-
-  @doc """
-  List the logs for a user
-  """
-  def list_logs_by_user(%User{} = user) do
-    Log
-    |> where(user_id: ^user.id)
-    |> Repo.all()
-  end
-
-  @doc """
-  List all logs for a habit
+  Lists a user's completion activity for one of their habits
   """
   def list_logs_by_habit(%User{} = user, %Habit{} = habit) do
-    list_logs_by_habit(user, habit.id)
-  end
-
-  def list_logs_by_habit(%User{} = user, habit_id) do
-    Log
-    |> where(habit_id: ^habit_id, user_id: ^user.id)
+    user
+    |> for_habit_query(habit)
     |> Repo.all()
   end
 
   @doc """
-  List all logs for a habit by habit_id only
+  Builds the scoped query used to read and recalculate a habit's activity
   """
-  def list_logs_by_habit_id(habit_id) do
-    Log
-    |> where(habit_id: ^habit_id)
-    |> order_by([l], asc: l.inserted_at)
-    |> Repo.all()
-  end
-
-  def base_logs_range_query(start_of_range, end_of_range) do
-    from l in Log,
-      where: l.inserted_at >= ^start_of_range and l.inserted_at <= ^end_of_range
-  end
-
-  @doc """
-  Gets a single log.
-
-  Raises `Ecto.NoResultsError` if the Log does not exist.
-
-  ## Examples
-
-      iex> get_log!(123)
-      %Log{}
-
-      iex> get_log!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_log!(id), do: Repo.get!(Log, id)
-
-  @doc """
-  Creates a log.
-
-  ## Examples
-
-      iex> create_log(%{field: value})
-      {:ok, %Log{}}
-
-      iex> create_log(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_log(attrs \\ %{}) do
-    %Log{}
-    |> Log.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Updates a log.
-
-  ## Examples
-
-      iex> update_log(log, %{field: new_value})
-      {:ok, %Log{}}
-
-      iex> update_log(log, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_log(%Log{} = log, attrs) do
-    log
-    |> Log.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a log.
-
-  ## Examples
-
-      iex> delete_log(log)
-      {:ok, %Log{}}
-
-      iex> delete_log(log)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_log(%Log{} = log) do
-    Repo.delete(log)
-  end
-
-  def delete_most_recent_log(habit_id) do
-    habit_id
-    |> get_most_recent_log()
-    |> case do
-      nil -> {:error, "No logs found for this habit"}
-      log -> delete_log(log)
-    end
-  end
-
-  defp get_most_recent_log(habit_id) do
-    Repo.one(
-      from(log in Log,
-        where: log.habit_id == ^habit_id,
-        order_by: [desc: log.inserted_at],
-        limit: 1
-      )
+  def for_habit_query(%User{id: user_id}, %Habit{id: habit_id}) do
+    from(log in Log,
+      join: habit in Habit,
+      on: habit.id == log.habit_id,
+      where: log.habit_id == ^habit_id and log.user_id == ^user_id and habit.user_id == ^user_id,
+      order_by: [asc: log.inserted_at, asc: log.id]
     )
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking log changes.
-
-  ## Examples
-
-      iex> change_log(log)
-      %Ecto.Changeset{data: %Log{}}
-
+  Builds a scoped query for completion activity within UTC boundaries
   """
-  def change_log(%Log{} = log, attrs \\ %{}) do
-    Log.changeset(log, attrs)
+  def in_range_query(%User{id: user_id}, start_of_range, end_of_range) do
+    from(log in Log,
+      where:
+        log.user_id == ^user_id and log.inserted_at >= ^start_of_range and
+          log.inserted_at <= ^end_of_range,
+      order_by: [asc: log.inserted_at, asc: log.id]
+    )
   end
 end

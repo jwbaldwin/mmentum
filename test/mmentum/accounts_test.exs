@@ -49,10 +49,11 @@ defmodule Mmentum.AccountsTest do
   end
 
   describe "register_user/1" do
-    test "requires email and password to be set" do
+    test "requires full name, email, and password to be set" do
       {:error, changeset} = Accounts.register_user(%{})
 
       assert %{
+               full_name: ["can't be blank"],
                password: ["can't be blank"],
                email: ["can't be blank"]
              } = errors_on(changeset)
@@ -92,12 +93,26 @@ defmodule Mmentum.AccountsTest do
       assert is_nil(user.confirmed_at)
       assert is_nil(user.password)
     end
+
+    test "trims the full name without restricting its shape" do
+      assert {:ok, user} =
+               Accounts.register_user(valid_user_attributes(full_name: "  James Earl Jones  "))
+
+      assert user.full_name == "James Earl Jones"
+    end
+
+    test "rejects a whitespace-only full name" do
+      assert {:error, changeset} =
+               Accounts.register_user(valid_user_attributes(full_name: "   "))
+
+      assert errors_on(changeset).full_name == ["can't be blank"]
+    end
   end
 
   describe "change_user_registration/2" do
     test "returns a changeset" do
       assert %Ecto.Changeset{} = changeset = Accounts.change_user_registration(%User{})
-      assert changeset.required == [:password, :email]
+      assert changeset.required == [:password, :email, :full_name]
     end
 
     test "allows fields to be set" do

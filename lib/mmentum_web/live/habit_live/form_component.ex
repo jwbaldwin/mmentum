@@ -93,7 +93,7 @@ defmodule MmentumWeb.HabitLive.FormComponent do
   end
 
   defp save_habit(socket, :edit, habit_params) do
-    case Habits.update_habit(socket.assigns.habit, habit_params) do
+    case Habits.update_habit(get_current_user(socket), socket.assigns.habit.id, habit_params) do
       {:ok, habit} ->
         notify_parent({:saved, habit})
 
@@ -104,6 +104,12 @@ defmodule MmentumWeb.HabitLive.FormComponent do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign_form(socket, changeset)}
+
+      {:error, :not_found} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Habit not found")
+         |> push_patch(to: socket.assigns.patch)}
     end
   end
 

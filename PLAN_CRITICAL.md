@@ -12,11 +12,11 @@ Target files:
 - `lib/mmentum_web/live/habit_live/index.ex`
 - `lib/mmentum_web/live/habit_live/show.ex`
 
-- [ ] Replace global habit lookups with functions that require the current user.
-- [ ] Scope habit show, edit, delete, add-completion, and remove-completion operations to the current user.
-- [ ] Ensure a user cannot access or mutate another user's habit by changing a URL or event ID.
-- [ ] Return a deliberate not-found response when a habit is unavailable to the current user.
-- [ ] Add tests covering cross-user show, edit, delete, and completion attempts.
+- [x] Replace global habit lookups with functions that require the current user.
+- [x] Scope habit show, edit, delete, add-completion, and remove-completion operations to the current user.
+- [x] Ensure a user cannot access or mutate another user's habit by changing a URL or event ID.
+- [x] Return a deliberate not-found response when a habit is unavailable to the current user.
+- [x] Add tests covering cross-user show, edit, delete, and completion attempts.
 
 Acceptance criteria:
 
@@ -32,10 +32,10 @@ Target files:
 - `lib/mmentum_web/live/log_live/show.ex`
 - Habit completion handlers that create or delete logs.
 
-- [ ] Require the current user for every user-facing log lookup and mutation.
-- [ ] Verify that a log belongs to one of the current user's habits.
-- [ ] Scope deletion of the most recent completion to both user and habit.
-- [ ] Add tests covering cross-user log access and deletion attempts.
+- [x] Require the current user for every user-facing log lookup and mutation.
+- [x] Verify that a log belongs to one of the current user's habits.
+- [x] Scope deletion of the most recent completion to both user and habit.
+- [x] Add tests covering cross-user log access and deletion attempts.
 
 Acceptance criteria:
 
@@ -49,10 +49,10 @@ Target files:
 - `lib/mmentum_web/live/log_live/*`
 - Navigation or links that expose log administration.
 
-- [ ] Remove `/logs/new` and log edit routes.
-- [ ] Remove the empty log form component.
-- [ ] Decide whether `/logs` and `/logs/:id` should also be removed in favor of habit activity.
-- [ ] Remove generated copy such as "Listing Logs" and "record from your database" from all remaining user-facing surfaces.
+- [x] Remove `/logs/new` and log edit routes.
+- [x] Remove the empty log form component.
+- [x] Remove `/logs` and `/logs/:id` in favor of habit activity.
+- [x] Remove generated copy such as "Listing Logs" and "record from your database" from all remaining user-facing surfaces.
 
 Acceptance criteria:
 
@@ -68,10 +68,10 @@ Target files:
 - `lib/mmentum_web/live/user_confirmation_instructions_live.ex`
 - `lib/mmentum_web/live/user_confirmation_live.ex`
 
-- [ ] Redirect logout directly to `/users/log_in`.
-- [ ] Redirect unauthenticated confirmation and password-reset completion flows directly to `/users/log_in`.
-- [ ] Preserve the intentional success message without adding "You must log in."
-- [ ] Update redirect tests.
+- [x] Redirect logout directly to `/users/log_in`.
+- [x] Redirect unauthenticated confirmation and password-reset completion flows directly to `/users/log_in`.
+- [x] Preserve the intentional success message without adding "You must log in."
+- [x] Update redirect tests.
 
 Acceptance criteria:
 
@@ -85,10 +85,10 @@ Target files:
 - `lib/mmentum_web/live/habit_live/index.ex`
 - Registration tests.
 
-- [ ] Require `full_name` during registration.
-- [ ] Trim surrounding whitespace.
-- [ ] Derive the greeting name from the first non-empty segment rather than matching exactly two segments.
-- [ ] Cover blank, one-word, multi-part, and whitespace-heavy names in tests.
+- [x] Require `full_name` during registration.
+- [x] Trim surrounding whitespace.
+- [x] Derive the greeting name from the first non-empty segment rather than matching exactly two segments.
+- [x] Cover blank, one-word, multi-part, and whitespace-heavy names in tests.
 
 Acceptance criteria:
 

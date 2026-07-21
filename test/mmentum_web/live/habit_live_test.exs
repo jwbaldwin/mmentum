@@ -1,6 +1,10 @@
 defmodule MmentumWeb.HabitLiveTest do
   use MmentumWeb.ConnCase
 
+  alias Mmentum.Habits
+  alias Mmentum.Logs
+  alias Mmentum.Repo
+
   import Phoenix.LiveViewTest
   import Mmentum.HabitsFixtures
 
@@ -39,6 +43,31 @@ defmodule MmentumWeb.HabitLiveTest do
       assert html =~ habit.name
     end
 
+    test "greets users with one-word and multi-part names" do
+      for {full_name, first_name} <- [{"Prince", "Prince"}, {"James Earl Jones", "James"}] do
+        user = Mmentum.AccountsFixtures.user_fixture(%{full_name: full_name})
+
+        {:ok, _index_live, html} =
+          build_conn()
+          |> log_in_user(user)
+          |> live(~p"/habits")
+
+        assert html =~ ", #{first_name}!"
+      end
+    end
+
+    test "renders safely for a legacy blank name" do
+      user = Mmentum.AccountsFixtures.user_fixture()
+      user = user |> Ecto.Changeset.change(full_name: "") |> Mmentum.Repo.update!()
+
+      {:ok, _index_live, html} =
+        build_conn()
+        |> log_in_user(user)
+        |> live(~p"/habits")
+
+      assert html =~ ", there!"
+    end
+
     test "saves new habit", %{conn: conn} do
       {:ok, index_live, _html} = live(conn, ~p"/habits")
 
@@ -71,7 +100,7 @@ defmodule MmentumWeb.HabitLiveTest do
       assert index_live
              |> element(~s|#habit-#{habit.id} a[href="/habits/#{habit.id}/edit"]|)
              |> render_click() =~
-               "Edit Habit"
+               "Refine"
 
       assert_patch(index_live, ~p"/habits/#{habit}/edit")
 
@@ -90,8 +119,12 @@ defmodule MmentumWeb.HabitLiveTest do
       assert html =~ "some updated name"
     end
 
-    test "shows the habit's current periodicity when editing", %{conn: conn, habit: habit} do
-      {:ok, habit} = Mmentum.Habits.update_habit(habit, %{periodicity: :month})
+    test "shows the habit's current periodicity when editing", %{
+      conn: conn,
+      habit: habit,
+      user: user
+    } do
+      {:ok, habit} = Habits.update_habit(user, habit.id, %{periodicity: :month})
       {:ok, index_live, _html} = live(conn, ~p"/habits")
 
       index_live
@@ -110,6 +143,31 @@ defmodule MmentumWeb.HabitLiveTest do
 
       refute has_element?(index_live, "#habit-#{habit.id}")
     end
+
+    test "does not edit another user's habit", %{conn: conn} do
+      habit = habit_fixture()
+
+      assert_raise Ecto.NoResultsError, fn -> live(conn, ~p"/habits/#{habit}/edit") end
+    end
+
+    test "does not delete another user's habit", %{conn: conn} do
+      habit = habit_fixture()
+      {:ok, index_live, _html} = live(conn, ~p"/habits")
+
+      assert render_hook(index_live, "delete", %{"id" => habit.id}) =~ "Habit not found."
+      assert Repo.get!(Mmentum.Habits.Habit, habit.id)
+    end
+
+    test "does not add or remove another user's completions", %{conn: conn} do
+      owner = Mmentum.AccountsFixtures.user_fixture()
+      habit = habit_fixture(user: owner)
+      {:ok, log} = Habits.record_completion(owner, habit.id)
+      {:ok, index_live, _html} = live(conn, ~p"/habits")
+
+      assert render_hook(index_live, "add_log", %{"id" => habit.id}) =~ "Habit not found."
+      assert render_hook(index_live, "remove_log", %{"id" => habit.id}) =~ "Habit not found."
+      assert Logs.list_logs_by_habit(owner, habit) == [log]
+    end
   end
 
   describe "Show" do
@@ -126,7 +184,7 @@ defmodule MmentumWeb.HabitLiveTest do
       {:ok, show_live, _html} = live(conn, ~p"/habits/#{habit}")
 
       assert show_live |> element(~s|a[href="/habits/#{habit.id}/show/edit"]|) |> render_click() =~
-               "Edit Habit"
+               "Refine"
 
       assert_patch(show_live, ~p"/habits/#{habit}/show/edit")
 
@@ -143,6 +201,13 @@ defmodule MmentumWeb.HabitLiveTest do
       html = render(show_live)
       assert html =~ "Habit updated successfully"
       assert html =~ "some updated name"
+    end
+
+    test "does not show or edit another user's habit", %{conn: conn} do
+      habit = habit_fixture()
+
+      assert_raise Ecto.NoResultsError, fn -> live(conn, ~p"/habits/#{habit}") end
+      assert_raise Ecto.NoResultsError, fn -> live(conn, ~p"/habits/#{habit}/show/edit") end
     end
   end
 end

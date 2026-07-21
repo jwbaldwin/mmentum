@@ -10,25 +10,15 @@ defmodule Mmentum.Habits do
   alias Mmentum.Habits.Habit
   alias Mmentum.Habits.Momentum
   alias Mmentum.Logs
+  alias Mmentum.Logs.Log
   alias Mmentum.Time
 
   @allowed_ranges [:year, :month, :week, :day]
 
   @doc """
-  Retrieve the user's list of habits
-  """
-  def list_habits(%User{id: user_id} = _user) do
-    Habit
-    |> where(user_id: ^user_id)
-    |> order_by([habit], asc: habit.inserted_at, asc: habit.id)
-    |> preload(:logs)
-    |> Repo.all()
-  end
-
-  @doc """
   Retrieve the user's list of habits with all logs in the specified range
   """
-  def list_habits_with_range(%User{id: user_id}, %DateTime{} = current_time, range \\ :week)
+  def list_habits_with_range(%User{id: user_id} = user, %DateTime{} = current_time, range \\ :week)
       when range in @allowed_ranges do
     start_of_range = Time.start_of_range(current_time, range)
     end_of_range = Time.end_of_range(current_time, range)
@@ -36,37 +26,19 @@ defmodule Mmentum.Habits do
     Habit
     |> where(user_id: ^user_id)
     |> order_by([habit], asc: habit.inserted_at, asc: habit.id)
-    |> preload(logs: ^Logs.base_logs_range_query(start_of_range, end_of_range))
+    |> preload(logs: ^Logs.in_range_query(user, start_of_range, end_of_range))
     |> Repo.all()
   end
 
   @doc """
-  Gets a single habit.
-
-  Raises `Ecto.NoResultsError` if the Habit does not exist.
-
-  ## Examples
-
-      iex> get_habit!(123)
-      %Habit{}
-
-      iex> get_habit!(456)
-      ** (Ecto.NoResultsError)
-
+  Gets one of the user's habits or raises `Ecto.NoResultsError`
   """
-  def get_habit!(id), do: Repo.get!(Habit, id)
+  def get_habit!(%User{id: user_id}, id) do
+    Repo.get_by!(Habit, id: id, user_id: user_id)
+  end
 
   @doc """
-  Creates a habit.
-
-  ## Examples
-
-      iex> create_habit(%{field: value}, %User{})
-      {:ok, %Habit{}}
-
-      iex> create_habit(%{field: bad_value}, %User{})
-      {:error, %Ecto.Changeset{}}
-
+  Creates a habit for the user
   """
   def create_habit(%User{} = user, attrs \\ %{}) do
     Ecto.build_assoc(user, :habits)
@@ -75,37 +47,25 @@ defmodule Mmentum.Habits do
   end
 
   @doc """
-  Updates a habit.
-
-  ## Examples
-
-      iex> update_habit(habit, %{field: new_value})
-      {:ok, %Habit{}}
-
-      iex> update_habit(habit, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
+  Updates one of the user's habits
   """
-  def update_habit(%Habit{} = habit, attrs) do
-    habit
-    |> Habit.changeset(attrs)
-    |> Repo.update()
+  def update_habit(%User{} = user, id, attrs) do
+    with {:ok, habit} <- fetch_habit(user, id) do
+      habit
+      |> Habit.changeset(attrs)
+      |> Repo.update()
+    end
   end
 
   @doc """
-  Deletes a habit.
-
-  ## Examples
-
-      iex> delete_habit(habit)
-      {:ok, %Habit{}}
-
-      iex> delete_habit(habit)
-      {:error, %Ecto.Changeset{}}
-
+  Deletes one of the user's habits
   """
-  def delete_habit(%Habit{} = habit) do
-    Repo.delete(habit)
+  def delete_habit(%User{} = user, id) do
+    Repo.transact(fn repo ->
+      with {:ok, habit} <- fetch_locked_habit(repo, user, id) do
+        repo.delete(habit)
+      end
+    end)
   end
 
   @doc """
@@ -121,12 +81,71 @@ defmodule Mmentum.Habits do
     Habit.changeset(habit, attrs)
   end
 
-  # TODO: make this much less shitty
   @doc """
-  Updates the momentum for a habit when a log is added.
-  Applies exponential decay and then adds a boost with diminishing returns.
+  Records a completion for one of the user's habits and updates its momentum
   """
-  def update_momentum_on_log_added(%Habit{} = habit) do
+  def record_completion(%User{} = user, habit_id) do
+    Repo.transact(fn repo ->
+      with {:ok, habit} <- fetch_locked_habit(repo, user, habit_id),
+           {:ok, log} <- insert_completion(repo, user, habit),
+           {:ok, _habit} <- repo.update(momentum_after_completion(habit)) do
+        {:ok, log}
+      end
+    end)
+  end
+
+  @doc """
+  Removes the user's most recent completion for a habit and recalculates its momentum
+  """
+  def remove_most_recent_completion(%User{} = user, habit_id) do
+    Repo.transact(fn repo ->
+      with {:ok, habit} <- fetch_locked_habit(repo, user, habit_id),
+           {:ok, log} <- fetch_most_recent_completion(repo, user, habit),
+           {:ok, log} <- repo.delete(log),
+           logs = repo.all(Logs.for_habit_query(user, habit)),
+           {:ok, _habit} <- repo.update(momentum_after_removal(habit, logs)) do
+        {:ok, log}
+      end
+    end)
+  end
+
+  defp fetch_habit(%User{id: user_id}, id) do
+    case Repo.get_by(Habit, id: id, user_id: user_id) do
+      nil -> {:error, :not_found}
+      habit -> {:ok, habit}
+    end
+  end
+
+  defp fetch_locked_habit(repo, %User{id: user_id}, id) do
+    habit =
+      repo.one(
+        from habit in Habit,
+          where: habit.id == ^id and habit.user_id == ^user_id,
+          lock: "FOR UPDATE"
+      )
+
+    if habit, do: {:ok, habit}, else: {:error, :not_found}
+  end
+
+  defp insert_completion(repo, user, habit) do
+    %Log{user_id: user.id, habit_id: habit.id}
+    |> Log.completion_changeset()
+    |> repo.insert()
+  end
+
+  defp fetch_most_recent_completion(repo, user, habit) do
+    log =
+      user
+      |> Logs.for_habit_query(habit)
+      |> exclude(:order_by)
+      |> order_by([log], desc: log.inserted_at, desc: log.id)
+      |> first()
+      |> repo.one()
+
+    if log, do: {:ok, log}, else: {:error, :no_completion}
+  end
+
+  defp momentum_after_completion(habit) do
     current_time = Momentum.current_timestamp()
     half_life = Momentum.get_default_half_life(habit.periodicity)
     boost_amount = 60.0
@@ -140,34 +159,21 @@ defmodule Mmentum.Habits do
         boost_amount
       )
 
-    habit
-    |> Habit.changeset(%{
+    Ecto.Changeset.change(habit, %{
       momentum_score: new_score,
       momentum_last_updated: new_timestamp
     })
-    |> Repo.update()
   end
 
-  # TODO: make this much less shitty
-  @doc """
-  Updates the momentum for a habit when a log is removed.
-  Recalculates momentum from scratch based on remaining logs.
-  """
-  def update_momentum_on_log_removed(%Habit{} = habit) do
+  defp momentum_after_removal(habit, logs) do
     current_time = Momentum.current_timestamp()
     half_life = Momentum.get_default_half_life(habit.periodicity)
-
-    logs = Logs.list_logs_by_habit_id(habit.id)
-
-    # Recalculate momentum from scratch based on remaining logs
     {new_score, new_timestamp} = recalculate_momentum_from_logs(logs, half_life, current_time)
 
-    habit
-    |> Habit.changeset(%{
+    Ecto.Changeset.change(habit, %{
       momentum_score: new_score,
       momentum_last_updated: new_timestamp
     })
-    |> Repo.update()
   end
 
   @doc """
@@ -183,17 +189,6 @@ defmodule Mmentum.Habits do
       current_time,
       half_life
     )
-  end
-
-  @doc """
-  Initializes momentum fields for a habit if they're not set.
-  """
-  def initialize_momentum(%Habit{} = habit) do
-    habit
-    |> Habit.changeset(%{
-      momentum_score: 0.0
-    })
-    |> Repo.update()
   end
 
   # Recalculates momentum from scratch based on logs in chronological order.

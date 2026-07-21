@@ -10,9 +10,11 @@ defmodule Mmentum.Logs.Log do
   end
 
   @doc false
-  def changeset(log, attrs) do
+  def completion_changeset(log) do
     log
-    |> cast(attrs, [:user_id, :habit_id])
+    |> change()
     |> validate_required([:user_id, :habit_id])
+    |> foreign_key_constraint(:user_id)
+    |> foreign_key_constraint(:habit_id)
   end
 end

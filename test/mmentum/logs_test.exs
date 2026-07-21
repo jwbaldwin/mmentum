@@ -2,61 +2,39 @@ defmodule Mmentum.LogsTest do
   use Mmentum.DataCase
 
   alias Mmentum.Logs
+  alias Mmentum.Logs.Log
+  alias Mmentum.Repo
 
-  describe "logs" do
-    alias Mmentum.Logs.Log
+  import Mmentum.AccountsFixtures
+  import Mmentum.HabitsFixtures
+  import Mmentum.LogsFixtures
 
-    import Mmentum.LogsFixtures
+  describe "completion activity" do
+    test "list_logs_by_habit/2 returns an owned habit's activity" do
+      user = user_fixture()
+      habit = habit_fixture(user: user)
+      log = log_fixture(user: user, habit: habit)
 
-    @invalid_attrs %{user_id: nil, habit_id: nil}
-
-    test "list_logs/0 returns all logs" do
-      log = log_fixture()
-      assert Logs.list_logs() == [log]
+      assert Logs.list_logs_by_habit(user, habit) == [log]
     end
 
-    test "get_log!/1 returns the log with given id" do
-      log = log_fixture()
-      assert Logs.get_log!(log.id) == log
+    test "list_logs_by_habit/2 does not reveal another user's activity" do
+      owner = user_fixture()
+      attacker = user_fixture()
+      habit = habit_fixture(user: owner)
+      _log = log_fixture(user: owner, habit: habit)
+
+      assert Logs.list_logs_by_habit(attacker, habit) == []
     end
 
-    test "create_log/1 with valid data creates a log" do
-      user = Mmentum.AccountsFixtures.user_fixture()
-      habit = Mmentum.HabitsFixtures.habit_fixture(user: user)
-      valid_attrs = %{user_id: user.id, habit_id: habit.id}
+    test "inconsistent ownership is visible to neither user" do
+      owner = user_fixture()
+      other_user = user_fixture()
+      habit = habit_fixture(user: owner)
+      Repo.insert!(%Log{user_id: other_user.id, habit_id: habit.id})
 
-      assert {:ok, %Log{} = log} = Logs.create_log(valid_attrs)
-      assert log.user_id == user.id
-      assert log.habit_id == habit.id
-    end
-
-    test "create_log/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Logs.create_log(@invalid_attrs)
-    end
-
-    test "update_log/2 with valid data updates the log" do
-      log = log_fixture()
-      update_attrs = %{}
-
-      assert {:ok, %Log{} = updated_log} = Logs.update_log(log, update_attrs)
-      assert updated_log.id == log.id
-    end
-
-    test "update_log/2 with invalid data returns error changeset" do
-      log = log_fixture()
-      assert {:error, %Ecto.Changeset{}} = Logs.update_log(log, @invalid_attrs)
-      assert log == Logs.get_log!(log.id)
-    end
-
-    test "delete_log/1 deletes the log" do
-      log = log_fixture()
-      assert {:ok, %Log{}} = Logs.delete_log(log)
-      assert_raise Ecto.NoResultsError, fn -> Logs.get_log!(log.id) end
-    end
-
-    test "change_log/1 returns a log changeset" do
-      log = log_fixture()
-      assert %Ecto.Changeset{} = Logs.change_log(log)
+      assert Logs.list_logs_by_habit(owner, habit) == []
+      assert Logs.list_logs_by_habit(other_user, habit) == []
     end
   end
 end

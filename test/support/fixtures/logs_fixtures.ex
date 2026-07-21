@@ -12,11 +12,7 @@ defmodule Mmentum.LogsFixtures do
     user = attrs[:user] || Mmentum.AccountsFixtures.user_fixture()
     habit = attrs[:habit] || Mmentum.HabitsFixtures.habit_fixture(user: user)
 
-    {:ok, log} =
-      attrs
-      |> Map.drop([:user, :habit])
-      |> Enum.into(%{user_id: user.id, habit_id: habit.id})
-      |> Mmentum.Logs.create_log()
+    {:ok, log} = Mmentum.Habits.record_completion(user, habit.id)
 
     log
   end

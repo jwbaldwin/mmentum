@@ -3,7 +3,6 @@ defmodule MmentumWeb.HabitLive.Index do
 
   alias Mmentum.Habits
   alias Mmentum.Habits.Habit
-  alias Mmentum.Logs
   alias Mmentum.Time
 
   @impl true
@@ -21,9 +20,11 @@ defmodule MmentumWeb.HabitLive.Index do
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
+    user = get_current_user(socket)
+
     socket
     |> assign(:page_title, "Edit Habit")
-    |> assign(:habit, Habits.get_habit!(id))
+    |> assign(:habit, Habits.get_habit!(user, id))
   end
 
   defp apply_action(socket, :new, _params) do
@@ -45,41 +46,27 @@ defmodule MmentumWeb.HabitLive.Index do
 
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
-    habit = Habits.get_habit!(id)
-    {:ok, _} = Habits.delete_habit(habit)
-
-    {:noreply, assign(socket, :habits, list_habits(socket))}
+    case Habits.delete_habit(get_current_user(socket), id) do
+      {:ok, _habit} -> {:noreply, assign(socket, :habits, list_habits(socket))}
+      {:error, :not_found} -> {:noreply, habit_not_found(socket)}
+      {:error, %Ecto.Changeset{} = changeset} -> {:noreply, assign(socket, changeset: changeset)}
+    end
   end
 
   def handle_event("add_log", %{"id" => habit_id}, socket) do
-    user = get_current_user(socket)
-
-    case Logs.create_log(%{user_id: user.id, habit_id: habit_id}) do
-      {:ok, _log} ->
-        habit = Habits.get_habit!(habit_id)
-        Habits.update_momentum_on_log_added(habit)
-
-        {:noreply, assign(socket, :habits, list_habits(socket))}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, changeset: changeset)}
+    case Habits.record_completion(get_current_user(socket), habit_id) do
+      {:ok, _log} -> {:noreply, assign(socket, :habits, list_habits(socket))}
+      {:error, :not_found} -> {:noreply, habit_not_found(socket)}
+      {:error, %Ecto.Changeset{} = changeset} -> {:noreply, assign(socket, changeset: changeset)}
     end
   end
 
   def handle_event("remove_log", %{"id" => habit_id}, socket) do
-    habit_id
-    |> Logs.delete_most_recent_log()
-    |> case do
-      {:ok, _} ->
-        # TODO: don't do this here man... this should be a multi...
-        # also it doesn't even work when deleting logs?
-        habit = Habits.get_habit!(habit_id)
-        Habits.update_momentum_on_log_removed(habit)
-
-        {:noreply, assign(socket, :habits, list_habits(socket))}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, changeset: changeset)}
+    case Habits.remove_most_recent_completion(get_current_user(socket), habit_id) do
+      {:ok, _log} -> {:noreply, assign(socket, :habits, list_habits(socket))}
+      {:error, :no_completion} -> {:noreply, socket}
+      {:error, :not_found} -> {:noreply, habit_not_found(socket)}
+      {:error, %Ecto.Changeset{} = changeset} -> {:noreply, assign(socket, changeset: changeset)}
     end
   end
 
@@ -101,8 +88,8 @@ defmodule MmentumWeb.HabitLive.Index do
   end
 
   defp greeting_for_time_of_day(user, current_time) do
-    [partial_name, _rest] = String.split(user.full_name, " ")
-    Time.greeting_for_time_of_day(current_time) <> ", " <> partial_name
+    first_name = user.full_name |> String.split() |> List.first() || "there"
+    Time.greeting_for_time_of_day(current_time) <> ", " <> first_name
   end
 
   defp build_day_info(current_time) do
@@ -125,4 +112,6 @@ defmodule MmentumWeb.HabitLive.Index do
         "Happy #{current_day}, keep your momentum going!"
     end
   end
+
+  defp habit_not_found(socket), do: put_flash(socket, :error, "Habit not found.")
 end
