@@ -15,15 +15,13 @@
         <.link
           patch={~p"/habits/#{habit}/edit"}
           phx-click={JS.push_focus()}
-          class="flex items-center"
+          class="relative flex items-center"
         >
           <.icon
             name="hero-pencil-solid"
-            class="w-5 h-5 text-zinc-700 opacity-0 group-hover:opacity-100 transition-all duration-300"
+            class="absolute -left-7 w-5 h-5 text-zinc-700 opacity-0 transition-opacity duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] group-hover:opacity-100 group-focus-within:opacity-100"
           />
-          <p class="-translate-x-5 group-hover:translate-x-1 transition-all duration-300">
-            {habit.name}
-          </p>
+          <p>{habit.name}</p>
         </.link>
       </div>
       <div class="flex items-center gap-4">
@@ -35,7 +33,7 @@
           phx-click="delete"
           phx-value-id={habit.id}
           data-confirm="Are you sure?"
-          class="text-sm font-semibold text-zinc-500 hover:text-zinc-900"
+          class="button-feedback text-sm font-semibold text-zinc-500 hover:text-zinc-900"
         >
           Delete
         </button>
@@ -52,28 +50,29 @@
       <div class="flex w-full">
         <div
           :for={{_log, i} <- Enum.with_index(habit.logs, 1)}
+          id={"habit-#{habit.id}-completion-#{i}"}
           class={[
-            "flex items-center hover:animate-pulse",
+            "flex items-center",
             i != habit.iterations && "w-full"
           ]}
         >
-          <div class="w-12 h-12 transition-all duration-300 border-2 rounded-full bg-zinc-900 border-zinc-900" />
+          <div class="habit-completion w-12 h-12 border-2 rounded-full bg-zinc-900 border-zinc-900" />
           <%= if i != habit.iterations do %>
-            <div class="w-full flex-1 h-1.5 transition-all duration-300 transform bg-zinc-900 border-t border-b border-zinc-900" />
+            <div class="habit-completion w-full flex-1 h-1.5 bg-zinc-900 border-t border-b border-zinc-900" />
           <% end %>
         </div>
         <%= if (length(habit.logs) - habit.iterations) != 0 do %>
           <div
             :for={i <- (length(habit.logs) + 1)..habit.iterations}
+            id={"habit-#{habit.id}-completion-#{i}"}
             class={[
-              "flex items-center hover:animate-pulse",
+              "flex items-center",
               i != habit.iterations && "w-full"
             ]}
           >
-            <div class="w-12 h-12 transition-all duration-300 border-2 rounded-full bg-zinc-200 border-zinc-200" />
+            <div class="habit-completion w-12 h-12 border-2 rounded-full bg-zinc-200 border-zinc-200" />
             <%= if i != habit.iterations do %>
-              <div class="w-full flex-1 h-1.5 transition-all duration-300 transform border-t border-b bg-zinc-200 border-zinc-200">
-              </div>
+              <div class="habit-completion w-full flex-1 h-1.5 border-t border-b bg-zinc-200 border-zinc-200"></div>
             <% end %>
           </div>
         <% end %>
@@ -85,7 +84,7 @@
         phx-value-id={habit.id}
         type="button"
         class={[
-          "h-12 text-zinc-700 hover:text-zinc-900",
+          "button-feedback h-12 text-zinc-700 hover:text-zinc-900",
           length(habit.logs) == 0 && "disabled:text-zinc-200 cursor-not-allowed"
         ]}
         disabled={length(habit.logs) == 0}
@@ -96,10 +95,8 @@
         phx-click="add_log"
         phx-value-id={habit.id}
         type="button"
-        class="text-zinc-700 hover:text-zinc-900"
-        class="h-12"
         class={[
-          "h-12 text-zinc-700 hover:text-zinc-900",
+          "button-feedback h-12 text-zinc-700 hover:text-zinc-900",
           length(habit.logs) == habit.iterations &&
             "disabled:text-zinc-200 cursor-not-allowed"
         ]}

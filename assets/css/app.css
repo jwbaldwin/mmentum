@@ -13,6 +13,31 @@
 
 /* This file is for your main application CSS */
 
+:root {
+  --motion-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --motion-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --motion-duration-press: 140ms;
+  --motion-duration-small: 180ms;
+  --motion-duration-modal: 200ms;
+  --motion-duration-exit: 140ms;
+}
+
+.button-feedback {
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-duration: var(--motion-duration-press);
+  transition-timing-function: var(--motion-ease-out);
+}
+
+.button-feedback:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.habit-completion {
+  transition-property: background-color, border-color;
+  transition-duration: var(--motion-duration-small);
+  transition-timing-function: var(--motion-ease-out);
+}
+
 .account-menu {
   position: relative;
 }
@@ -31,8 +56,8 @@
   text-align: left;
   user-select: none;
   transition:
-    background-color 140ms ease,
-    box-shadow 140ms ease;
+    background-color var(--motion-duration-press) var(--motion-ease-out),
+    box-shadow var(--motion-duration-press) var(--motion-ease-out);
 }
 
 .account-menu__trigger::-webkit-details-marker {
@@ -87,7 +112,7 @@
   display: flex;
   flex: none;
   color: #71717a;
-  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+  transition: transform 160ms var(--motion-ease-out);
 }
 
 .account-menu[open] .account-menu__chevron {
@@ -135,8 +160,8 @@
   font-weight: 500;
   line-height: 1.25rem;
   transition:
-    color 120ms ease,
-    background-color 120ms ease;
+    color 120ms var(--motion-ease-out),
+    background-color 120ms var(--motion-ease-out);
 }
 
 .account-menu__item:hover,
@@ -167,5 +192,29 @@
   .account-menu__popover {
     background: #fff;
     backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button-feedback {
+    transition-property: color, background-color, border-color, box-shadow;
+  }
+
+  .button-feedback:active:not(:disabled),
+  .motion-modal-panel {
+    transform: none !important;
+  }
+
+  .motion-modal-panel,
+  .motion-modal-backdrop {
+    transition-duration: 120ms !important;
+  }
+
+  .account-menu__chevron {
+    transition: none;
+  }
+
+  #toast-group [phx-hook="LiveToast"] {
+    transform: none !important;
   }
 }

@@ -58,7 +58,7 @@ defmodule MmentumWeb.HabitLive.FormComponent do
 
         <.button
           phx-disable-with="Saving..."
-          class="flex h-12 w-full items-center justify-center gap-2 rounded-xl text-base shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2"
+          class="flex h-12 w-full items-center justify-center gap-2 rounded-xl text-base shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2"
         >
           {if @action == :new, do: "Start becoming", else: "Save changes"}
           <.icon name="hero-arrow-right-mini" class="h-4 w-4" />

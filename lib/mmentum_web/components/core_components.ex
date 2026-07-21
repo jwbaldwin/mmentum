@@ -62,7 +62,11 @@ defmodule MmentumWeb.CoreComponents do
       data-cancel={JS.exec(@on_cancel, "phx-remove")}
       class="relative z-50 hidden"
     >
-      <div id={"#{@id}-bg"} class="bg-zinc-50/90 fixed inset-0 transition-opacity" aria-hidden="true" />
+      <div
+        id={"#{@id}-bg"}
+        class="motion-modal-backdrop bg-zinc-50/90 fixed inset-0"
+        aria-hidden="true"
+      />
       <div
         class="fixed inset-0 overflow-y-auto"
         aria-labelledby={"#{@id}-title"}
@@ -78,13 +82,13 @@ defmodule MmentumWeb.CoreComponents do
               phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
               phx-key="escape"
               phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-              class="shadow-zinc-700/10 ring-zinc-700/10 relative hidden rounded-3xl bg-white p-6 shadow-xl ring-1 transition sm:p-8"
+              class="motion-modal-panel shadow-zinc-700/10 ring-zinc-700/10 relative hidden origin-center rounded-3xl bg-white p-6 shadow-xl ring-1 sm:p-8"
             >
               <div class="absolute right-4 top-4 sm:right-5 sm:top-5">
                 <button
                   phx-click={JS.exec("data-cancel", to: "##{@id}")}
                   type="button"
-                  class="flex h-9 w-9 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:ring-offset-2"
+                  class="button-feedback flex h-9 w-9 items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:ring-offset-2"
                   aria-label={gettext("close")}
                 >
                   <.icon name="hero-x-mark-solid" class="h-5 w-5" />
@@ -156,8 +160,8 @@ defmodule MmentumWeb.CoreComponents do
     <button
       type={@type}
       class={[
-        "phx-submit-loading:opacity-75 rounded-md bg-zinc-900 hover:bg-zinc-700 py-2 px-3",
-        "text-sm font-semibold leading-6 text-white active:text-white/80",
+        "button-feedback phx-submit-loading:opacity-75 rounded-md bg-zinc-900 hover:bg-zinc-700 py-2 px-3",
+        "disabled:cursor-not-allowed disabled:opacity-75 text-sm font-semibold leading-6 text-white active:text-white/80",
         @class
       ]}
       {@rest}
@@ -542,19 +546,20 @@ defmodule MmentumWeb.CoreComponents do
   def show(js \\ %JS{}, selector) do
     JS.show(js,
       to: selector,
+      time: 200,
       transition:
-        {"transition-all transform ease-out duration-300", "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95",
-         "opacity-100 translate-y-0 sm:scale-100"}
+        {"transition-[opacity,transform] ease-[var(--motion-ease-out)] duration-[var(--motion-duration-modal)]",
+         "opacity-0 scale-[0.98]", "opacity-100 scale-100"}
     )
   end
 
   def hide(js \\ %JS{}, selector) do
     JS.hide(js,
       to: selector,
-      time: 200,
+      time: 140,
       transition:
-        {"transition-all transform ease-in duration-200", "opacity-100 translate-y-0 sm:scale-100",
-         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
+        {"transition-[opacity,transform] ease-[var(--motion-ease-out)] duration-[var(--motion-duration-exit)]",
+         "opacity-100 scale-100", "opacity-0 scale-[0.98]"}
     )
   end
 
@@ -563,7 +568,10 @@ defmodule MmentumWeb.CoreComponents do
     |> JS.show(to: "##{id}")
     |> JS.show(
       to: "##{id}-bg",
-      transition: {"transition-all transform ease-out duration-300", "opacity-0", "opacity-100"}
+      time: 200,
+      transition:
+        {"transition-opacity ease-[var(--motion-ease-out)] duration-[var(--motion-duration-modal)]", "opacity-0",
+         "opacity-100"}
     )
     |> show("##{id}-container")
     |> JS.add_class("overflow-hidden", to: "body")
@@ -574,7 +582,10 @@ defmodule MmentumWeb.CoreComponents do
     js
     |> JS.hide(
       to: "##{id}-bg",
-      transition: {"transition-all transform ease-in duration-200", "opacity-100", "opacity-0"}
+      time: 140,
+      transition:
+        {"transition-opacity ease-[var(--motion-ease-out)] duration-[var(--motion-duration-exit)]", "opacity-100",
+         "opacity-0"}
     )
     |> hide("##{id}-container")
     |> JS.hide(to: "##{id}", transition: {"block", "block", "hidden"})

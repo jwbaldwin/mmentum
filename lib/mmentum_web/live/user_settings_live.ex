@@ -10,8 +10,8 @@ defmodule MmentumWeb.UserSettingsLive do
       <:subtitle>Manage your account email address and password settings</:subtitle>
     </.header>
 
-    <div class="space-y-12 divide-y">
-      <div>
+    <div class="space-y-2 divide-y divide-zinc-300">
+      <div class="py-3">
         <.simple_form for={@time_zone_form} id="time_zone_form" phx-submit="update_time_zone">
           <.input
             field={@time_zone_form[:time_zone]}
@@ -24,7 +24,7 @@ defmodule MmentumWeb.UserSettingsLive do
           </:actions>
         </.simple_form>
       </div>
-      <div>
+      <div class="py-3">
         <.simple_form
           for={@email_form}
           id="email_form"
@@ -46,7 +46,7 @@ defmodule MmentumWeb.UserSettingsLive do
           </:actions>
         </.simple_form>
       </div>
-      <div>
+      <div class="py-3">
         <.simple_form
           for={@password_form}
           id="password_form"
