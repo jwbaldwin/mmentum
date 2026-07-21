@@ -25,16 +25,11 @@ Target file:
 
 - `lib/mmentum_web/components/layouts/app.html.heex`
 
-- [ ] Prevent full name, Settings, Log out, and logo from competing in one row on narrow screens.
-- [ ] Collapse account actions behind a compact menu at small widths.
-- [ ] Keep Settings and Log out available with keyboard and touch.
-- [ ] Remove redundant nested horizontal padding.
-- [ ] Preserve a simple desktop header rather than introducing a sidebar.
+- [ ] take a look at ~/repos/projects/arnor/assets/ for the account nav dropdown with the avatar and take as much of that as we can (i know we can't just copy bc that's react and we are liveview but we can do most of it I think?)
 
 Acceptance criteria:
 
-- Header does not overflow at 320px with a long user name.
-- Account actions remain reachable without precision tapping.
+- Header items are collapsed and use the Arnor dropdown button style
 
 ## Product Information Architecture
 

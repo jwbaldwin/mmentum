@@ -21,6 +21,7 @@ defmodule MmentumWeb.Endpoint do
     at: "/",
     from: :mmentum,
     gzip: false,
+    cache_control_for_etags: if(code_reloading?, do: "no-cache", else: "public"),
     only: MmentumWeb.static_paths()
 
   # Code reloading can be explicitly enabled under the

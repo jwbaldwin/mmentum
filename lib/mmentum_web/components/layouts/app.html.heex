@@ -5,30 +5,70 @@
         <img src={~p"/images/mmentum.svg"} width="36" />
       </a>
     </div>
-    <div class="flex items-center gap-4 font-semibold leading-6 text-zinc-900">
-      <ul class="relative z-10 flex items-center gap-4 px-4 sm:px-6 lg:px-8 justify-end">
-        <%= if @current_user do %>
-          <li>
+    <div class="flex items-center font-semibold leading-6 text-zinc-900">
+      <%= if @current_user do %>
+        <details
+          id="account-menu"
+          class="account-menu relative"
+          phx-click-away={JS.remove_attribute("open", to: "#account-menu")}
+          phx-window-keydown={JS.remove_attribute("open", to: "#account-menu")}
+          phx-key="escape"
+        >
+          <summary
+            class="account-menu__trigger flex min-w-0 cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 text-left"
+            style="width: min(14rem, calc(100vw - 4rem)); list-style: none; user-select: none;"
+          >
+            <.avatar id="account-avatar" seed={@current_user.email} />
+            <span class="account-menu__identity min-w-0 flex-1">
+              <span class="account-menu__name block truncate text-sm/5 font-medium text-zinc-950">
+                {@current_user.full_name}
+              </span>
+              <span class="account-menu__email block truncate text-xs/5 font-normal text-zinc-500">
+                {@current_user.email}
+              </span>
+            </span>
+            <span
+              id="account-menu-chevron"
+              class="account-menu__chevron ml-auto flex shrink-0 text-zinc-500"
+            >
+              <.icon
+                name="hero-chevron-down-mini"
+                class="account-menu__chevron-icon h-4 w-4"
+              />
+            </span>
+          </summary>
+
+          <div
+            id="account-menu-popover"
+            role="menu"
+            class="account-menu__popover absolute right-0 z-20 mt-2 overflow-hidden rounded-xl bg-white p-1 shadow-lg"
+            style="width: min(14rem, calc(100vw - 4rem));"
+          >
             <.link
               href={~p"/users/settings"}
-              class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
+              role="menuitem"
+              class="account-menu__item flex items-center gap-2 rounded-lg px-3 py-2 text-sm/6 font-medium text-zinc-700 hover:bg-zinc-100"
             >
-              Settings
+              <.icon name="hero-user" class="account-menu__item-icon h-4 w-4" />
+              <span>Settings</span>
             </.link>
-          </li>
-          <li>
+            <div class="account-menu__divider mx-2 my-1 h-px bg-zinc-100"></div>
             <.link
               href={~p"/users/log_out"}
               method="delete"
-              class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
+              role="menuitem"
+              class="account-menu__item flex items-center gap-2 rounded-lg px-3 py-2 text-sm/6 font-medium text-zinc-700 hover:bg-zinc-100"
             >
-              Log out
+              <.icon
+                name="hero-arrow-right-on-rectangle"
+                class="account-menu__item-icon h-4 w-4"
+              />
+              <span>Log out</span>
             </.link>
-          </li>
-          <li class="text-[0.8125rem] leading-6 text-zinc-700 px-2 py-1 bg-zinc-50 shadow-sm rounded-lg border border-zinc-200">
-            {@current_user.full_name}
-          </li>
-        <% else %>
+          </div>
+        </details>
+      <% else %>
+        <ul class="relative z-10 flex items-center gap-4 px-4 sm:px-6 lg:px-8 justify-end">
           <li>
             <.link
               href={~p"/users/register"}
@@ -45,8 +85,8 @@
               Log in
             </.link>
           </li>
-        <% end %>
-      </ul>
+        </ul>
+      <% end %>
     </div>
   </div>
 </header>

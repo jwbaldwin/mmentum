@@ -45,9 +45,7 @@ defmodule MmentumWeb.UserRegistrationLiveTest do
       full_name = "Updated User"
 
       form =
-        form(lv, "#registration_form",
-          user: valid_user_attributes(email: email, full_name: full_name)
-        )
+        form(lv, "#registration_form", user: valid_user_attributes(email: email, full_name: full_name))
 
       render_submit(form)
       conn = follow_trigger_action(form, conn)
