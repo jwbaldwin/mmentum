@@ -4,7 +4,7 @@ defmodule Mmentum.Habits.Momentum do
 
   Uses continuous momentum scoring instead of binary streaks. The score represents 
   "momentum" - it rises with each completion and naturally decays over time, creating 
-  a fluid representation of habit consistency.
+  a fluid representation of habit consistency
   """
 
   @max_score 100.0
@@ -75,7 +75,7 @@ defmodule Mmentum.Habits.Momentum do
   def get_default_half_life(:month), do: 18.0
 
   @doc """
-  Converts a momentum score into a user-facing tier label.
+  Converts a momentum score into a user-facing tier label
   """
   def get_momentum_tier(score) when score >= 80.0, do: "On Fire 🔥"
   def get_momentum_tier(score) when score >= 50.0, do: "Rolling"
@@ -83,7 +83,7 @@ defmodule Mmentum.Habits.Momentum do
   def get_momentum_tier(_score), do: "Cooling Off"
 
   @doc """
-  Gets current Unix timestamp in milliseconds.
+  Gets current Unix timestamp in milliseconds
   """
   def current_timestamp do
     System.system_time(:millisecond)
