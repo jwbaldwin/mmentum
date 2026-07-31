@@ -8,10 +8,13 @@ defmodule MmentumWeb.HabitLive.FormComponent do
     ~H"""
     <div>
       <header class="pr-8 sm:pr-10">
-        <h2 class="type-page-title">
+        <h2 id="habit-modal-title" class="text-2xl font-semibold leading-8 tracking-tight text-zinc-900 dark:text-zinc-100">
           {if @action == :new, do: "New habit", else: "Edit habit"}
         </h2>
-        <p class="mt-2 type-body text-muted dark:text-zinc-400">
+        <p
+          id="habit-modal-description"
+          class="mt-2 text-sm font-normal leading-6 text-muted dark:text-zinc-400"
+        >
           {if @action == :new,
             do: "Choose an action you can repeat.",
             else: "Adjust this habit's name or cadence."}
@@ -35,7 +38,9 @@ defmodule MmentumWeb.HabitLive.FormComponent do
         />
 
         <fieldset class="rounded-panel border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-950/70">
-          <legend class="px-1 type-label text-zinc-900 dark:text-zinc-100">Cadence</legend>
+          <legend class="px-1 text-sm font-medium leading-5 text-zinc-900 dark:text-zinc-100">
+            Cadence
+          </legend>
           <div class={[
             "grid grid-cols-1 gap-3",
             if(@has_flexible_target,
