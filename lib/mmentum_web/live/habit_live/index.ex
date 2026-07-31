@@ -113,51 +113,5 @@ defmodule MmentumWeb.HabitLive.Index do
     end
   end
 
-  defp completion_summary(%Habit{max_completions: nil, min_completions: target}, completed) do
-    "#{completed} of #{target} completed"
-  end
-
-  defp completion_summary(
-         %Habit{min_completions: min_completions, max_completions: max_completions},
-         completed
-       ) do
-    required_completed = min(completed, min_completions)
-    optional_completed = max(completed - min_completions, 0)
-    optional_total = max_completions - min_completions
-    required_text = "#{required_completed} of #{min_completions} required completions"
-
-    optional_text =
-      case optional_total do
-        1 -> "1 optional completion"
-        count -> "#{count} optional completions"
-      end
-
-    cond do
-      completed < min_completions ->
-        required_text
-
-      optional_completed == 0 ->
-        "#{required_text}; goal met; #{optional_text} available"
-
-      true ->
-        "#{required_text}; goal met; #{optional_completed} of #{optional_text} completed"
-    end
-  end
-
-  defp progress_style(completion_cap, completed) do
-    total_connections = max(completion_cap - 1, 1)
-    completed_connections = min(max(completed - 1, 0), total_connections)
-    remaining = if completed == 0, do: 1.0, else: 1 - completed_connections / total_connections
-    fill_offset = if completed == 0, do: 0.0, else: remaining
-
-    [
-      "--progress-fill-right-percent: #{Float.round(remaining * 100, 4)}%",
-      "--progress-fill-offset-narrow: #{Float.round(fill_offset * 28, 4)}px",
-      "--progress-fill-offset-mobile: #{Float.round(fill_offset * 32, 4)}px",
-      "--progress-fill-offset-desktop: #{Float.round(fill_offset * 44, 4)}px"
-    ]
-    |> Enum.join("; ")
-  end
-
   defp habit_not_found(socket), do: put_flash(socket, :error, "Habit not found.")
 end

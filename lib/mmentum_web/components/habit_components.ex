@@ -17,4 +17,195 @@ defmodule MmentumWeb.HabitComponents do
     <% end %>
     """
   end
+
+  attr :habit, Habit, required: true
+
+  def habit_progress(assigns) do
+    completion_cap = assigns.habit.max_completions || assigns.habit.min_completions
+    completed = min(length(assigns.habit.logs), completion_cap)
+
+    assigns =
+      assign(assigns,
+        completed: completed,
+        completion_cap: completion_cap,
+        optional_steps: optional_steps(assigns.habit)
+      )
+
+    ~H"""
+    <div class="flex items-center gap-2 sm:gap-3">
+      <div class="min-w-0 flex-1 overflow-x-auto py-1">
+        <div
+          id={"habit-#{@habit.id}-progress"}
+          class="habit-progress"
+          data-completed={@completed}
+          role="progressbar"
+          aria-label={"#{@habit.name} required completions"}
+          aria-valuemin="0"
+          aria-valuemax={@habit.min_completions}
+          aria-valuenow={min(@completed, @habit.min_completions)}
+          aria-valuetext={completion_summary(@habit, @completed)}
+          style={progress_style(@completion_cap, @completed)}
+        >
+          <span class="habit-progress__shape" aria-hidden="true">
+            <span :if={@completion_cap > 1} class="habit-progress__track"></span>
+            <span
+              :for={step <- 1..@completion_cap}
+              id={"habit-#{@habit.id}-progress-step-#{step}"}
+              class="habit-progress__step"
+              data-kind={if step in @optional_steps, do: "optional", else: "required"}
+              data-state={progress_state(step, @completed)}
+            ></span>
+          </span>
+          <span
+            class={[
+              "habit-progress__fill",
+              @completed > 0 && @completed < @completion_cap &&
+                "habit-progress__fill--partial"
+            ]}
+            aria-hidden="true"
+          >
+            <span class="habit-progress__fill-fluid">
+              <span
+                :for={_step <- 1..@completion_cap}
+                class="habit-progress__fill-fluid-step"
+              ></span>
+            </span>
+            <span class="habit-progress__fill-beads">
+              <span
+                :for={_step <- 1..@completion_cap}
+                class="habit-progress__fill-step"
+              ></span>
+            </span>
+          </span>
+        </div>
+      </div>
+      <div class="flex shrink-0 items-center gap-1">
+        <.completion_control
+          habit={@habit}
+          event="remove_log"
+          label="Remove completion"
+          icon="hero-backward-solid"
+          disabled={@completed == 0}
+        />
+        <.completion_control
+          habit={@habit}
+          event="add_log"
+          label="Record completion"
+          icon="hero-forward-solid"
+          disabled={@completed >= @completion_cap}
+        />
+      </div>
+    </div>
+    """
+  end
+
+  def habit_progress_filter(assigns) do
+    ~H"""
+    <svg aria-hidden="true" width="0" height="0" focusable="false" class="absolute">
+      <defs>
+        <filter id="habit-progress-fluid" x="-10%" y="-25%" width="120%" height="150%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blurred" />
+          <feColorMatrix
+            in="blurred"
+            values="1 0 0 0 0
+                    0 1 0 0 0
+                    0 0 1 0 0
+                    0 0 0 18 -7"
+            result="fluid"
+          />
+          <feComposite in="SourceGraphic" in2="fluid" operator="over" />
+        </filter>
+      </defs>
+    </svg>
+    """
+  end
+
+  attr :habit, Habit, required: true
+  attr :event, :string, required: true
+  attr :label, :string, required: true
+  attr :icon, :string, required: true
+  attr :disabled, :boolean, required: true
+
+  defp completion_control(assigns) do
+    ~H"""
+    <.tooltip
+      id={"habit-#{@habit.id}-#{String.replace(@label, " ", "-") |> String.downcase()}-tooltip"}
+      content={@label}
+      disabled={@disabled}
+    >
+      <button
+        phx-click={@event}
+        phx-value-id={@habit.id}
+        type="button"
+        class={[
+          "h-12 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] dark:text-zinc-300",
+          "duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-900 enabled:active:scale-[0.98] dark:hover:text-zinc-100",
+          "phx-click-loading:pointer-events-none phx-click-loading:cursor-wait phx-click-loading:opacity-60",
+          "motion-reduce:scale-100 motion-reduce:transition-[color,background-color,border-color,box-shadow]",
+          @disabled && "cursor-not-allowed disabled:text-zinc-200 dark:disabled:text-zinc-800"
+        ]}
+        disabled={@disabled}
+        aria-label={"#{@label} for #{@habit.name}"}
+      >
+        <.icon name={@icon} class="h-6 w-6" />
+      </button>
+    </.tooltip>
+    """
+  end
+
+  defp optional_steps(%Habit{max_completions: nil}), do: []
+
+  defp optional_steps(%Habit{min_completions: minimum, max_completions: maximum}) do
+    (minimum + 1)..maximum
+  end
+
+  defp completion_summary(%Habit{max_completions: nil, min_completions: target}, completed) do
+    "#{completed} of #{target} completed"
+  end
+
+  defp completion_summary(
+         %Habit{min_completions: minimum, max_completions: maximum},
+         completed
+       ) do
+    required_completed = min(completed, minimum)
+    optional_completed = max(completed - minimum, 0)
+    optional_total = maximum - minimum
+    required_text = "#{required_completed} of #{minimum} required completions"
+
+    optional_text =
+      case optional_total do
+        1 -> "1 optional completion"
+        count -> "#{count} optional completions"
+      end
+
+    cond do
+      completed < minimum ->
+        required_text
+
+      optional_completed == 0 ->
+        "#{required_text}; goal met; #{optional_text} available"
+
+      true ->
+        "#{required_text}; goal met; #{optional_completed} of #{optional_text} completed"
+    end
+  end
+
+  defp progress_style(completion_cap, completed) do
+    total_connections = max(completion_cap - 1, 1)
+    completed_connections = min(max(completed - 1, 0), total_connections)
+    remaining = if completed == 0, do: 1.0, else: 1 - completed_connections / total_connections
+    fill_offset = if completed == 0, do: 0.0, else: remaining
+
+    [
+      "--progress-fill-right-percent: #{Float.round(remaining * 100, 4)}%",
+      "--progress-fill-offset-narrow: #{Float.round(fill_offset * 28, 4)}px",
+      "--progress-fill-offset-mobile: #{Float.round(fill_offset * 32, 4)}px",
+      "--progress-fill-offset-desktop: #{Float.round(fill_offset * 44, 4)}px"
+    ]
+    |> Enum.join("; ")
+  end
+
+  defp progress_state(step, completed) do
+    if step <= completed, do: "complete", else: "pending"
+  end
 end

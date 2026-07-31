@@ -43,6 +43,24 @@ defmodule MmentumWeb.HabitLiveTest do
       assert html =~ habit.name
     end
 
+    test "renders completion tooltips", %{conn: conn, habit: habit} do
+      {:ok, index_live, _html} = live(conn, ~p"/habits")
+
+      remove_tooltip =
+        index_live
+        |> element("#habit-#{habit.id}-remove-completion-tooltip[phx-hook=Tooltip]")
+        |> render()
+
+      assert remove_tooltip =~ ~s(data-tooltip-disabled="true")
+
+      assert has_element?(
+               index_live,
+               "#habit-#{habit.id}-record-completion-tooltip[phx-hook=Tooltip][data-tooltip-content='Record completion']"
+             )
+
+      refute has_element?(index_live, "#habit-#{habit.id} button[title]")
+    end
+
     test "uses live navigation for shared authenticated links", %{conn: conn} do
       {:ok, index_live, _html} = live(conn, ~p"/habits")
 

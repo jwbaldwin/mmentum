@@ -1,0 +1,22 @@
+@media (prefers-reduced-transparency: reduce) {
+  .account-menu-popover {
+    background: white;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-modal-panel {
+    transform: none !important;
+    scale: 1 !important;
+  }
+
+  .motion-modal-panel,
+  .motion-modal-backdrop {
+    transition-duration: 120ms !important;
+  }
+
+  #toast-group [phx-hook="LiveToast"] {
+    transform: none !important;
+  }
+}

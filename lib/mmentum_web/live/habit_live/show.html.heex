@@ -2,9 +2,9 @@
   {@habit.name}
   <:subtitle>Review this habit and its completion history</:subtitle>
   <:actions>
-    <.link patch={~p"/habits/#{@habit}/show/edit"} phx-click={JS.push_focus()}>
-      <.button>Edit habit</.button>
-    </.link>
+    <.button_link patch={~p"/habits/#{@habit}/show/edit"} phx-click={JS.push_focus()}>
+      Edit habit
+    </.button_link>
   </:actions>
 </.header>
 
@@ -27,10 +27,13 @@
           <div class="h-1.5 w-1.5 rounded-full bg-zinc-100 ring-1 ring-zinc-300 dark:bg-zinc-900 dark:ring-zinc-700">
           </div>
         </div>
-        <p class="flex-auto py-0.5 type-metadata">
+        <p class="flex-auto py-0.5 text-xs font-normal leading-4 text-muted dark:text-zinc-400">
           <span class="font-medium text-zinc-900 dark:text-zinc-100">{@habit.name}</span> completion recorded
         </p>
-        <time datetime={log.inserted_at} class="flex-none py-0.5 type-metadata">
+        <time
+          datetime={log.inserted_at}
+          class="flex-none py-0.5 text-xs font-normal leading-4 text-muted dark:text-zinc-400"
+        >
           {Time.to_human_relative(log.inserted_at)}
         </time>
       </li>
@@ -42,10 +45,13 @@
       <div class="relative flex h-6 w-6 flex-none items-center justify-center bg-white dark:bg-zinc-950">
         <.icon name="hero-sparkles-solid" class="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
       </div>
-      <p class="flex-auto py-0.5 type-metadata">
+      <p class="flex-auto py-0.5 text-xs font-normal leading-4 text-muted dark:text-zinc-400">
         <span class="font-medium text-zinc-900 dark:text-zinc-100">{@habit.name}</span> habit created
       </p>
-      <time datetime={@habit.inserted_at} class="flex-none py-0.5 type-metadata">
+      <time
+        datetime={@habit.inserted_at}
+        class="flex-none py-0.5 text-xs font-normal leading-4 text-muted dark:text-zinc-400"
+      >
         {Time.to_human_relative(@habit.inserted_at)}
       </time>
     </li>

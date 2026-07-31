@@ -1,0 +1,25 @@
+.tippy-box[data-theme~="mmentum"] {
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 0.5rem;
+  background: var(--color-zinc-900);
+  box-shadow: 0 4px 12px rgb(24 24 27 / 0.16);
+  color: var(--color-zinc-50);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1rem;
+}
+
+.tippy-box[data-theme~="mmentum"] > .tippy-arrow {
+  color: var(--color-zinc-900);
+}
+
+.tippy-box[data-theme~="mmentum"] > .tippy-content {
+  padding: 0.375rem 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tippy-box {
+    transition-duration: 0ms !important;
+  }
+}
