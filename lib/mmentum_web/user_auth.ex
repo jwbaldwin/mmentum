@@ -23,7 +23,7 @@ defmodule MmentumWeb.UserAuth do
   It also sets a `:live_socket_id` key in the session,
   so LiveView sessions are identified and automatically
   disconnected on log out. The line can be safely removed
-  if you are not using LiveView.
+  if you are not using LiveView
   """
   def log_in_user(conn, user, params \\ %{}) do
     token = Accounts.generate_user_session_token(user)
@@ -68,7 +68,7 @@ defmodule MmentumWeb.UserAuth do
   @doc """
   Logs the user out.
 
-  It clears all session data for safety. See renew_session.
+  It clears all session data for safety. See renew_session
   """
   def log_out_user(conn) do
     user_token = get_session(conn, :user_token)
@@ -86,7 +86,7 @@ defmodule MmentumWeb.UserAuth do
 
   @doc """
   Authenticates the user by looking into the session
-  and remember me token.
+  and remember me token
   """
   def fetch_current_user(conn, _opts) do
     {user_token, conn} = ensure_user_token(conn)
@@ -190,7 +190,7 @@ defmodule MmentumWeb.UserAuth do
   end
 
   @doc """
-  Used for routes that require the user to not be authenticated.
+  Used for routes that require the user to not be authenticated
   """
   def redirect_if_user_is_authenticated(conn, _opts) do
     if conn.assigns[:current_user] do
@@ -206,7 +206,7 @@ defmodule MmentumWeb.UserAuth do
   Used for routes that require the user to be authenticated.
 
   If you want to enforce the user email is confirmed before
-  they use the application at all, here would be a good place.
+  they use the application at all, here would be a good place
   """
   def require_authenticated_user(conn, _opts) do
     if conn.assigns[:current_user] do

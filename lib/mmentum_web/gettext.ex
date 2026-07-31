@@ -18,7 +18,7 @@ defmodule MmentumWeb.Gettext do
       # Domain-based translation
       dgettext("errors", "Here is the error message to translate")
 
-  See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
+  See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage
   """
   use Gettext.Backend, otp_app: :mmentum
 end
