@@ -5,7 +5,7 @@ defmodule MmentumWeb.LayoutsTest do
 
   alias MmentumWeb.Layouts
 
-  test "account menu renders the animated appearance preferences" do
+  test "account menu renders the animated appearance cycle button" do
     html =
       render_component(&Layouts.account_menu/1,
         current_user: %{email: "james@example.com", full_name: "James Baldwin"}
@@ -13,10 +13,12 @@ defmodule MmentumWeb.LayoutsTest do
 
     assert html =~ ~s(id="account-appearance")
     assert html =~ ~s(phx-hook="ThemeToggle")
+    assert html =~ "data-theme-cycle"
     assert html =~ "data-appearance-path"
-
-    for preference <- ~w(auto light dark) do
-      assert html =~ ~s(data-theme-preference="#{preference}")
-    end
+    assert html =~ "data-appearance-track"
+    assert html =~ "Auto"
+    assert html =~ "Light"
+    assert html =~ "Dark"
+    refute html =~ "data-theme-preference"
   end
 end

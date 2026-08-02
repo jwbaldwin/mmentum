@@ -1,5 +1,7 @@
 const POINT_COUNT = 24
 const MORPH_DURATION = 480
+const PREFERENCES = ["auto", "light", "dark"]
+const PREFERENCE_LABELS = {auto: "Auto", light: "Light", dark: "Dark"}
 
 const sunPoints = Array.from({length: POINT_COUNT}, (_, index) => {
   const angle = -Math.PI / 2 + (index / POINT_COUNT) * Math.PI * 2
@@ -56,38 +58,60 @@ const ThemeToggle = {
   mounted() {
     this.path = this.el.querySelector("[data-appearance-path]")
     this.icon = this.el.querySelector("[data-appearance-icon]")
+    this.track = this.el.querySelector("[data-appearance-track]")
     this.status = this.el.querySelector("[data-appearance-status]")
-    this.options = [...this.el.querySelectorAll("[data-theme-preference]")]
     this.reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
     this.currentPoints = copyPoints(targetPoints(document.documentElement.dataset.theme))
+    this.preference = null
+    this.turn = 0
     this.path.setAttribute("d", pathThrough(this.currentPoints))
 
-    this.onOptionClick = event => {
-      window.mmentumTheme.set(event.currentTarget.dataset.themePreference, {animate: true})
+    this.onClick = () => {
+      const {preference} = window.mmentumTheme.current()
+      const nextPreference = PREFERENCES[(PREFERENCES.indexOf(preference) + 1) % PREFERENCES.length]
+      window.mmentumTheme.set(nextPreference, {animate: true})
     }
     this.onThemeChange = event => this.sync(event.detail, true)
 
-    this.options.forEach(option => option.addEventListener("click", this.onOptionClick))
+    this.el.addEventListener("click", this.onClick)
     window.addEventListener("mmentum:theme-changed", this.onThemeChange)
     this.sync(window.mmentumTheme.current(), false)
+    this.readyFrame = window.requestAnimationFrame(() => {
+      this.el.dataset.rollReady = "true"
+    })
   },
 
   destroyed() {
-    this.options.forEach(option => option.removeEventListener("click", this.onOptionClick))
+    this.el.removeEventListener("click", this.onClick)
     window.removeEventListener("mmentum:theme-changed", this.onThemeChange)
     window.cancelAnimationFrame(this.animationFrame)
+    window.cancelAnimationFrame(this.readyFrame)
   },
 
   sync({preference, theme}, animate) {
+    const themeLabel = theme === "dark" ? "Dark" : "Light"
+    const preferenceLabel = PREFERENCE_LABELS[preference]
+    const nextPreference = PREFERENCES[(PREFERENCES.indexOf(preference) + 1) % PREFERENCES.length]
+
     this.status.textContent = preference === "auto"
-      ? `System · ${theme === "dark" ? "Dark" : "Light"}`
-      : theme === "dark" ? "Dark" : "Light"
+      ? `Auto, system ${themeLabel}`
+      : preferenceLabel
+    this.el.setAttribute(
+      "aria-label",
+      `Appearance: ${this.status.textContent}. Switch to ${PREFERENCE_LABELS[nextPreference]}`
+    )
     this.icon.dataset.theme = theme
 
-    this.options.forEach(option => {
-      const selected = option.dataset.themePreference === preference
-      option.setAttribute("aria-pressed", selected.toString())
-    })
+    const nextIndex = PREFERENCES.indexOf(preference)
+    if (this.preference === null || !animate) {
+      this.turn = nextIndex
+    } else if (preference !== this.preference) {
+      const previousIndex = PREFERENCES.indexOf(this.preference)
+      this.turn += (nextIndex - previousIndex + PREFERENCES.length) % PREFERENCES.length
+    }
+
+    this.track.style.setProperty("--appearance-turn", this.turn)
+    this.preference = preference
 
     this.morphTo(theme, animate)
   },

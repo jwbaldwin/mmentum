@@ -51,46 +51,38 @@ defmodule MmentumWeb.Layouts do
 
   defp appearance_toggle(assigns) do
     ~H"""
-    <div
+    <button
       id="account-appearance"
       phx-hook="ThemeToggle"
-      class="rounded-[0.75rem] px-2.5 pb-2.5 pt-2"
+      type="button"
+      data-theme-cycle
+      data-roll-ready="false"
+      aria-label="Appearance: Auto. Switch to Light"
+      class="flex min-h-9 w-full items-center gap-2.5 rounded-control px-2.5 py-2 text-left text-zinc-700 transition-[background-color,color,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:text-zinc-900 focus-visible:bg-zinc-100 focus-visible:text-zinc-900 focus-visible:outline-none active:scale-[0.98] motion-reduce:scale-100"
     >
-      <div class="flex items-center gap-2.5 px-0.5">
-        <svg
-          data-appearance-icon
-          data-theme="light"
-          viewBox="0 0 24 24"
-          class="appearance-morph h-4 w-4 flex-none overflow-visible text-muted"
-          aria-hidden="true"
-        >
-          <path
-            data-appearance-path
-            fill="currentColor"
-            d="M12 2.75 13.42 6.66 17.59 4.41 17.34 9.08 21.25 12 17.34 14.92 17.59 19.59 13.42 17.34 12 21.25 10.58 17.34 6.41 19.59 6.66 14.92 2.75 12 6.66 9.08 6.41 4.41 10.58 6.66Z"
-          />
-        </svg>
-        <span class="text-[0.8125rem] font-medium leading-5 text-zinc-700">Appearance</span>
-        <span data-appearance-status class="ml-auto text-[0.6875rem] font-normal leading-4 text-muted">
-          System · Light
-        </span>
-      </div>
-      <div
-        role="group"
-        aria-label="Appearance preference"
-        class="mt-2 grid grid-cols-3 gap-0.5 rounded-[0.625rem] bg-zinc-100 p-0.5"
+      <svg
+        data-appearance-icon
+        data-theme="light"
+        viewBox="0 0 24 24"
+        class="appearance-morph h-4 w-4 flex-none overflow-visible text-muted"
+        aria-hidden="true"
       >
-        <button
-          :for={{preference, label} <- [{"auto", "Auto"}, {"light", "Light"}, {"dark", "Dark"}]}
-          type="button"
-          data-theme-preference={preference}
-          aria-pressed={to_string(preference == "auto")}
-          class="appearance-option min-h-7 rounded-lg px-1.5 text-[0.6875rem] font-medium leading-4 text-muted transition-[color,background-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-900 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/25 motion-reduce:scale-100"
-        >
-          {label}
-        </button>
-      </div>
-    </div>
+        <path
+          data-appearance-path
+          fill="currentColor"
+          d="M12 2.75 13.42 6.66 17.59 4.41 17.34 9.08 21.25 12 17.34 14.92 17.59 19.59 13.42 17.34 12 21.25 10.58 17.34 6.41 19.59 6.66 14.92 2.75 12 6.66 9.08 6.41 4.41 10.58 6.66Z"
+        />
+      </svg>
+      <span class="text-[0.8125rem] font-medium leading-5">Appearance</span>
+      <span data-appearance-roll class="appearance-roll ml-auto" aria-hidden="true">
+        <span data-appearance-track class="appearance-roll-track">
+          <span class="appearance-roll-face" style="--appearance-face: 0">Auto</span>
+          <span class="appearance-roll-face" style="--appearance-face: 1">Light</span>
+          <span class="appearance-roll-face" style="--appearance-face: 2">Dark</span>
+        </span>
+      </span>
+      <span data-appearance-status class="sr-only">Auto, system Light</span>
+    </button>
     """
   end
 
