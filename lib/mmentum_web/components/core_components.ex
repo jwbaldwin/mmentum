@@ -64,7 +64,7 @@ defmodule MmentumWeb.CoreComponents do
     >
       <div
         id={"#{@id}-bg"}
-        class="motion-modal-backdrop fixed inset-0 bg-zinc-50/90 dark:bg-zinc-950/90"
+        class="motion-modal-backdrop bg-zinc-50/90 fixed inset-0"
         aria-hidden="true"
       />
       <div
@@ -567,7 +567,7 @@ defmodule MmentumWeb.CoreComponents do
     ~H"""
     <div class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
       <table class="w-[40rem] mt-11 sm:w-full">
-        <thead class="text-left text-sm leading-6 text-zinc-500 dark:text-zinc-400">
+        <thead class="text-sm text-left leading-6 text-zinc-500 dark:text-zinc-400">
           <tr>
             <th :for={col <- @col} class="p-0 pr-6 pb-4 font-normal">{col[:label]}</th>
             <th class="relative p-0 pb-4"><span class="sr-only">{gettext("Actions")}</span></th>
