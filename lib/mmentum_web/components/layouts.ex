@@ -5,6 +5,115 @@ defmodule MmentumWeb.Layouts do
 
   embed_templates "layouts/*"
 
+  attr :current_user, :any, required: true
+
+  def account_menu(assigns) do
+    ~H"""
+    <details
+      id="account-menu"
+      class="group relative"
+      phx-click-away={JS.remove_attribute("open", to: "#account-menu")}
+      phx-window-keydown={JS.remove_attribute("open", to: "#account-menu")}
+      phx-key="escape"
+    >
+      <summary class="flex w-[min(14rem,calc(100vw-4rem))] min-w-0 cursor-pointer list-none select-none items-center gap-2.5 rounded-xl px-2 py-1.5 text-left text-zinc-900 transition-[background-color,box-shadow] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:shadow-[inset_0_0_0_1px_rgb(24_24_27/0.06)] focus:outline-none focus-visible:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-focus)_24%,transparent),inset_0_0_0_1px_rgb(24_24_27/0.08)] group-open:bg-zinc-100 group-open:shadow-[inset_0_0_0_1px_rgb(24_24_27/0.06)] [&::-webkit-details-marker]:hidden">
+        <.avatar id="account-avatar" seed={@current_user.email} />
+        <span class="min-w-0 flex-1">
+          <span class="block truncate text-[0.8125rem] font-medium leading-[1.125rem] text-zinc-900">
+            {@current_user.full_name}
+          </span>
+          <span class="mt-px block truncate text-xs font-normal leading-4 text-muted">
+            {@current_user.email}
+          </span>
+        </span>
+        <.icon
+          name="hero-chevron-down-mini"
+          class="h-3.5 w-3.5 flex-none text-muted transition-transform duration-[160ms] ease-[var(--motion-ease-out)] group-open:rotate-180 motion-reduce:transition-none"
+        />
+      </summary>
+
+      <div
+        id="account-menu-popover"
+        class="account-menu-popover absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[min(14rem,calc(100vw-4rem))] origin-top-right overflow-hidden rounded-panel bg-white/[0.92] p-1.5 shadow-[0_14px_32px_rgb(24_24_27/0.12),0_3px_10px_rgb(24_24_27/0.06),inset_0_0_0_1px_rgb(24_24_27/0.08)] backdrop-blur-[20px] backdrop-saturate-[1.6]"
+      >
+        <.account_menu_item navigate={~p"/users/settings"} icon="hero-user">
+          Settings
+        </.account_menu_item>
+        <.appearance_toggle />
+        <div class="mx-2 my-1 h-px bg-zinc-950/[0.07]"></div>
+        <.account_menu_item href={~p"/users/log_out"} method="delete" icon="hero-arrow-right-on-rectangle">
+          Log out
+        </.account_menu_item>
+      </div>
+    </details>
+    """
+  end
+
+  defp appearance_toggle(assigns) do
+    ~H"""
+    <div
+      id="account-appearance"
+      phx-hook="ThemeToggle"
+      class="rounded-[0.75rem] px-2.5 pb-2.5 pt-2"
+    >
+      <div class="flex items-center gap-2.5 px-0.5">
+        <svg
+          data-appearance-icon
+          data-theme="light"
+          viewBox="0 0 24 24"
+          class="appearance-morph h-4 w-4 flex-none overflow-visible text-muted"
+          aria-hidden="true"
+        >
+          <path
+            data-appearance-path
+            fill="currentColor"
+            d="M12 2.75 13.42 6.66 17.59 4.41 17.34 9.08 21.25 12 17.34 14.92 17.59 19.59 13.42 17.34 12 21.25 10.58 17.34 6.41 19.59 6.66 14.92 2.75 12 6.66 9.08 6.41 4.41 10.58 6.66Z"
+          />
+        </svg>
+        <span class="text-[0.8125rem] font-medium leading-5 text-zinc-700">Appearance</span>
+        <span data-appearance-status class="ml-auto text-[0.6875rem] font-normal leading-4 text-muted">
+          System · Light
+        </span>
+      </div>
+      <div
+        role="group"
+        aria-label="Appearance preference"
+        class="mt-2 grid grid-cols-3 gap-0.5 rounded-[0.625rem] bg-zinc-100 p-0.5"
+      >
+        <button
+          :for={{preference, label} <- [{"auto", "Auto"}, {"light", "Light"}, {"dark", "Dark"}]}
+          type="button"
+          data-theme-preference={preference}
+          aria-pressed={to_string(preference == "auto")}
+          class="appearance-option min-h-7 rounded-lg px-1.5 text-[0.6875rem] font-medium leading-4 text-muted transition-[color,background-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-900 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/25 motion-reduce:scale-100"
+        >
+          {label}
+        </button>
+      </div>
+    </div>
+    """
+  end
+
+  attr :navigate, :string, default: nil
+  attr :href, :string, default: nil
+  attr :method, :string, default: nil
+  attr :icon, :string, required: true
+  slot :inner_block, required: true
+
+  defp account_menu_item(assigns) do
+    ~H"""
+    <.link
+      navigate={@navigate}
+      href={@href}
+      method={@method}
+      class="flex min-h-9 items-center gap-2.5 rounded-control px-2.5 py-2 text-[0.8125rem] font-medium leading-5 text-zinc-700 transition-colors duration-[120ms] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:text-zinc-900 focus-visible:bg-zinc-100 focus-visible:text-zinc-900 focus-visible:outline-none active:bg-zinc-200"
+    >
+      <.icon name={@icon} class="h-4 w-4 flex-none text-muted" />
+      <span>{render_slot(@inner_block)}</span>
+    </.link>
+    """
+  end
+
   attr :id, :string, required: true
   attr :seed, :string, required: true
   attr :class, :string, default: nil
@@ -16,7 +125,6 @@ defmodule MmentumWeb.Layouts do
     <span
       id={@id}
       aria-hidden="true"
-      style={@model.style}
       class={[
         "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full ring-1 ring-zinc-950/10",
         @class
@@ -24,7 +132,7 @@ defmodule MmentumWeb.Layouts do
     >
       <svg
         viewBox="0 0 40 40"
-        style="position: absolute; inset: 0; width: 100%; height: 100%;"
+        class="absolute inset-0 h-full w-full"
       >
         <defs>
           <clipPath id={"#{@id}-clip"}>
@@ -84,8 +192,6 @@ defmodule MmentumWeb.Layouts do
     {top_colors, bottom_colors} = gradient_colors(hash)
 
     %{
-      style:
-        "width: 2.5rem; min-width: 2.5rem; max-width: 2.5rem; height: 2.5rem; min-height: 2.5rem; max-height: 2.5rem; flex: 0 0 2.5rem; aspect-ratio: 1; border-radius: 9999px;",
       boundary_path: boundary_path,
       top_path:
         "M -2 -2 H 42 V #{last_y} " <>
@@ -124,7 +230,7 @@ defmodule MmentumWeb.Layouts do
           cosine_amplitude * :math.cos(progress * cosine_frequency * @tau - phase * 0.6) +
           tangent_amplitude * tangent
 
-      {x, y |> max(8) |> min(32) |> Float.round(2)}
+      {x, y |> max(8.0) |> min(32.0) |> Float.round(2)}
     end
   end
 

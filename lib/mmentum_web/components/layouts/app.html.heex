@@ -5,77 +5,18 @@
         navigate={~p"/"}
         class="rounded-control focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20"
       >
-        <img src={~p"/images/mmentum.svg"} width="36" alt="Mmentum" />
+        <img class="theme-logo" src={~p"/images/mmentum.svg"} width="36" alt="Mmentum" />
       </.link>
     </div>
     <div class="flex items-center font-semibold leading-6 text-zinc-900">
       <%= if @current_user do %>
-        <details
-          id="account-menu"
-          class="account-menu relative"
-          phx-click-away={JS.remove_attribute("open", to: "#account-menu")}
-          phx-window-keydown={JS.remove_attribute("open", to: "#account-menu")}
-          phx-key="escape"
-        >
-          <summary
-            class="account-menu__trigger"
-            style="width: min(14rem, calc(100vw - 4rem)); list-style: none; user-select: none;"
-          >
-            <.avatar id="account-avatar" seed={@current_user.email} />
-            <span class="account-menu__identity">
-              <span class="account-menu__name">
-                {@current_user.full_name}
-              </span>
-              <span class="account-menu__email">
-                {@current_user.email}
-              </span>
-            </span>
-            <span
-              id="account-menu-chevron"
-              class="account-menu__chevron"
-            >
-              <.icon
-                name="hero-chevron-down-mini"
-                class="account-menu__chevron-icon"
-              />
-            </span>
-          </summary>
-
-          <div
-            id="account-menu-popover"
-            role="menu"
-            class="account-menu__popover"
-            style="width: min(14rem, calc(100vw - 4rem));"
-          >
-            <.link
-              navigate={~p"/users/settings"}
-              role="menuitem"
-              class="account-menu__item"
-            >
-              <.icon name="hero-user" class="account-menu__item-icon" />
-              <span>Settings</span>
-            </.link>
-            <div class="account-menu__divider"></div>
-            <.link
-              href={~p"/users/log_out"}
-              method="delete"
-              role="menuitem"
-              class="account-menu__item"
-            >
-              <.icon
-                name="hero-arrow-right-on-rectangle"
-                class="account-menu__item-icon"
-              />
-              <span>Log out</span>
-            </.link>
-          </div>
-        </details>
+        <.account_menu current_user={@current_user} />
       <% else %>
         <ul class="relative z-10 flex items-center justify-end gap-4">
           <li>
             <.link
               href={~p"/users/register"}
-              class="button-feedback rounded-control type-label text-zinc-700 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20"
+              class="rounded-control text-sm font-medium leading-5 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 motion-reduce:scale-100"
             >
               Create account
             </.link>
@@ -83,7 +24,7 @@
           <li>
             <.link
               href={~p"/login"}
-              class="button-feedback rounded-control type-label text-zinc-700 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20"
+              class="rounded-control text-sm font-medium leading-5 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 motion-reduce:scale-100"
             >
               Log in
             </.link>
