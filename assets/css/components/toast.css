@@ -43,8 +43,8 @@
   font-size: 0.8125rem;
   line-height: 1.25rem;
 }
+
 .dark .mmentum-toast > button,
-.dark .mmentum-toast::before,
 .dark .mmentum-toast > div > p {
   color: var(--color-zinc-400);
 }
@@ -52,7 +52,6 @@
 .dark .mmentum-toast::before {
   background-color: var(--color-zinc-400);
 }
-
 
 @media (scripting: enabled) {
   .mmentum-toast {

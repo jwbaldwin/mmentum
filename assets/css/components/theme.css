@@ -94,19 +94,3 @@
   transform: rotateX(calc(var(--appearance-face) * 120deg)) translateZ(0.3rem);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  :root.theme-changing *,
-  :root.theme-changing *::before,
-  :root.theme-changing *::after {
-    transition-duration: 120ms !important;
-  }
-
-  .appearance-morph {
-    transition: none !important;
-  }
-
-  [data-roll-ready="true"] .appearance-roll-track,
-  :root.theme-changing [data-roll-ready="true"] .appearance-roll-track {
-    transition: none !important;
-  }
-}

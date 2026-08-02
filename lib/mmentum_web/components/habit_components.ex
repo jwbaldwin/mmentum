@@ -19,14 +19,13 @@ defmodule MmentumWeb.HabitComponents do
   end
 
   attr :habit, Habit, required: true
+  attr :completed, :integer, required: true
 
   def habit_progress(assigns) do
     completion_cap = assigns.habit.max_completions || assigns.habit.min_completions
-    completed = min(length(assigns.habit.logs), completion_cap)
 
     assigns =
       assign(assigns,
-        completed: completed,
         completion_cap: completion_cap,
         optional_steps: optional_steps(assigns.habit)
       )
@@ -53,7 +52,7 @@ defmodule MmentumWeb.HabitComponents do
               id={"habit-#{@habit.id}-progress-step-#{step}"}
               class="habit-progress__step"
               data-kind={if step in @optional_steps, do: "optional", else: "required"}
-              data-state={progress_state(step, @completed)}
+              data-state={if(step <= @completed, do: "complete", else: "pending")}
             ></span>
           </span>
           <span
@@ -141,7 +140,6 @@ defmodule MmentumWeb.HabitComponents do
           "h-12 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] dark:text-zinc-300",
           "duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-900 enabled:active:scale-[0.98] dark:hover:text-zinc-100",
           "phx-click-loading:pointer-events-none phx-click-loading:cursor-wait phx-click-loading:opacity-60",
-          "motion-reduce:scale-100 motion-reduce:transition-[color,background-color,border-color,box-shadow]",
           @disabled && "cursor-not-allowed disabled:text-zinc-200 dark:disabled:text-zinc-800"
         ]}
         disabled={@disabled}
@@ -203,9 +201,5 @@ defmodule MmentumWeb.HabitComponents do
       "--progress-fill-offset-desktop: #{Float.round(fill_offset * 44, 4)}px"
     ]
     |> Enum.join("; ")
-  end
-
-  defp progress_state(step, completed) do
-    if step <= completed, do: "complete", else: "pending"
   end
 end

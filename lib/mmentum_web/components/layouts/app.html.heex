@@ -8,15 +8,28 @@
         <img class="theme-logo" src={~p"/images/mmentum.svg"} width="36" alt="Mmentum" />
       </.link>
     </div>
-    <div class="flex items-center font-semibold leading-6 text-zinc-900 dark:text-zinc-100">
+    <div class="flex items-center gap-1 font-semibold leading-6 text-zinc-900 dark:text-zinc-100">
       <%= if @current_user do %>
+        <.tooltip id="new-habit-tooltip" content="New habit" placement="bottom">
+          <.button_link
+            id="new-habit-button"
+            navigate={~p"/habits/new"}
+            variant="quiet"
+            size="compact"
+            class="h-11 w-11 p-0"
+            aria-label="New habit"
+          >
+            <.icon name="hero-plus" class="h-5 w-5" />
+            <span class="sr-only">New habit</span>
+          </.button_link>
+        </.tooltip>
         <.account_menu current_user={@current_user} />
       <% else %>
         <ul class="relative z-10 flex items-center justify-end gap-4">
           <li>
             <.link
               href={~p"/users/register"}
-              class="rounded-control text-sm font-medium leading-5 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 dark:text-zinc-300 dark:hover:text-zinc-50 motion-reduce:scale-100"
+              class="rounded-control text-sm font-medium leading-5 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 dark:text-zinc-300 dark:hover:text-zinc-50"
             >
               Create account
             </.link>
@@ -24,7 +37,7 @@
           <li>
             <.link
               href={~p"/login"}
-              class="rounded-control text-sm font-medium leading-5 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 dark:text-zinc-300 dark:hover:text-zinc-50 motion-reduce:scale-100"
+              class="rounded-control text-sm font-medium leading-5 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 dark:text-zinc-300 dark:hover:text-zinc-50"
             >
               Log in
             </.link>

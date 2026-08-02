@@ -37,6 +37,19 @@ defmodule Mmentum.Habits do
     Repo.get_by!(Habit, id: id, user_id: user_id)
   end
 
+  @doc "Gets one of the user's habits with completion activity from its current period"
+  def get_habit_with_current_progress!(%User{} = user, id, %DateTime{} = current_time) do
+    habit = get_habit!(user, id)
+    start_of_range = Time.start_of_range(current_time, habit.periodicity)
+    end_of_range = Time.end_of_range(current_time, habit.periodicity)
+
+    Repo.preload(
+      habit,
+      [logs: Logs.in_range_query(user, start_of_range, end_of_range)],
+      force: true
+    )
+  end
+
   @doc """
   Creates a habit for the user
   """

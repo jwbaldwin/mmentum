@@ -13,13 +13,17 @@ defmodule MmentumWeb.HabitLive.Show do
   @impl true
   def handle_params(%{"id" => id}, _, socket) do
     user = get_current_user(socket)
-    habit = Habits.get_habit!(user, id)
+    current_time = Time.current_time(user.time_zone)
+    habit = Habits.get_habit_with_current_progress!(user, id, current_time)
+    logs = Logs.list_logs_by_habit(user, habit)
 
     {:noreply,
      socket
      |> assign(:page_title, page_title(socket.assigns.live_action))
      |> assign(:habit, habit)
-     |> stream(:logs, Logs.list_logs_by_habit(user, habit))}
+     |> assign(:completed, min(length(habit.logs), habit.max_completions || habit.min_completions))
+     |> assign(:momentum, round(Habits.get_current_momentum(habit)))
+     |> stream(:logs, logs, reset: true)}
   end
 
   @impl true

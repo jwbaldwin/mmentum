@@ -1,6 +1,8 @@
 defmodule MmentumWeb.HabitLive.Index do
   use MmentumWeb, :live_view
 
+  import MmentumWeb.HabitComponents
+
   alias Mmentum.Habits
   alias Mmentum.Habits.Habit
   alias Mmentum.Time

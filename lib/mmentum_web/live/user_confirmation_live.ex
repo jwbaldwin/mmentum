@@ -15,7 +15,7 @@ defmodule MmentumWeb.UserConfirmationLive do
         </:actions>
       </.simple_form>
 
-      <.auth_navigation registration_path={~p"/users/register"} login_path={~p"/login"} />
+      <.auth_navigation />
     </.auth_page>
     """
   end

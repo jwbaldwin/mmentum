@@ -37,6 +37,27 @@ defmodule MmentumWeb.HabitLive.FormComponent do
           autocomplete="off"
         />
 
+        <div :if={@action == :edit} class="space-y-5">
+          <.input
+            field={@form[:identity]}
+            type="text"
+            label="Identity"
+            placeholder="I am someone who..."
+          />
+          <.input
+            field={@form[:why_it_matters]}
+            type="textarea"
+            label="Why it matters"
+            placeholder="Why is this worth becoming consistent at?"
+          />
+          <.input
+            field={@form[:what_counts]}
+            type="textarea"
+            label="What counts as progress"
+            placeholder="Describe the smallest honest action that counts."
+          />
+        </div>
+
         <fieldset class="rounded-panel border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-950/70">
           <legend class="px-1 text-sm font-medium leading-5 text-zinc-900 dark:text-zinc-100">
             Cadence
@@ -77,14 +98,22 @@ defmodule MmentumWeb.HabitLive.FormComponent do
             />
           </div>
           <div class="mt-4">
-            <.input
-              id="habit-has-flexible-target"
-              type="checkbox"
-              name="habit[has_flexible_target]"
-              value="true"
-              checked={@has_flexible_target}
-              label="Use a flexible range"
-            />
+            <label class="inline-flex cursor-pointer text-sm leading-6 text-muted">
+              <input type="hidden" name="habit[has_flexible_target]" value="false" />
+              <input
+                id="habit-has-flexible-target"
+                type="checkbox"
+                name="habit[has_flexible_target]"
+                value="true"
+                checked={@has_flexible_target}
+                class="peer sr-only"
+              />
+              <span class="hover:text-zinc-900 peer-checked:font-medium peer-checked:text-zinc-900 peer-focus-visible:rounded-sm peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus dark:hover:text-zinc-100 dark:peer-checked:text-zinc-100">
+                {if @has_flexible_target,
+                  do: "Use a single target",
+                  else: "Use a flexible range"}
+              </span>
+            </label>
           </div>
         </fieldset>
 
