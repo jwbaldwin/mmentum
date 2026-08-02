@@ -11,7 +11,7 @@ defmodule MmentumWeb.UserSettingsLive do
         <:subtitle>Manage your time zone, email, and password</:subtitle>
       </.header>
 
-      <div class="mt-10 divide-y divide-zinc-200">
+      <div class="mt-10 divide-y divide-zinc-200 dark:divide-zinc-800">
         <section class="pb-8">
           <.section_title>Time zone</.section_title>
           <p class="mt-1 text-sm font-normal leading-6 text-muted dark:text-zinc-400">

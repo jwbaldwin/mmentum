@@ -9,7 +9,13 @@ defmodule MmentumWeb.HabitLiveTest do
   import Mmentum.HabitsFixtures
 
   @create_attrs %{min_completions: 3, name: "some name"}
-  @update_attrs %{min_completions: 4, name: "some updated name"}
+  @update_attrs %{
+    identity: "I am someone who follows through",
+    min_completions: 4,
+    name: "some updated name",
+    what_counts: "Twenty focused minutes",
+    why_it_matters: "Consistency builds confidence"
+  }
   @invalid_attrs %{min_completions: nil, name: nil}
 
   defp create_habit(%{user: user}) do
@@ -70,6 +76,13 @@ defmodule MmentumWeb.HabitLiveTest do
                index_live,
                ~s|#account-menu a[href="/users/settings"][data-phx-link="redirect"]|
              )
+
+      assert has_element?(
+               index_live,
+               ~s|header #new-habit-button[href="/habits/new"][data-phx-link="redirect"]|
+             )
+
+      refute has_element?(index_live, "main #new-habit-button")
     end
 
     test "greets users with one-word and multi-part names" do
@@ -98,12 +111,7 @@ defmodule MmentumWeb.HabitLiveTest do
     end
 
     test "saves new habit", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/habits")
-
-      assert index_live |> element(~s|a[href="/habits/new"]|) |> render_click() =~
-               "New habit"
-
-      assert_patch(index_live, ~p"/habits/new")
+      {:ok, index_live, _html} = live(conn, ~p"/habits/new")
 
       refute has_element?(index_live, "#habit_max_completions")
 
@@ -126,11 +134,7 @@ defmodule MmentumWeb.HabitLiveTest do
     end
 
     test "saves a flexible range and treats its maximum as optional", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/habits")
-
-      index_live
-      |> element(~s|a[href="/habits/new"]|)
-      |> render_click()
+      {:ok, index_live, _html} = live(conn, ~p"/habits/new")
 
       index_live
       |> form("#habit-form",
@@ -271,8 +275,6 @@ defmodule MmentumWeb.HabitLiveTest do
       assert has_element?(show_live, "#habit_periodicity option[value=month][selected]")
     end
 
-
-
     test "marks the next progress segment complete after recording a completion", %{
       conn: conn,
       habit: habit
@@ -304,8 +306,6 @@ defmodule MmentumWeb.HabitLiveTest do
       assert_raise Ecto.NoResultsError, fn -> live(conn, ~p"/habits/#{habit}/edit") end
     end
 
-
-
     test "does not add or remove another user's completions", %{conn: conn} do
       owner = Mmentum.AccountsFixtures.user_fixture()
       habit = habit_fixture(user: owner)
@@ -327,9 +327,26 @@ defmodule MmentumWeb.HabitLiveTest do
       assert html =~ "Habit details"
       assert html =~ habit.name
       assert has_element?(show_live, ~s|a[href="/habits"]|, "Today")
-      assert has_element?(show_live, "dt", "Target")
+      assert has_element?(show_live, "dt", "Current progress")
       assert has_element?(show_live, "dt", "Momentum")
       assert has_element?(show_live, "#habit-history-title", "History")
+      refute html =~ "Why it matters"
+      refute html =~ "What counts"
+    end
+
+    test "shows the habit's identity and meaning", %{conn: conn, habit: habit, user: user} do
+      {:ok, habit} =
+        Habits.update_habit(user, habit.id, %{
+          identity: "I am someone who takes care of my body",
+          why_it_matters: "I want energy for the people I love",
+          what_counts: "Complete the movement planned for today"
+        })
+
+      {:ok, _show_live, html} = live(conn, ~p"/habits/#{habit}")
+
+      assert html =~ habit.identity
+      assert html =~ habit.why_it_matters
+      assert html =~ habit.what_counts
     end
 
     test "updates habit within modal", %{conn: conn, habit: habit} do
@@ -353,8 +370,10 @@ defmodule MmentumWeb.HabitLiveTest do
       html = render(show_live)
       assert html =~ "Habit updated."
       assert html =~ "some updated name"
+      assert html =~ @update_attrs.identity
+      assert html =~ @update_attrs.why_it_matters
+      assert html =~ @update_attrs.what_counts
     end
-
 
     test "deletes habit from its detail page", %{conn: conn, habit: habit} do
       {:ok, show_live, _html} = live(conn, ~p"/habits/#{habit}")

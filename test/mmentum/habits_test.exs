@@ -28,6 +28,21 @@ defmodule Mmentum.HabitsTest do
       assert_raise Ecto.NoResultsError, fn -> Habits.get_habit!(attacker, -1) end
     end
 
+    test "get_habit_with_current_progress!/3 preloads current completion activity" do
+      user = user_fixture()
+      habit = habit_fixture(user: user)
+      {:ok, log} = Habits.record_completion(user, habit.id)
+
+      habit =
+        Habits.get_habit_with_current_progress!(
+          user,
+          habit.id,
+          Mmentum.Time.current_time(user.time_zone)
+        )
+
+      assert habit.logs == [log]
+    end
+
     test "create_habit/2 creates a habit for the user" do
       user = user_fixture()
       valid_attrs = %{min_completions: 3, name: "some name", periodicity: :week}

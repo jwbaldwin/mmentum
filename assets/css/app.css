@@ -4,7 +4,6 @@
 @import "./components/habit-progress.css";
 @import "./components/tooltip.css";
 @import "./components/toast.css";
-@import "./components/accessibility.css";
 
 @plugin "@tailwindcss/forms";
 

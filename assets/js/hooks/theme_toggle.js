@@ -60,7 +60,6 @@ const ThemeToggle = {
     this.icon = this.el.querySelector("[data-appearance-icon]")
     this.track = this.el.querySelector("[data-appearance-track]")
     this.status = this.el.querySelector("[data-appearance-status]")
-    this.reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
     this.currentPoints = copyPoints(targetPoints(document.documentElement.dataset.theme))
     this.preference = null
     this.turn = 0
@@ -120,7 +119,7 @@ const ThemeToggle = {
     window.cancelAnimationFrame(this.animationFrame)
     const destination = targetPoints(theme)
 
-    if (!animate || this.reduceMotion.matches) {
+    if (!animate) {
       this.currentPoints = copyPoints(destination)
       this.path.setAttribute("d", pathThrough(this.currentPoints))
       return

@@ -7,6 +7,9 @@ defmodule Mmentum.Habits.Habit do
     field :max_completions, :integer
     field :periodicity, Ecto.Enum, values: [:day, :week, :month], default: :week
     field :name, :string
+    field :identity, :string
+    field :why_it_matters, :string
+    field :what_counts, :string
 
     field :momentum_score, :float, default: 0.0
     field :momentum_last_updated, :integer
@@ -25,6 +28,9 @@ defmodule Mmentum.Habits.Habit do
       :min_completions,
       :max_completions,
       :periodicity,
+      :identity,
+      :why_it_matters,
+      :what_counts,
       :momentum_score,
       :momentum_last_updated
     ])

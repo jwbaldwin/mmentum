@@ -17,7 +17,7 @@ const Tooltip = {
   initializeTooltip() {
     const trigger = this.el.firstElementChild
 
-    if (!trigger || this.el.dataset.tooltipDisabled === "true") return
+    if (this.el.dataset.tooltipDisabled === "true") return
 
     this.tooltip = tippy(trigger, {
       appendTo: () => document.body,

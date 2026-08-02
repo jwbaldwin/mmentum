@@ -28,7 +28,7 @@ defmodule MmentumWeb.Layouts do
         </span>
         <.icon
           name="hero-chevron-down-mini"
-          class="h-3.5 w-3.5 flex-none text-muted transition-transform duration-[160ms] ease-[var(--motion-ease-out)] group-open:rotate-180 dark:text-zinc-400 motion-reduce:transition-none"
+          class="h-3.5 w-3.5 flex-none text-muted transition-transform duration-[160ms] ease-[var(--motion-ease-out)] group-open:rotate-180 dark:text-zinc-400"
         />
       </summary>
 
@@ -58,7 +58,7 @@ defmodule MmentumWeb.Layouts do
       data-theme-cycle
       data-roll-ready="false"
       aria-label="Appearance: Auto. Switch to Light"
-      class="flex min-h-9 w-full items-center gap-2.5 rounded-control px-2.5 py-2 text-left text-zinc-700 transition-[background-color,color,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:text-zinc-900 focus-visible:bg-zinc-100 focus-visible:text-zinc-900 focus-visible:outline-none active:scale-[0.98] dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100 dark:focus-visible:bg-zinc-900 dark:focus-visible:text-zinc-100 motion-reduce:scale-100"
+      class="flex min-h-9 w-full items-center gap-2.5 rounded-control px-2.5 py-2 text-left text-zinc-700 transition-[background-color,color,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:text-zinc-900 focus-visible:bg-zinc-100 focus-visible:text-zinc-900 focus-visible:outline-none active:scale-[0.98] dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100 dark:focus-visible:bg-zinc-900 dark:focus-visible:text-zinc-100"
     >
       <svg
         data-appearance-icon

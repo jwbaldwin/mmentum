@@ -3,7 +3,8 @@
 <article class="max-w-3xl">
   <.header>
     {@habit.name}
-    <:subtitle>{target_description(@habit)}</:subtitle>
+    <:subtitle :if={@habit.identity}>{@habit.identity}</:subtitle>
+    <:subtitle :if={!@habit.identity}>{target_description(@habit)}</:subtitle>
     <:actions>
       <.button_link
         patch={~p"/habits/#{@habit}/show/edit"}
@@ -17,22 +18,47 @@
     </:actions>
   </.header>
 
-  <dl class="mt-7 grid grid-cols-2 divide-x divide-zinc-200 rounded-panel bg-zinc-50 ring-1 ring-zinc-950/[0.06] dark:divide-zinc-800 dark:bg-zinc-900/50 dark:ring-zinc-50/[0.08]">
+  <dl class="mt-7 grid grid-cols-2 divide-x divide-zinc-200 rounded-panel bg-zinc-50 ring-1 ring-zinc-950/[0.06] dark:divide-zinc-800 dark:bg-zinc-950 dark:ring-zinc-50/10">
     <div class="min-w-0 px-4 py-3.5 sm:px-5">
-      <dt class="text-xs font-medium leading-4 text-muted dark:text-zinc-400">Target</dt>
+      <dt class="text-xs font-medium leading-4 text-muted dark:text-zinc-400">
+        Current progress
+      </dt>
       <dd class="mt-1 truncate text-sm font-semibold leading-5 text-zinc-900 dark:text-zinc-100">
-        <MmentumWeb.HabitComponents.cadence habit={@habit} />
+        {min(@completed, @habit.min_completions)} of <MmentumWeb.HabitComponents.cadence habit={@habit} />
+        <span :if={@completed >= @habit.min_completions}> · Goal met</span>
       </dd>
     </div>
     <div class="min-w-0 px-4 py-3.5 sm:px-5">
       <dt class="text-xs font-medium leading-4 text-muted dark:text-zinc-400">Momentum</dt>
       <dd class="mt-1 text-sm font-semibold leading-5 text-zinc-900 dark:text-zinc-100">
-        {round(Habits.get_current_momentum(@habit))}
+        {@momentum}
       </dd>
     </div>
   </dl>
 
-  <section class="mt-10 flow-root border-t border-zinc-100 pt-8 dark:border-zinc-900" aria-labelledby="habit-history-title">
+  <section
+    :if={@habit.why_it_matters || @habit.what_counts}
+    class="mt-8 grid gap-6 border-t border-zinc-100 pt-7 dark:border-zinc-900 sm:grid-cols-2"
+    aria-label="Habit meaning"
+  >
+    <div :if={@habit.why_it_matters}>
+      <p class="text-xs font-medium leading-4 text-muted dark:text-zinc-400">Why it matters</p>
+      <p class="mt-2 text-sm font-normal leading-6 text-zinc-700 dark:text-zinc-300">
+        {@habit.why_it_matters}
+      </p>
+    </div>
+    <div :if={@habit.what_counts}>
+      <p class="text-xs font-medium leading-4 text-muted dark:text-zinc-400">What counts</p>
+      <p class="mt-2 text-sm font-normal leading-6 text-zinc-700 dark:text-zinc-300">
+        {@habit.what_counts}
+      </p>
+    </div>
+  </section>
+
+  <section
+    class="mt-10 flow-root border-t border-zinc-100 pt-8 dark:border-zinc-900"
+    aria-labelledby="habit-history-title"
+  >
     <div class="mb-6">
       <.section_title id="habit-history-title">History</.section_title>
       <p class="mt-1 text-sm font-normal leading-6 text-muted dark:text-zinc-400">
@@ -50,8 +76,7 @@
             </div>
           </div>
           <p class="flex-auto py-0.5 text-xs font-normal leading-4 text-muted dark:text-zinc-400">
-            <span class="font-medium text-zinc-900 dark:text-zinc-100">{@habit.name}</span>
-            completion recorded
+            <span class="font-medium text-zinc-900 dark:text-zinc-100">{@habit.name}</span> completion recorded
           </p>
           <time
             datetime={log.inserted_at}
@@ -69,8 +94,7 @@
           <.icon name="hero-sparkles-solid" class="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
         </div>
         <p class="flex-auto py-0.5 text-xs font-normal leading-4 text-muted dark:text-zinc-400">
-          <span class="font-medium text-zinc-900 dark:text-zinc-100">{@habit.name}</span>
-          habit created
+          <span class="font-medium text-zinc-900 dark:text-zinc-100">{@habit.name}</span> habit created
         </p>
         <time
           datetime={@habit.inserted_at}
