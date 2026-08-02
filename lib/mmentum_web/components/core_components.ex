@@ -151,7 +151,7 @@ defmodule MmentumWeb.CoreComponents do
       <.button phx-click="go" class="ml-2">Send!</.button>
   """
   attr :type, :string, default: nil
-  attr :variant, :string, default: "primary", values: ~w(primary destructive)
+  attr :variant, :string, default: "primary", values: ~w(primary quiet destructive)
   attr :size, :string, default: "default", values: ~w(default compact)
   attr :class, :any, default: nil
   attr :rest, :global, include: ~w(disabled form name value)
@@ -173,7 +173,7 @@ defmodule MmentumWeb.CoreComponents do
   attr :navigate, :any, default: nil
   attr :patch, :any, default: nil
   attr :href, :any, default: nil
-  attr :variant, :string, default: "primary", values: ~w(primary destructive)
+  attr :variant, :string, default: "primary", values: ~w(primary quiet destructive)
   attr :size, :string, default: "default", values: ~w(default compact)
   attr :class, :any, default: nil
   attr :rest, :global
@@ -208,6 +208,10 @@ defmodule MmentumWeb.CoreComponents do
 
   defp button_variant("primary") do
     "bg-action text-white shadow-control hover:bg-action-hover active:text-white/80 dark:bg-zinc-100 dark:text-zinc-950 dark:shadow-[0_1px_2px_rgb(0_0_0/0.22)] dark:hover:bg-zinc-200 dark:active:text-zinc-950/80"
+  end
+
+  defp button_variant("quiet") do
+    "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950 active:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50 dark:active:bg-zinc-800"
   end
 
   defp button_variant("destructive") do
@@ -522,12 +526,13 @@ defmodule MmentumWeb.CoreComponents do
   end
 
   @doc "Renders a section title"
+  attr :id, :string, default: nil
   attr :class, :any, default: nil
   slot :inner_block, required: true
 
   def section_title(assigns) do
     ~H"""
-    <h2 class={["text-base font-semibold leading-6 text-zinc-900 dark:text-zinc-100", @class]}>
+    <h2 id={@id} class={["text-base font-semibold leading-6 text-zinc-900 dark:text-zinc-100", @class]}>
       {render_slot(@inner_block)}
     </h2>
     """
@@ -644,11 +649,12 @@ defmodule MmentumWeb.CoreComponents do
       <.back navigate={~p"/posts"}>Back to posts</.back>
   """
   attr :navigate, :any, required: true
+  attr :class, :any, default: "mt-12"
   slot :inner_block, required: true
 
   def back(assigns) do
     ~H"""
-    <div class="mt-12">
+    <div class={@class}>
       <.link
         navigate={@navigate}
         class="inline-flex items-center gap-1.5 rounded-control text-sm font-medium leading-5 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 dark:text-zinc-300 dark:hover:text-zinc-50 motion-reduce:scale-100"

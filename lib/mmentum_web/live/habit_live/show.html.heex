@@ -1,65 +1,103 @@
-<.header>
-  {@habit.name}
-  <:subtitle>Review this habit and its completion history</:subtitle>
-  <:actions>
-    <.button_link patch={~p"/habits/#{@habit}/show/edit"} phx-click={JS.push_focus()}>
-      Edit habit
-    </.button_link>
-  </:actions>
-</.header>
+<.back navigate={~p"/habits"} class="mb-6">Today</.back>
 
-<.list>
-  <:item title="Name">{@habit.name}</:item>
-  <:item title="Cadence">
-    <MmentumWeb.HabitComponents.cadence habit={@habit} />
-  </:item>
-</.list>
+<article class="max-w-3xl">
+  <.header>
+    {@habit.name}
+    <:subtitle>{target_description(@habit)}</:subtitle>
+    <:actions>
+      <.button_link
+        patch={~p"/habits/#{@habit}/show/edit"}
+        phx-click={JS.push_focus()}
+        variant="quiet"
+        size="compact"
+        class="-mr-2"
+      >
+        <.icon name="hero-pencil" class="h-4 w-4" /> Edit
+      </.button_link>
+    </:actions>
+  </.header>
 
-<section class="mt-12 flow-root">
-  <.section_title class="mb-6">Completion activity</.section_title>
-  <ul role="list" class="space-y-6">
-    <%= for {row_id, log} <- @streams.logs do %>
-      <li class="relative flex gap-x-4" id={row_id}>
-        <div class="absolute left-0 top-0 flex w-6 justify-center -bottom-6">
-          <div class="w-px bg-zinc-200"></div>
+  <dl class="mt-7 grid grid-cols-2 divide-x divide-zinc-200 rounded-panel bg-zinc-50 ring-1 ring-zinc-950/[0.06] dark:divide-zinc-800 dark:bg-zinc-900/50 dark:ring-zinc-50/[0.08]">
+    <div class="min-w-0 px-4 py-3.5 sm:px-5">
+      <dt class="text-xs font-medium leading-4 text-muted dark:text-zinc-400">Target</dt>
+      <dd class="mt-1 truncate text-sm font-semibold leading-5 text-zinc-900 dark:text-zinc-100">
+        <MmentumWeb.HabitComponents.cadence habit={@habit} />
+      </dd>
+    </div>
+    <div class="min-w-0 px-4 py-3.5 sm:px-5">
+      <dt class="text-xs font-medium leading-4 text-muted dark:text-zinc-400">Momentum</dt>
+      <dd class="mt-1 text-sm font-semibold leading-5 text-zinc-900 dark:text-zinc-100">
+        {round(Habits.get_current_momentum(@habit))}
+      </dd>
+    </div>
+  </dl>
+
+  <section class="mt-10 flow-root border-t border-zinc-100 pt-8 dark:border-zinc-900" aria-labelledby="habit-history-title">
+    <div class="mb-6">
+      <.section_title id="habit-history-title">History</.section_title>
+      <p class="mt-1 text-sm font-normal leading-6 text-muted dark:text-zinc-400">
+        The evidence behind this habit's momentum.
+      </p>
+    </div>
+    <ul role="list" class="space-y-6">
+      <%= for {row_id, log} <- @streams.logs do %>
+        <li class="relative flex gap-x-4" id={row_id}>
+          <div class="absolute left-0 top-0 flex w-6 justify-center -bottom-6">
+            <div class="w-px bg-zinc-200 dark:bg-zinc-800"></div>
+          </div>
+          <div class="relative flex h-6 w-6 flex-none items-center justify-center bg-white dark:bg-zinc-950">
+            <div class="h-1.5 w-1.5 rounded-full bg-zinc-100 ring-1 ring-zinc-300 dark:bg-zinc-900 dark:ring-zinc-700">
+            </div>
+          </div>
+          <p class="flex-auto py-0.5 text-xs font-normal leading-4 text-muted dark:text-zinc-400">
+            <span class="font-medium text-zinc-900 dark:text-zinc-100">{@habit.name}</span>
+            completion recorded
+          </p>
+          <time
+            datetime={log.inserted_at}
+            class="flex-none py-0.5 text-xs font-normal leading-4 text-muted dark:text-zinc-400"
+          >
+            {Time.to_human_relative(log.inserted_at)}
+          </time>
+        </li>
+      <% end %>
+      <li class="relative flex gap-x-4" id={"habit-created-#{@habit.id}"}>
+        <div class="absolute left-0 top-0 flex h-6 w-6 justify-center">
+          <div class="w-px bg-zinc-200 dark:bg-zinc-800"></div>
         </div>
-        <div class="relative flex h-6 w-6 flex-none items-center justify-center bg-white">
-          <div class="h-1.5 w-1.5 rounded-full bg-zinc-100 ring-1 ring-zinc-300"></div>
+        <div class="relative flex h-6 w-6 flex-none items-center justify-center bg-white dark:bg-zinc-950">
+          <.icon name="hero-sparkles-solid" class="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
         </div>
         <p class="flex-auto py-0.5 text-xs font-normal leading-4 text-muted dark:text-zinc-400">
           <span class="font-medium text-zinc-900 dark:text-zinc-100">{@habit.name}</span>
-          completion recorded
+          habit created
         </p>
         <time
-          datetime={log.inserted_at}
+          datetime={@habit.inserted_at}
           class="flex-none py-0.5 text-xs font-normal leading-4 text-muted dark:text-zinc-400"
         >
-          {Time.to_human_relative(log.inserted_at)}
+          {Time.to_human_relative(@habit.inserted_at)}
         </time>
       </li>
-    <% end %>
-    <li class="relative flex gap-x-4" id={"habit-created-#{@habit.id}"}>
-      <div class="absolute left-0 top-0 flex w-6 justify-center h-6">
-        <div class="w-px bg-zinc-200"></div>
-      </div>
-      <div class="relative flex h-6 w-6 flex-none items-center justify-center bg-white">
-        <.icon name="hero-sparkles-solid" class="w-4 h-4 text-zinc-400" />
-      </div>
-      <p class="flex-auto py-0.5 text-xs font-normal leading-4 text-muted dark:text-zinc-400">
-        <span class="font-medium text-zinc-900 dark:text-zinc-100">{@habit.name}</span>
-        habit created
-      </p>
-      <time
-        datetime={@habit.inserted_at}
-        class="flex-none py-0.5 text-xs font-normal leading-4 text-muted dark:text-zinc-400"
-      >
-        {Time.to_human_relative(@habit.inserted_at)}
-      </time>
-    </li>
-  </ul>
-</section>
+    </ul>
+  </section>
 
-<.back navigate={~p"/"}>Back to habits</.back>
+  <footer class="mt-10 flex items-center justify-between gap-6 border-t border-zinc-100 pt-6 dark:border-zinc-900">
+    <p class="text-xs font-normal leading-5 text-muted dark:text-zinc-400">
+      This also removes its completion history.
+    </p>
+    <.button
+      type="button"
+      variant="destructive"
+      size="compact"
+      phx-click="delete"
+      data-confirm="Delete this habit and its completion history?"
+      phx-disable-with="Deleting..."
+    >
+      Delete habit
+    </.button>
+  </footer>
+</article>
 
 <.modal
   :if={@live_action == :edit}

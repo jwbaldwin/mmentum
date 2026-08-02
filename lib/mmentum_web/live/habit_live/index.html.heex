@@ -4,61 +4,33 @@
   {@greeting}!
   <:subtitle>{@day_info}</:subtitle>
   <:actions>
-    <.button_link patch={~p"/habits/new"}>New habit</.button_link>
+    <.button_link patch={~p"/habits/new"} variant="quiet" size="compact" class="-mr-2">
+      <.icon name="hero-plus-mini" class="h-4 w-4" /> New habit
+    </.button_link>
   </:actions>
 </.header>
 
-<div id="habits" class="mt-10 space-y-10">
+<div id="habits" class="mt-8">
   <section
     :for={habit <- @habits}
     id={"habit-#{habit.id}"}
-    class="border-b border-zinc-100 pb-10 last:border-0 last:pb-0 dark:border-zinc-900"
+    class="border-b border-zinc-100 py-4 first:pt-0 last:border-0 last:pb-0 dark:border-zinc-900"
   >
-    <% completed = min(length(habit.logs), habit.max_completions || habit.min_completions) %>
-    <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div class="group min-w-0">
-        <.link
-          patch={~p"/habits/#{habit}/edit"}
-          phx-click={JS.push_focus()}
-          class="inline-flex max-w-full items-center gap-2 rounded-control transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 motion-reduce:scale-100"
-        >
-          <h2 class="truncate text-xl font-semibold leading-7 tracking-[-0.015em] text-zinc-900 dark:text-zinc-100">
-            {habit.name}
-          </h2>
-          <.icon
-            name="hero-pencil-solid"
-            class="h-4 w-4 shrink-0 text-muted opacity-60 transition-opacity duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] group-hover:opacity-100 group-focus-within:opacity-100 dark:text-zinc-400"
-          />
-        </.link>
-      </div>
-      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <p class="text-xs font-normal leading-4 text-muted dark:text-zinc-400">
-          <.cadence habit={habit} />
-        </p>
-        <span
-          :if={completed >= habit.min_completions}
-          class="text-xs font-normal leading-4 text-muted dark:text-zinc-400"
-        >
-          Goal met
-        </span>
-        <span
-          :if={habit.momentum_score > 0}
-          class="text-xs font-normal leading-4 text-muted dark:text-zinc-400"
-        >
-          Momentum {Float.round(habit.momentum_score, 2)}
-        </span>
-        <.button
-          type="button"
-          variant="destructive"
-          size="compact"
-          phx-click="delete"
-          phx-value-id={habit.id}
-          data-confirm="Are you sure?"
-          phx-disable-with="Deleting..."
-        >
-          Delete
-        </.button>
-      </div>
+    <% completion_cap = habit.max_completions || habit.min_completions %>
+    <% completed = min(length(habit.logs), completion_cap) %>
+    <div class="mb-3 min-w-0">
+      <.link
+        navigate={~p"/habits/#{habit}"}
+        class="inline-flex max-w-full rounded-control transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 motion-reduce:scale-100"
+      >
+        <h2 class="truncate text-xl font-semibold leading-7 tracking-[-0.015em] text-zinc-900 dark:text-zinc-100">
+          {habit.name}
+        </h2>
+      </.link>
+      <p class="mt-0.5 text-xs font-normal leading-4 text-muted dark:text-zinc-400">
+        {min(completed, habit.min_completions)} of <.cadence habit={habit} />
+        <span :if={completed >= habit.min_completions}> · Goal met</span>
+      </p>
     </div>
     <.habit_progress habit={habit} />
   </section>
