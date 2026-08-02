@@ -19,8 +19,15 @@ if Mix.env() == :dev do
 
   changeset =
     case Repo.get_by(User, email: email) do
-      nil -> User.registration_changeset(%User{}, %{email: email, password: password})
-      user -> User.password_changeset(user, %{password: password})
+      nil ->
+        User.registration_changeset(%User{}, %{
+          email: email,
+          full_name: "Demo User",
+          password: password
+        })
+
+      user ->
+        User.password_changeset(user, %{password: password})
     end
 
   changeset

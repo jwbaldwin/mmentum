@@ -45,14 +45,6 @@ defmodule MmentumWeb.HabitLive.Index do
   end
 
   @impl true
-  def handle_event("delete", %{"id" => id}, socket) do
-    case Habits.delete_habit(get_current_user(socket), id) do
-      {:ok, _habit} -> {:noreply, assign(socket, :habits, list_habits(socket))}
-      {:error, :not_found} -> {:noreply, habit_not_found(socket)}
-      {:error, %Ecto.Changeset{} = changeset} -> {:noreply, assign(socket, changeset: changeset)}
-    end
-  end
-
   def handle_event("add_log", %{"id" => habit_id}, socket) do
     case Habits.record_completion(get_current_user(socket), habit_id) do
       {:ok, _log} -> {:noreply, assign(socket, :habits, list_habits(socket))}
