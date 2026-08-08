@@ -64,7 +64,7 @@ defmodule MmentumWeb.CoreComponents do
     >
       <div
         id={"#{@id}-bg"}
-        class="motion-modal-backdrop bg-zinc-50/90 fixed inset-0"
+        class="motion-modal-backdrop fixed inset-0 bg-zinc-50/90 dark:bg-zinc-950/90"
         aria-hidden="true"
       />
       <div
@@ -82,13 +82,13 @@ defmodule MmentumWeb.CoreComponents do
               phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
               phx-key="escape"
               phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-              class="motion-modal-panel relative hidden origin-center rounded-modal bg-white p-6 shadow-modal ring-1 ring-zinc-950/10 sm:p-8"
+              class="motion-modal-panel relative hidden origin-center rounded-modal bg-white p-6 shadow-modal ring-1 ring-zinc-950/10 dark:bg-zinc-950 dark:shadow-[0_28px_72px_rgb(0_0_0/0.48),0_8px_24px_rgb(0_0_0/0.28)] dark:ring-zinc-50/10 sm:p-8"
             >
               <div class="absolute right-4 top-4 sm:right-5 sm:top-5">
                 <button
                   phx-click={JS.exec("data-cancel", to: "##{@id}")}
                   type="button"
-                  class="button-feedback flex h-9 w-9 items-center justify-center rounded-control text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 focus-visible:ring-offset-2"
+                  class="button-feedback flex h-9 w-9 items-center justify-center rounded-control text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 focus-visible:ring-offset-2 dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-zinc-300 dark:focus-visible:ring-offset-zinc-950"
                   aria-label={gettext("close")}
                 >
                   <.icon name="hero-x-mark-solid" class="h-5 w-5" />
@@ -164,7 +164,7 @@ defmodule MmentumWeb.CoreComponents do
       type={@type}
       class={[
         "button-feedback inline-flex items-center justify-center gap-2 rounded-control type-label",
-        "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/25 focus-visible:ring-offset-2",
+        "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/25 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950",
         "disabled:cursor-not-allowed disabled:opacity-50 phx-submit-loading:cursor-wait phx-submit-loading:opacity-65",
         button_size(@size),
         button_variant(@variant),
@@ -178,11 +178,11 @@ defmodule MmentumWeb.CoreComponents do
   end
 
   defp button_variant("primary") do
-    "bg-action text-white shadow-control hover:bg-action-hover active:text-white/80"
+    "bg-action text-white shadow-control hover:bg-action-hover active:text-white/80 dark:bg-zinc-100 dark:text-zinc-950 dark:shadow-[0_1px_2px_rgb(0_0_0/0.22)] dark:hover:bg-zinc-200 dark:active:text-zinc-950/80"
   end
 
   defp button_variant("destructive") do
-    "text-danger hover:bg-danger-soft active:text-rose-800"
+    "text-danger hover:bg-danger-soft active:text-rose-800 dark:text-rose-400 dark:hover:bg-[#2e1016] dark:active:text-rose-300"
   end
 
   defp button_size("default"), do: "min-h-11 px-4 py-2.5"
@@ -252,7 +252,7 @@ defmodule MmentumWeb.CoreComponents do
 
     ~H"""
     <div phx-feedback-for={@name}>
-      <label class="flex items-center gap-3 type-body text-zinc-600">
+      <label class="flex items-center gap-3 type-body text-zinc-600 dark:text-zinc-400">
         <input type="hidden" name={@name} value="false" />
         <input
           type="checkbox"
@@ -260,7 +260,7 @@ defmodule MmentumWeb.CoreComponents do
           name={@name}
           value="true"
           checked={@checked}
-          class="h-4 w-4 rounded border-zinc-300 text-action shadow-control focus:ring-3 focus:ring-focus/20 disabled:cursor-not-allowed disabled:opacity-50"
+          class="h-4 w-4 rounded border-zinc-300 text-action shadow-control focus:ring-3 focus:ring-focus/20 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-100 dark:shadow-[0_1px_2px_rgb(0_0_0/0.22)]"
           {@rest}
         />
         {@label}
@@ -327,12 +327,13 @@ defmodule MmentumWeb.CoreComponents do
 
   defp field_classes(errors, class, sizing) do
     [
-      "mt-2 block w-full rounded-control border bg-white px-3.5 text-base leading-6 text-zinc-900 shadow-control sm:text-sm sm:leading-5",
+      "mt-2 block w-full rounded-control border bg-white px-3.5 text-base leading-6 text-zinc-900 shadow-control dark:bg-zinc-950 dark:text-zinc-100 dark:shadow-[0_1px_2px_rgb(0_0_0/0.22)] sm:text-sm sm:leading-5",
       "transition-[border-color,box-shadow,background-color] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)]",
-      "placeholder:text-zinc-400 focus:outline-none focus:ring-3 focus:ring-focus/20 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-muted",
-      "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-focus",
-      errors == [] && "border-zinc-300 focus:border-focus",
-      errors != [] && "border-danger focus:border-danger focus:ring-danger/15",
+      "placeholder:text-zinc-400 focus:outline-none focus:ring-3 focus:ring-focus/20 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-muted dark:placeholder:text-zinc-500 dark:disabled:bg-zinc-900 dark:disabled:text-zinc-400",
+      "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-focus dark:phx-no-feedback:border-zinc-700",
+      errors == [] && "border-zinc-300 focus:border-focus dark:border-zinc-700",
+      errors != [] &&
+        "border-danger focus:border-danger focus:ring-danger/15 dark:border-rose-400 dark:focus:border-rose-400 dark:focus:ring-rose-400/15",
       sizing,
       class
     ]
@@ -346,7 +347,7 @@ defmodule MmentumWeb.CoreComponents do
 
   def label(assigns) do
     ~H"""
-    <label for={@for} class="block type-label text-zinc-800">
+    <label for={@for} class="block type-label text-zinc-800 dark:text-zinc-200">
       {render_slot(@inner_block)}
     </label>
     """
@@ -359,7 +360,7 @@ defmodule MmentumWeb.CoreComponents do
 
   def error(assigns) do
     ~H"""
-    <p class="mt-2 flex items-center gap-2 text-xs font-medium leading-5 text-danger phx-no-feedback:hidden">
+    <p class="mt-2 flex items-center gap-2 text-xs font-medium leading-5 text-danger phx-no-feedback:hidden dark:text-rose-400">
       <.icon name="hero-exclamation-circle-mini" class="h-4 w-4 flex-none" />
       {render_slot(@inner_block)}
     </p>
@@ -386,7 +387,7 @@ defmodule MmentumWeb.CoreComponents do
         <p
           :if={@subtitle != []}
           class={[
-            "type-body text-muted",
+            "type-body text-muted dark:text-zinc-400",
             if(@variant == "dashboard", do: "mt-1 sm:text-base sm:leading-7", else: "mt-2")
           ]}
         >
@@ -442,7 +443,7 @@ defmodule MmentumWeb.CoreComponents do
     ~H"""
     <div class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
       <table class="w-[40rem] mt-11 sm:w-full">
-        <thead class="text-sm text-left leading-6 text-zinc-500">
+        <thead class="text-left text-sm leading-6 text-zinc-500 dark:text-zinc-400">
           <tr>
             <th :for={col <- @col} class="p-0 pr-6 pb-4 font-normal">{col[:label]}</th>
             <th class="relative p-0 pb-4"><span class="sr-only">{gettext("Actions")}</span></th>
@@ -451,27 +452,27 @@ defmodule MmentumWeb.CoreComponents do
         <tbody
           id={@id}
           phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
-          class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700"
+          class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700 dark:divide-zinc-900 dark:border-zinc-800 dark:text-zinc-300"
         >
-          <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="group hover:bg-zinc-50">
+          <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="group hover:bg-zinc-50 dark:hover:bg-zinc-950">
             <td
               :for={{col, i} <- Enum.with_index(@col)}
               phx-click={@row_click && @row_click.(row)}
               class={["relative p-0", @row_click && "hover:cursor-pointer"]}
             >
               <div class="block py-4 pr-6">
-                <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
-                <span class={["relative", i == 0 && "font-semibold text-zinc-900"]}>
+                <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-950 sm:rounded-l-xl" />
+                <span class={["relative", i == 0 && "font-semibold text-zinc-900 dark:text-zinc-100"]}>
                   {render_slot(col, @row_item.(row))}
                 </span>
               </div>
             </td>
             <td :if={@action != []} class="relative w-14 p-0">
               <div class="relative whitespace-nowrap py-4 text-right text-sm font-medium">
-                <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-zinc-50 sm:rounded-r-xl" />
+                <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-950 sm:rounded-r-xl" />
                 <span
                   :for={action <- @action}
-                  class="relative ml-4 font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
+                  class="relative ml-4 font-semibold leading-6 text-zinc-900 hover:text-zinc-700 dark:text-zinc-100 dark:hover:text-zinc-300"
                 >
                   {render_slot(action, @row_item.(row))}
                 </span>
@@ -501,10 +502,10 @@ defmodule MmentumWeb.CoreComponents do
   def list(assigns) do
     ~H"""
     <div class="mt-10">
-      <dl class="-my-4 divide-y divide-zinc-100">
+      <dl class="-my-4 divide-y divide-zinc-100 dark:divide-zinc-900">
         <div :for={item <- @item} class="flex gap-4 py-4 type-body sm:gap-8">
-          <dt class="w-1/3 flex-none text-muted sm:w-1/4">{item.title}</dt>
-          <dd class="text-zinc-800">{render_slot(item)}</dd>
+          <dt class="w-1/3 flex-none text-muted dark:text-zinc-400 sm:w-1/4">{item.title}</dt>
+          <dd class="text-zinc-800 dark:text-zinc-200">{render_slot(item)}</dd>
         </div>
       </dl>
     </div>
@@ -526,7 +527,7 @@ defmodule MmentumWeb.CoreComponents do
     <div class="mt-12">
       <.link
         navigate={@navigate}
-        class="button-feedback inline-flex items-center gap-1.5 rounded-control type-label text-zinc-700 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20"
+        class="button-feedback inline-flex items-center gap-1.5 rounded-control type-label text-zinc-700 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 dark:text-zinc-300 dark:hover:text-zinc-50"
       >
         <.icon name="hero-arrow-left-solid" class="h-3 w-3" />
         {render_slot(@inner_block)}
@@ -559,7 +560,7 @@ defmodule MmentumWeb.CoreComponents do
 
     [
       "mmentum-toast group/toast pointer-events-auto relative col-start-1 col-end-1 row-start-1 row-end-2",
-      "w-full max-w-[calc(100vw-2rem)] items-center justify-between overflow-hidden rounded-panel border border-zinc-200 bg-white p-4 pr-10 shadow-floating",
+      "w-full max-w-[calc(100vw-2rem)] items-center justify-between overflow-hidden rounded-panel border border-zinc-200 bg-white p-4 pr-10 shadow-floating dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-[0_10px_28px_rgb(0_0_0/0.32),0_2px_8px_rgb(0_0_0/0.2)]",
       "[@media(scripting:enabled)]:opacity-0 [@media(scripting:enabled){[data-phx-main]_&}]:opacity-100",
       if(assigns[:rest][:hidden] == true, do: "hidden", else: "flex"),
       icon_class

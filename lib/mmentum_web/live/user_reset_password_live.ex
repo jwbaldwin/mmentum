@@ -32,7 +32,7 @@ defmodule MmentumWeb.UserResetPasswordLive do
 
       <p class="mt-5 flex items-center justify-center gap-4 type-body">
         <.link href={~p"/users/register"} class="text-link">Create account</.link>
-        <span aria-hidden="true" class="text-zinc-300">/</span>
+        <span aria-hidden="true" class="text-zinc-300 dark:text-zinc-700">/</span>
         <.link href={~p"/login"} class="text-link">Log in</.link>
       </p>
     </div>

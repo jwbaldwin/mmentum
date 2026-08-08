@@ -16,31 +16,31 @@ defmodule MmentumWeb.Layouts do
       phx-window-keydown={JS.remove_attribute("open", to: "#account-menu")}
       phx-key="escape"
     >
-      <summary class="flex w-[min(14rem,calc(100vw-4rem))] min-w-0 cursor-pointer list-none select-none items-center gap-2.5 rounded-xl px-2 py-1.5 text-left text-zinc-900 transition-[background-color,box-shadow] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:shadow-[inset_0_0_0_1px_rgb(24_24_27/0.06)] focus:outline-none focus-visible:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-focus)_24%,transparent),inset_0_0_0_1px_rgb(24_24_27/0.08)] group-open:bg-zinc-100 group-open:shadow-[inset_0_0_0_1px_rgb(24_24_27/0.06)] [&::-webkit-details-marker]:hidden">
+      <summary class="flex w-[min(14rem,calc(100vw-4rem))] min-w-0 cursor-pointer list-none select-none items-center gap-2.5 rounded-xl px-2 py-1.5 text-left text-zinc-900 transition-[background-color,box-shadow] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:shadow-[inset_0_0_0_1px_rgb(24_24_27/0.06)] focus:outline-none focus-visible:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-focus)_24%,transparent),inset_0_0_0_1px_rgb(24_24_27/0.08)] group-open:bg-zinc-100 group-open:shadow-[inset_0_0_0_1px_rgb(24_24_27/0.06)] dark:text-zinc-100 dark:hover:bg-zinc-900 dark:hover:shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)] dark:focus-visible:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-focus)_24%,transparent),inset_0_0_0_1px_rgb(255_255_255/0.1)] dark:group-open:bg-zinc-900 dark:group-open:shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)] [&::-webkit-details-marker]:hidden">
         <.avatar id="account-avatar" seed={@current_user.email} />
         <span class="min-w-0 flex-1">
-          <span class="block truncate text-[0.8125rem] font-medium leading-[1.125rem] text-zinc-900">
+          <span class="block truncate text-[0.8125rem] font-medium leading-[1.125rem] text-zinc-900 dark:text-zinc-100">
             {@current_user.full_name}
           </span>
-          <span class="mt-px block truncate text-xs font-normal leading-4 text-muted">
+          <span class="mt-px block truncate text-xs font-normal leading-4 text-muted dark:text-zinc-400">
             {@current_user.email}
           </span>
         </span>
         <.icon
           name="hero-chevron-down-mini"
-          class="h-3.5 w-3.5 flex-none text-muted transition-transform duration-[160ms] ease-[var(--motion-ease-out)] group-open:rotate-180 motion-reduce:transition-none"
+          class="h-3.5 w-3.5 flex-none text-muted transition-transform duration-[160ms] ease-[var(--motion-ease-out)] group-open:rotate-180 dark:text-zinc-400 motion-reduce:transition-none"
         />
       </summary>
 
       <div
         id="account-menu-popover"
-        class="account-menu-popover absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[min(14rem,calc(100vw-4rem))] origin-top-right overflow-hidden rounded-panel bg-white/[0.92] p-1.5 shadow-[0_14px_32px_rgb(24_24_27/0.12),0_3px_10px_rgb(24_24_27/0.06),inset_0_0_0_1px_rgb(24_24_27/0.08)] backdrop-blur-[20px] backdrop-saturate-[1.6]"
+        class="account-menu-popover absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[min(14rem,calc(100vw-4rem))] origin-top-right overflow-hidden rounded-panel bg-white/[0.92] p-1.5 shadow-[0_14px_32px_rgb(24_24_27/0.12),0_3px_10px_rgb(24_24_27/0.06),inset_0_0_0_1px_rgb(24_24_27/0.08)] backdrop-blur-[20px] backdrop-saturate-[1.6] dark:bg-zinc-950/[0.92]"
       >
         <.account_menu_item navigate={~p"/users/settings"} icon="hero-user">
           Settings
         </.account_menu_item>
         <.appearance_toggle />
-        <div class="mx-2 my-1 h-px bg-zinc-950/[0.07]"></div>
+        <div class="mx-2 my-1 h-px bg-zinc-950/[0.07] dark:bg-zinc-50/[0.07]"></div>
         <.account_menu_item href={~p"/users/log_out"} method="delete" icon="hero-arrow-right-on-rectangle">
           Log out
         </.account_menu_item>
@@ -58,13 +58,13 @@ defmodule MmentumWeb.Layouts do
       data-theme-cycle
       data-roll-ready="false"
       aria-label="Appearance: Auto. Switch to Light"
-      class="flex min-h-9 w-full items-center gap-2.5 rounded-control px-2.5 py-2 text-left text-zinc-700 transition-[background-color,color,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:text-zinc-900 focus-visible:bg-zinc-100 focus-visible:text-zinc-900 focus-visible:outline-none active:scale-[0.98] motion-reduce:scale-100"
+      class="flex min-h-9 w-full items-center gap-2.5 rounded-control px-2.5 py-2 text-left text-zinc-700 transition-[background-color,color,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:text-zinc-900 focus-visible:bg-zinc-100 focus-visible:text-zinc-900 focus-visible:outline-none active:scale-[0.98] dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100 dark:focus-visible:bg-zinc-900 dark:focus-visible:text-zinc-100 motion-reduce:scale-100"
     >
       <svg
         data-appearance-icon
         data-theme="light"
         viewBox="0 0 24 24"
-        class="appearance-morph h-4 w-4 flex-none overflow-visible text-muted"
+        class="appearance-morph h-4 w-4 flex-none overflow-visible text-muted dark:text-zinc-400"
         aria-hidden="true"
       >
         <path
@@ -98,9 +98,9 @@ defmodule MmentumWeb.Layouts do
       navigate={@navigate}
       href={@href}
       method={@method}
-      class="flex min-h-9 items-center gap-2.5 rounded-control px-2.5 py-2 text-[0.8125rem] font-medium leading-5 text-zinc-700 transition-colors duration-[120ms] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:text-zinc-900 focus-visible:bg-zinc-100 focus-visible:text-zinc-900 focus-visible:outline-none active:bg-zinc-200"
+      class="flex min-h-9 items-center gap-2.5 rounded-control px-2.5 py-2 text-[0.8125rem] font-medium leading-5 text-zinc-700 transition-colors duration-[120ms] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:text-zinc-900 focus-visible:bg-zinc-100 focus-visible:text-zinc-900 focus-visible:outline-none active:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100 dark:focus-visible:bg-zinc-900 dark:focus-visible:text-zinc-100 dark:active:bg-zinc-800"
     >
-      <.icon name={@icon} class="h-4 w-4 flex-none text-muted" />
+      <.icon name={@icon} class="h-4 w-4 flex-none text-muted dark:text-zinc-400" />
       <span>{render_slot(@inner_block)}</span>
     </.link>
     """
@@ -118,7 +118,7 @@ defmodule MmentumWeb.Layouts do
       id={@id}
       aria-hidden="true"
       class={[
-        "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full ring-1 ring-zinc-950/10",
+        "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full ring-1 ring-zinc-950/10 dark:ring-zinc-50/10",
         @class
       ]}
     >
