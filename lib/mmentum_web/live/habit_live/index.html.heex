@@ -29,7 +29,7 @@
   <section
     :for={habit <- @habits}
     id={"habit-#{habit.id}"}
-    class="border-b border-zinc-100 pb-10 last:border-0 last:pb-0"
+    class="border-b border-zinc-100 pb-10 last:border-0 last:pb-0 dark:border-zinc-900"
   >
     <% completed = min(length(habit.logs), habit.iterations) %>
     <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -42,7 +42,7 @@
           <h2 class="type-card-title truncate">{habit.name}</h2>
           <.icon
             name="hero-pencil-solid"
-            class="h-4 w-4 shrink-0 text-muted opacity-60 transition-opacity duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] group-hover:opacity-100 group-focus-within:opacity-100"
+            class="h-4 w-4 shrink-0 text-muted opacity-60 transition-opacity duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] group-hover:opacity-100 group-focus-within:opacity-100 dark:text-zinc-400"
           />
         </.link>
       </div>
@@ -114,8 +114,9 @@
           phx-value-id={habit.id}
           type="button"
           class={[
-            "button-feedback h-12 text-zinc-700 hover:text-zinc-900",
-            completed == 0 && "disabled:text-zinc-200 cursor-not-allowed"
+            "button-feedback h-12 text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100",
+            completed == 0 &&
+              "cursor-not-allowed disabled:text-zinc-200 dark:disabled:text-zinc-800"
           ]}
           disabled={completed == 0}
           aria-label={"Remove a completion from #{habit.name}"}
@@ -128,8 +129,9 @@
           phx-value-id={habit.id}
           type="button"
           class={[
-            "button-feedback h-12 text-zinc-700 hover:text-zinc-900",
-            completed >= habit.iterations && "disabled:text-zinc-200 cursor-not-allowed"
+            "button-feedback h-12 text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100",
+            completed >= habit.iterations &&
+              "cursor-not-allowed disabled:text-zinc-200 dark:disabled:text-zinc-800"
           ]}
           disabled={completed >= habit.iterations}
           aria-label={"Record a completion for #{habit.name}"}
@@ -144,14 +146,14 @@
 <div :if={@time_of_day && length(@habits) == 0} class="py-20 text-center sm:py-24">
   <%= case @time_of_day do %>
     <% :morning -> %>
-      <.icon name="hero-sun-mini" class="mx-auto h-10 w-10 text-muted" />
+      <.icon name="hero-sun-mini" class="mx-auto h-10 w-10 text-muted dark:text-zinc-400" />
     <% :afternoon -> %>
-      <.icon name="hero-sparkles-mini" class="mx-auto h-10 w-10 text-muted" />
+      <.icon name="hero-sparkles-mini" class="mx-auto h-10 w-10 text-muted dark:text-zinc-400" />
     <% :evening -> %>
-      <.icon name="hero-moon-mini" class="mx-auto h-10 w-10 text-muted" />
+      <.icon name="hero-moon-mini" class="mx-auto h-10 w-10 text-muted dark:text-zinc-400" />
   <% end %>
   <h2 class="mt-3 type-section-title">No habits yet</h2>
-  <p class="mt-1 type-body text-muted">
+  <p class="mt-1 type-body text-muted dark:text-zinc-400">
     Add a habit to start building momentum.
   </p>
 </div>

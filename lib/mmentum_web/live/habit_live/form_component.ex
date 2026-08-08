@@ -11,7 +11,7 @@ defmodule MmentumWeb.HabitLive.FormComponent do
         <h2 class="type-page-title">
           {if @action == :new, do: "New habit", else: "Edit habit"}
         </h2>
-        <p class="mt-2 type-body text-muted">
+        <p class="mt-2 type-body text-muted dark:text-zinc-400">
           {if @action == :new,
             do: "Choose an action you can repeat.",
             else: "Adjust this habit's name or cadence."}
@@ -34,8 +34,8 @@ defmodule MmentumWeb.HabitLive.FormComponent do
           autocomplete="off"
         />
 
-        <fieldset class="rounded-panel border border-zinc-200 bg-zinc-50/70 p-4">
-          <legend class="px-1 type-label text-zinc-900">Cadence</legend>
+        <fieldset class="rounded-panel border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-950/70">
+          <legend class="px-1 type-label text-zinc-900 dark:text-zinc-100">Cadence</legend>
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-[9rem_1fr]">
             <.input
               field={@form[:iterations]}

@@ -1,0 +1,112 @@
+:root {
+  color-scheme: light;
+  background: var(--color-white);
+}
+
+:root.dark {
+  color-scheme: dark;
+  background: var(--color-zinc-950);
+}
+
+:root.theme-changing *,
+:root.theme-changing *::before,
+:root.theme-changing *::after {
+  transition-property: color, background-color, border-color, box-shadow, outline-color !important;
+  transition-duration: 240ms !important;
+  transition-timing-function: var(--motion-ease-out) !important;
+}
+
+.theme-logo {
+  transition: filter 240ms var(--motion-ease-out);
+}
+
+.dark .theme-logo {
+  filter: invert(1) brightness(1.08);
+}
+
+.dark .account-menu-popover {
+  box-shadow:
+    0 18px 42px rgb(0 0 0 / 0.44),
+    0 4px 14px rgb(0 0 0 / 0.28),
+    inset 0 0 0 1px rgb(255 255 255 / 0.1);
+}
+
+.appearance-morph {
+  transform: rotate(0deg);
+  transition: transform 480ms cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: transform;
+}
+
+:root.theme-changing .appearance-morph {
+  transition: transform 480ms cubic-bezier(0.65, 0, 0.35, 1) !important;
+}
+
+.appearance-morph[data-theme="dark"] {
+  transform: rotate(-18deg);
+}
+
+.appearance-roll {
+  display: block;
+  flex: none;
+  width: 2.75rem;
+  height: 1rem;
+  overflow: hidden;
+  perspective: 3.5rem;
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1rem;
+  text-align: right;
+}
+
+.dark .appearance-roll {
+  color: var(--color-zinc-400);
+}
+
+.appearance-roll-track {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: rotateX(calc(var(--appearance-turn, 0) * -120deg));
+  transform-style: preserve-3d;
+  transition: none;
+  will-change: transform;
+}
+
+[data-roll-ready="true"] .appearance-roll-track {
+  transition: transform 260ms cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+:root.theme-changing [data-roll-ready="true"] .appearance-roll-track {
+  transition-property: transform !important;
+  transition-duration: 260ms !important;
+  transition-timing-function: cubic-bezier(0.77, 0, 0.175, 1) !important;
+}
+
+.appearance-roll-face {
+  position: absolute;
+  inset: 0 0.125rem 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  backface-visibility: hidden;
+  transform: rotateX(calc(var(--appearance-face) * 120deg)) translateZ(0.3rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root.theme-changing *,
+  :root.theme-changing *::before,
+  :root.theme-changing *::after {
+    transition-duration: 120ms !important;
+  }
+
+  .appearance-morph {
+    transition: none !important;
+  }
+
+  [data-roll-ready="true"] .appearance-roll-track,
+  :root.theme-changing [data-roll-ready="true"] .appearance-roll-track {
+    transition: none !important;
+  }
+}

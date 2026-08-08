@@ -1,9 +1,13 @@
 @import "tailwindcss" source(none);
+@import "./components/theme.css";
+
 @plugin "@tailwindcss/forms";
 
 @source "../js";
 @source "../../lib/mmentum_web";
 @source "../../deps/live_toast/lib";
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --color-brand: #fd4f00;
@@ -41,8 +45,16 @@ body {
   color: var(--color-zinc-900);
 }
 
+.dark body {
+  color: var(--color-zinc-100);
+}
+
 ::selection {
   background: color-mix(in srgb, var(--color-brand) 18%, white);
+}
+
+.dark ::selection {
+  background: color-mix(in srgb, var(--color-brand) 18%, var(--color-zinc-950));
 }
 
 .type-page-title {
@@ -93,6 +105,17 @@ body {
   font-size: 0.75rem;
   font-weight: 400;
   line-height: 1rem;
+}
+
+.dark .type-page-title,
+.dark .type-display-title,
+.dark .type-section-title,
+.dark .type-card-title {
+  color: var(--color-zinc-100);
+}
+
+.dark .type-metadata {
+  color: var(--color-zinc-400);
 }
 
 .text-link {
@@ -147,6 +170,14 @@ body {
   min-width: max-content;
   height: var(--progress-dot-size);
   isolation: isolate;
+}
+
+.dark .habit-progress {
+  --progress-pending: color-mix(
+    in srgb,
+    var(--color-zinc-900) 65%,
+    var(--color-zinc-800)
+  );
 }
 
 .habit-progress__shape {
@@ -277,6 +308,12 @@ body {
   background: var(--color-action);
 }
 
+.dark .habit-progress__fill-fluid::before,
+.dark .habit-progress__fill-fluid-step::before,
+.dark .habit-progress__fill-step {
+  background: var(--color-zinc-100);
+}
+
 .mmentum-toast > button {
   color: var(--color-muted);
 }
@@ -321,6 +358,16 @@ body {
   color: var(--color-zinc-600);
   font-size: 0.8125rem;
   line-height: 1.25rem;
+}
+
+.dark .mmentum-toast > button,
+.dark .mmentum-toast::before,
+.dark .mmentum-toast > div > p {
+  color: var(--color-zinc-400);
+}
+
+.dark .mmentum-toast::before {
+  background-color: var(--color-zinc-400);
 }
 
 .account-menu {

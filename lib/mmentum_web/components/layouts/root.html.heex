@@ -4,10 +4,68 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
+    <meta name="theme-color" content="#ffffff" />
+    <script>
+      (() => {
+        const storageKey = "mmentum-theme"
+        const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
+        const root = document.documentElement
+        const themeColor = document.querySelector('meta[name="theme-color"]')
+        let transitionTimer
+
+        const storedPreference = () => {
+          const preference = window.localStorage.getItem(storageKey)
+          return ["light", "dark"].includes(preference) ? preference : "auto"
+        }
+        const resolvedTheme = preference => preference === "auto"
+          ? systemTheme.matches ? "dark" : "light"
+          : preference
+        const current = () => ({
+          preference: storedPreference(),
+          theme: root.dataset.theme
+        })
+        const apply = (preference, {animate = false, notify = true} = {}) => {
+          const theme = resolvedTheme(preference)
+
+          if (animate && root.dataset.theme !== theme) {
+            window.clearTimeout(transitionTimer)
+            root.classList.add("theme-changing")
+            transitionTimer = window.setTimeout(() => root.classList.remove("theme-changing"), 260)
+          }
+
+          root.classList.toggle("dark", theme === "dark")
+          root.dataset.theme = theme
+          root.dataset.themePreference = preference
+          root.style.colorScheme = theme
+          themeColor.setAttribute("content", theme === "dark" ? "#09090b" : "#ffffff")
+
+          if (notify) {
+            window.dispatchEvent(new CustomEvent("mmentum:theme-changed", {
+              detail: {preference, theme}
+            }))
+          }
+        }
+        const set = (preference, options) => {
+          if (preference === "auto") {
+            window.localStorage.removeItem(storageKey)
+          } else {
+            window.localStorage.setItem(storageKey, preference)
+          }
+
+          apply(preference, options)
+        }
+
+        window.mmentumTheme = {current, set}
+        systemTheme.addEventListener("change", () => {
+          if (storedPreference() === "auto") apply("auto", {animate: true})
+        })
+        apply(storedPreference(), {notify: false})
+      })()
+    </script>
     <.live_title suffix=" | Mmentum">
       {assigns[:page_title] || "Home"}
     </.live_title>
-    <link phx-track-static rel="stylesheet" href={~p"/assets/app.css?v=9"} />
+    <link phx-track-static rel="stylesheet" href={~p"/assets/app.css?v=11"} />
     <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}>
     </script>
 
@@ -40,7 +98,7 @@
       rel="stylesheet"
     />
   </head>
-  <body class="bg-white antialiased">
+  <body class="bg-white text-zinc-900 antialiased selection:bg-[color-mix(in_srgb,var(--color-brand)_18%,white)] dark:bg-zinc-950 dark:text-zinc-100 dark:selection:bg-[color-mix(in_srgb,var(--color-brand)_18%,var(--color-zinc-950))]">
     {@inner_content}
   </body>
 </html>
