@@ -15,7 +15,7 @@ defmodule Mmentum.HabitsFixtures do
       attrs
       |> Map.drop([:user])
       |> Enum.into(%{
-        iterations: 42,
+        min_completions: 3,
         name: "some name",
         periodicity: :week
       })

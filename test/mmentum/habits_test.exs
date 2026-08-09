@@ -10,7 +10,7 @@ defmodule Mmentum.HabitsTest do
   import Mmentum.AccountsFixtures
   import Mmentum.HabitsFixtures
 
-  @invalid_attrs %{iterations: nil, name: nil, periodicity: nil}
+  @invalid_attrs %{min_completions: nil, name: nil, periodicity: nil}
 
   describe "habits" do
     test "get_habit!/2 returns an owned habit" do
@@ -30,13 +30,41 @@ defmodule Mmentum.HabitsTest do
 
     test "create_habit/2 creates a habit for the user" do
       user = user_fixture()
-      valid_attrs = %{iterations: 42, name: "some name", periodicity: :week}
+      valid_attrs = %{min_completions: 3, name: "some name", periodicity: :week}
 
       assert {:ok, %Habit{} = habit} = Habits.create_habit(user, valid_attrs)
       assert habit.user_id == user.id
-      assert habit.iterations == 42
+      assert habit.min_completions == 3
+      assert habit.max_completions == nil
       assert habit.name == "some name"
       assert habit.periodicity == :week
+    end
+
+    test "create_habit/2 creates a flexible completion range" do
+      user = user_fixture()
+
+      assert {:ok, %Habit{} = habit} =
+               Habits.create_habit(user, %{
+                 min_completions: 2,
+                 max_completions: 3,
+                 name: "Go to the gym",
+                 periodicity: :week
+               })
+
+      assert habit.min_completions == 2
+      assert habit.max_completions == 3
+    end
+
+    test "create_habit/2 rejects a maximum that does not exceed the minimum" do
+      attrs = %{
+        min_completions: 2,
+        max_completions: 2,
+        name: "Go to the gym",
+        periodicity: :week
+      }
+
+      assert {:error, changeset} = Habits.create_habit(user_fixture(), attrs)
+      assert "must be greater than the minimum" in errors_on(changeset).max_completions
     end
 
     test "create_habit/2 returns an error changeset for invalid data" do
@@ -48,9 +76,9 @@ defmodule Mmentum.HabitsTest do
       habit = habit_fixture(user: user)
 
       assert {:ok, %Habit{} = habit} =
-               Habits.update_habit(user, habit.id, %{iterations: 43, name: "updated"})
+               Habits.update_habit(user, habit.id, %{min_completions: 4, name: "updated"})
 
-      assert habit.iterations == 43
+      assert habit.min_completions == 4
       assert habit.name == "updated"
     end
 

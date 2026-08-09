@@ -31,7 +31,12 @@
     id={"habit-#{habit.id}"}
     class="border-b border-zinc-100 pb-10 last:border-0 last:pb-0 dark:border-zinc-900"
   >
-    <% completed = min(length(habit.logs), habit.iterations) %>
+    <% completion_cap = habit.max_completions || habit.min_completions %>
+    <% completed = min(length(habit.logs), completion_cap) %>
+    <% optional_steps =
+      if habit.max_completions,
+        do: (habit.min_completions + 1)..habit.max_completions,
+        else: [] %>
     <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div class="group min-w-0">
         <.link
@@ -48,8 +53,11 @@
       </div>
       <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
         <p class="type-metadata">
-          {habit.iterations} times per {habit.periodicity}
+          <MmentumWeb.HabitComponents.cadence habit={habit} />
         </p>
+        <span :if={completed >= habit.min_completions} class="type-metadata">
+          Goal met
+        </span>
         <span :if={habit.momentum_score > 0} class="type-metadata">
           Momentum {Float.round(habit.momentum_score, 2)}
         </span>
@@ -73,37 +81,38 @@
           class="habit-progress"
           data-completed={completed}
           role="progressbar"
-          aria-label={"#{habit.name} completions"}
+          aria-label={"#{habit.name} required completions"}
           aria-valuemin="0"
-          aria-valuemax={habit.iterations}
-          aria-valuenow={completed}
-          aria-valuetext={"#{completed} of #{habit.iterations} completed"}
-          style={progress_style(habit.iterations, completed)}
+          aria-valuemax={habit.min_completions}
+          aria-valuenow={min(completed, habit.min_completions)}
+          aria-valuetext={completion_summary(habit, completed)}
+          style={progress_style(completion_cap, completed)}
         >
           <span class="habit-progress__shape" aria-hidden="true">
-            <span :if={habit.iterations > 1} class="habit-progress__track"></span>
+            <span :if={completion_cap > 1} class="habit-progress__track"></span>
             <span
-              :for={step <- 1..habit.iterations}
+              :for={step <- 1..completion_cap}
               id={"habit-#{habit.id}-progress-step-#{step}"}
               class="habit-progress__step"
-              data-state={progress_state(step, completed)}
+              data-kind={if step in optional_steps, do: "optional", else: "required"}
+              data-state={if step <= completed, do: "complete", else: "pending"}
             ></span>
           </span>
           <span
             class={[
               "habit-progress__fill",
-              completed > 0 && completed < habit.iterations && "habit-progress__fill--partial"
+              completed > 0 && completed < completion_cap && "habit-progress__fill--partial"
             ]}
             aria-hidden="true"
           >
             <span class="habit-progress__fill-fluid">
               <span
-                :for={_step <- 1..habit.iterations}
+                :for={_step <- 1..completion_cap}
                 class="habit-progress__fill-fluid-step"
               ></span>
             </span>
             <span class="habit-progress__fill-beads">
-              <span :for={_step <- 1..habit.iterations} class="habit-progress__fill-step"></span>
+              <span :for={_step <- 1..completion_cap} class="habit-progress__fill-step"></span>
             </span>
           </span>
         </div>
@@ -130,10 +139,10 @@
           type="button"
           class={[
             "button-feedback h-12 text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100",
-            completed >= habit.iterations &&
+            completed >= completion_cap &&
               "cursor-not-allowed disabled:text-zinc-200 dark:disabled:text-zinc-800"
           ]}
-          disabled={completed >= habit.iterations}
+          disabled={completed >= completion_cap}
           aria-label={"Record a completion for #{habit.name}"}
           title="Record completion"
         >

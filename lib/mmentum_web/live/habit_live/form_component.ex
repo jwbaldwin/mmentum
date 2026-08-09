@@ -36,19 +36,49 @@ defmodule MmentumWeb.HabitLive.FormComponent do
 
         <fieldset class="rounded-panel border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-950/70">
           <legend class="px-1 type-label text-zinc-900 dark:text-zinc-100">Cadence</legend>
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-[9rem_1fr]">
+          <div class={[
+            "grid grid-cols-1 gap-3",
+            if(@has_flexible_target,
+              do: "sm:grid-cols-[9rem_9rem_1fr]",
+              else: "sm:grid-cols-[9rem_1fr]"
+            )
+          ]}>
             <.input
-              field={@form[:iterations]}
+              field={@form[:min_completions]}
               type="number"
-              label="Times"
+              label={if @has_flexible_target, do: "Minimum", else: "Times"}
               max={31}
               min={1}
+            />
+            <.input
+              :if={@has_flexible_target}
+              field={@form[:max_completions]}
+              type="number"
+              label="Maximum"
+              max={31}
+              min={1}
+            />
+            <input
+              :if={!@has_flexible_target}
+              type="hidden"
+              name="habit[max_completions]"
+              value=""
             />
             <.input
               field={@form[:periodicity]}
               type="select"
               label="Per"
               options={[Day: :day, Week: :week, Month: :month]}
+            />
+          </div>
+          <div class="mt-4">
+            <.input
+              id="habit-has-flexible-target"
+              type="checkbox"
+              name="habit[has_flexible_target]"
+              value="true"
+              checked={@has_flexible_target}
+              label="Use a flexible range"
             />
           </div>
         </fieldset>
@@ -72,6 +102,7 @@ defmodule MmentumWeb.HabitLive.FormComponent do
     {:ok,
      socket
      |> assign(assigns)
+     |> assign(:has_flexible_target, not is_nil(habit.max_completions))
      |> assign_form(changeset)}
   end
 
@@ -82,11 +113,37 @@ defmodule MmentumWeb.HabitLive.FormComponent do
       |> Habits.change_habit(habit_params)
       |> Map.put(:action, :validate)
 
-    {:noreply, assign_form(socket, changeset)}
+    {:noreply,
+     socket
+     |> assign(:has_flexible_target, habit_params["has_flexible_target"] == "true")
+     |> assign_form(changeset)}
   end
 
-  def handle_event("save", %{"habit" => habit_params}, socket) do
-    save_habit(socket, socket.assigns.action, habit_params)
+  def handle_event(
+        "save",
+        %{
+          "habit" =>
+            %{
+              "has_flexible_target" => has_flexible_target,
+              "max_completions" => max_completions
+            } = habit_params
+        },
+        socket
+      ) do
+    has_flexible_target = has_flexible_target == "true"
+    socket = assign(socket, :has_flexible_target, has_flexible_target)
+
+    if has_flexible_target and max_completions == "" do
+      changeset =
+        socket.assigns.habit
+        |> Habits.change_habit(habit_params)
+        |> Ecto.Changeset.add_error(:max_completions, "can't be blank")
+        |> Map.put(:action, :validate)
+
+      {:noreply, assign_form(socket, changeset)}
+    else
+      save_habit(socket, socket.assigns.action, habit_params)
+    end
   end
 
   defp save_habit(socket, :edit, habit_params) do
