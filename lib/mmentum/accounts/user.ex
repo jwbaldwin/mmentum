@@ -37,7 +37,7 @@ defmodule Mmentum.Accounts.User do
       you don't want to validate the uniqueness of the email (like when
       using this changeset for validations on a LiveView form before
       submitting the form), this option can be set to `false`.
-      Defaults to `true`.
+      Defaults to `true`
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
@@ -97,7 +97,7 @@ defmodule Mmentum.Accounts.User do
   @doc """
   A user changeset for changing the email.
 
-  It requires the email to change otherwise an error is added.
+  It requires the email to change otherwise an error is added
   """
   def email_changeset(user, attrs, opts \\ []) do
     user
@@ -119,7 +119,7 @@ defmodule Mmentum.Accounts.User do
       leaks in the logs. If password hashing is not needed and clearing the
       password field is not desired (like when using this changeset for
       validations on a LiveView form), this option can be set to `false`.
-      Defaults to `true`.
+      Defaults to `true`
   """
   def password_changeset(user, attrs, opts \\ []) do
     user
@@ -129,7 +129,7 @@ defmodule Mmentum.Accounts.User do
   end
 
   @doc """
-  Confirms the account by setting `confirmed_at`.
+  Confirms the account by setting `confirmed_at`
   """
   def confirm_changeset(user) do
     now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
@@ -140,7 +140,7 @@ defmodule Mmentum.Accounts.User do
   Verifies the password.
 
   If there is no user or the user doesn't have a password, we call
-  `Bcrypt.no_user_verify/0` to avoid timing attacks.
+  `Bcrypt.no_user_verify/0` to avoid timing attacks
   """
   def valid_password?(%Mmentum.Accounts.User{hashed_password: hashed_password}, password)
       when is_binary(hashed_password) and byte_size(password) > 0 do
@@ -153,7 +153,7 @@ defmodule Mmentum.Accounts.User do
   end
 
   @doc """
-  Validates the current password otherwise adds an error to the changeset.
+  Validates the current password otherwise adds an error to the changeset
   """
   def validate_current_password(changeset, password) do
     if valid_password?(changeset.data, password) do

@@ -1,6 +1,6 @@
 defmodule Mmentum.Accounts do
   @moduledoc """
-  The Accounts context.
+  The Accounts context
   """
 
   import Ecto.Query, warn: false
@@ -138,7 +138,7 @@ defmodule Mmentum.Accounts do
   Updates the user email using the given token.
 
   If the token matches, the user email is updated and the token is deleted.
-  The confirmed_at date is also updated to the current time.
+  The confirmed_at date is also updated to the current time
   """
   def update_user_email(user, token) do
     context = "change:#{user.email}"
@@ -224,7 +224,7 @@ defmodule Mmentum.Accounts do
   ## Session
 
   @doc """
-  Generates a session token.
+  Generates a session token
   """
   def generate_user_session_token(user) do
     {token, user_token} = UserToken.build_session_token(user)
@@ -233,7 +233,7 @@ defmodule Mmentum.Accounts do
   end
 
   @doc """
-  Gets the user with the given signed token.
+  Gets the user with the given signed token
   """
   def get_user_by_session_token(token) do
     {:ok, query} = UserToken.verify_session_token_query(token)
@@ -241,7 +241,7 @@ defmodule Mmentum.Accounts do
   end
 
   @doc """
-  Deletes the signed token with the given context.
+  Deletes the signed token with the given context
   """
   def delete_user_session_token(token) do
     Repo.delete_all(UserToken.token_and_context_query(token, "session"))
@@ -277,7 +277,7 @@ defmodule Mmentum.Accounts do
   Confirms a user by the given token.
 
   If the token matches, the user account is marked as confirmed
-  and the token is deleted.
+  and the token is deleted
   """
   def confirm_user(token) do
     with {:ok, query} <- UserToken.verify_email_token_query(token, "confirm"),

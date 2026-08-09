@@ -12,7 +12,7 @@ defmodule MmentumWeb.CoreComponents do
   See the [Tailwind CSS documentation](https://tailwindcss.com) to learn
   how to customize them or feel free to swap in another framework altogether.
 
-  Icons are provided by [heroicons](https://heroicons.com). See `icon/1` for usage.
+  Icons are provided by [heroicons](https://heroicons.com). See `icon/1` for usage
   """
   use Phoenix.Component
   use Gettext, backend: MmentumWeb.Gettext
@@ -340,7 +340,7 @@ defmodule MmentumWeb.CoreComponents do
   end
 
   @doc """
-  Renders a label.
+  Renders a label
   """
   attr :for, :string, default: nil
   slot :inner_block, required: true
@@ -354,7 +354,7 @@ defmodule MmentumWeb.CoreComponents do
   end
 
   @doc """
-  Generates a generic error message.
+  Generates a generic error message
   """
   slot :inner_block, required: true
 
@@ -368,7 +368,7 @@ defmodule MmentumWeb.CoreComponents do
   end
 
   @doc """
-  Renders a header with title.
+  Renders a header with title
   """
   attr :class, :string, default: nil
   attr :variant, :string, default: "default", values: ~w(default dashboard)
@@ -655,7 +655,7 @@ defmodule MmentumWeb.CoreComponents do
   end
 
   @doc """
-  Translates an error message using gettext.
+  Translates an error message using gettext
   """
   def translate_error({msg, opts}) do
     # When using gettext, we typically pass the strings we want
@@ -676,7 +676,7 @@ defmodule MmentumWeb.CoreComponents do
   end
 
   @doc """
-  Translates the errors for a field from a keyword list of errors.
+  Translates the errors for a field from a keyword list of errors
   """
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})

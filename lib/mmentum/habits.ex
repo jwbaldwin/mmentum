@@ -1,6 +1,6 @@
 defmodule Mmentum.Habits do
   @moduledoc """
-  The Habits context.
+  The Habits context
   """
 
   import Ecto.Query, warn: false
@@ -177,7 +177,7 @@ defmodule Mmentum.Habits do
   end
 
   @doc """
-  Gets the current momentum score for a habit by applying decay from last update.
+  Gets the current momentum score for a habit by applying decay from last update
   """
   def get_current_momentum(%Habit{} = habit) do
     current_time = Momentum.current_timestamp()

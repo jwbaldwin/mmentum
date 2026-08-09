@@ -39,7 +39,7 @@ defmodule Mmentum.Accounts.UserToken do
   to store additional data, such as the device used for logging in.
   You could then use this information to display all valid sessions
   and devices in the UI and allow users to explicitly expire any
-  session they deem invalid.
+  session they deem invalid
   """
   def build_session_token(user) do
     token = :crypto.strong_rand_bytes(@rand_size)
@@ -52,7 +52,7 @@ defmodule Mmentum.Accounts.UserToken do
   The query returns the user found by the token, if any.
 
   The token is valid if it matches the value in the database and it has
-  not expired (after @session_validity_in_days).
+  not expired (after @session_validity_in_days)
   """
   def verify_session_token_query(token) do
     query =
@@ -75,7 +75,7 @@ defmodule Mmentum.Accounts.UserToken do
   valid.
 
   Users can easily adapt the existing code to provide other types of delivery methods,
-  for example, by phone numbers.
+  for example, by phone numbers
   """
   def build_email_token(user, context) do
     build_hashed_token(user, context, user.email)
@@ -105,7 +105,7 @@ defmodule Mmentum.Accounts.UserToken do
   context. The default contexts supported by this function are either
   "confirm", for account confirmation emails, and "reset_password",
   for resetting the password. For verifying requests to change the email,
-  see `verify_change_email_token_query/2`.
+  see `verify_change_email_token_query/2`
   """
   def verify_email_token_query(token, context) do
     case Base.url_decode64(token, padding: false) do
@@ -141,7 +141,7 @@ defmodule Mmentum.Accounts.UserToken do
 
   The given token is valid if it matches its hashed counterpart in the
   database and if it has not expired (after @change_email_validity_in_days).
-  The context must always start with "change:".
+  The context must always start with "change:"
   """
   def verify_change_email_token_query(token, "change:" <> _ = context) do
     case Base.url_decode64(token, padding: false) do
@@ -160,14 +160,14 @@ defmodule Mmentum.Accounts.UserToken do
   end
 
   @doc """
-  Returns the token struct for the given token value and context.
+  Returns the token struct for the given token value and context
   """
   def token_and_context_query(token, context) do
     from UserToken, where: [token: ^token, context: ^context]
   end
 
   @doc """
-  Gets all tokens for the given user for the given contexts.
+  Gets all tokens for the given user for the given contexts
   """
   def user_and_contexts_query(user, :all) do
     from t in UserToken, where: t.user_id == ^user.id
