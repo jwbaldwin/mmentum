@@ -18,7 +18,7 @@
             navigate={~p"/habits/new"}
             variant="quiet"
             size="compact"
-            class="h-11 w-11 p-0"
+            class="h-12 w-12 px-2 py-1 hover:shadow-[inset_0_0_0_1px_rgb(24_24_27/0.06)] dark:hover:shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)]"
             aria-label="New habit"
           >
             <.icon name="hero-plus" class="h-5 w-5" />
@@ -31,7 +31,7 @@
           <li>
             <.link
               href={~p"/users/register"}
-              class="motion-press rounded-control text-sm font-medium leading-5 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 dark:text-zinc-300 dark:hover:text-zinc-50"
+              class="motion-press rounded-control text-sm font-medium leading-5 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] duration-(--motion-duration-press) ease-(--motion-ease-out) hover:text-zinc-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 dark:text-zinc-300 dark:hover:text-zinc-50"
             >
               Create account
             </.link>
@@ -39,7 +39,7 @@
           <li>
             <.link
               href={~p"/login"}
-              class="motion-press rounded-control text-sm font-medium leading-5 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 dark:text-zinc-300 dark:hover:text-zinc-50"
+              class="motion-press rounded-control text-sm font-medium leading-5 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] duration-(--motion-duration-press) ease-(--motion-ease-out) hover:text-zinc-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 dark:text-zinc-300 dark:hover:text-zinc-50"
             >
               Log in
             </.link>

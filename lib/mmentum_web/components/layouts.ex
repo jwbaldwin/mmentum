@@ -18,20 +18,20 @@ defmodule MmentumWeb.Layouts do
     >
       <summary
         aria-label={"Account menu for #{@current_user.full_name}"}
-        class="flex h-11 w-11 min-w-0 cursor-pointer list-none select-none items-center justify-center rounded-xl text-left text-zinc-900 transition-[background-color,box-shadow] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:shadow-[inset_0_0_0_1px_rgb(24_24_27/0.06)] focus:outline-none focus-visible:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-focus)_24%,transparent),inset_0_0_0_1px_rgb(24_24_27/0.08)] group-open:bg-zinc-100 group-open:shadow-[inset_0_0_0_1px_rgb(24_24_27/0.06)] dark:text-zinc-100 dark:hover:bg-zinc-900 dark:hover:shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)] dark:focus-visible:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-focus)_24%,transparent),inset_0_0_0_1px_rgb(255_255_255/0.1)] dark:group-open:bg-zinc-900 dark:group-open:shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)] sm:h-auto sm:w-[min(14rem,calc(100vw-4rem))] sm:justify-start sm:gap-2.5 sm:px-2 sm:py-1.5 [&::-webkit-details-marker]:hidden"
+        class="flex h-12 w-full px-2 py-1 min-w-0 cursor-pointer list-none select-none items-center justify-start gap-2 rounded-xl text-left text-zinc-900 transition-[background-color,box-shadow] duration-(--motion-duration-press) ease-(--motion-ease-out) hover:bg-zinc-100 hover:shadow-[inset_0_0_0_1px_rgb(24_24_27/0.06)] focus:outline-none focus-visible:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-focus)_24%,transparent),inset_0_0_0_1px_rgb(24_24_27/0.08)] group-open:bg-zinc-100 group-open:shadow-[inset_0_0_0_1px_rgb(24_24_27/0.06)] dark:text-zinc-100 dark:hover:bg-zinc-900 dark:hover:shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)] dark:focus-visible:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-focus)_24%,transparent),inset_0_0_0_1px_rgb(255_255_255/0.1)] dark:group-open:bg-zinc-900 dark:group-open:shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)] [&::-webkit-details-marker]:hidden"
       >
         <.avatar id="account-avatar" seed={@current_user.email} />
-        <span class="hidden min-w-0 flex-1 sm:block">
-          <span class="block truncate text-[0.8125rem] font-medium leading-[1.125rem] text-zinc-900 dark:text-zinc-100">
+        <span class="min-w-0 flex-1">
+          <span class="block truncate text-xs font-medium leading-4 text-zinc-900 dark:text-zinc-100">
             {@current_user.full_name}
           </span>
-          <span class="mt-px block truncate text-xs font-normal leading-4 text-muted dark:text-zinc-400">
+          <span class="block truncate text-[0.6875rem] font-normal leading-3.5 text-muted dark:text-zinc-400">
             {@current_user.email}
           </span>
         </span>
         <.icon
           name="hero-chevron-down-mini"
-          class="hidden h-3.5 w-3.5 flex-none text-muted transition-transform duration-[160ms] ease-[var(--motion-ease-out)] group-open:rotate-180 dark:text-zinc-400 sm:block"
+          class="h-3.5 w-3.5 flex-none text-muted transition-transform duration-[160ms] ease-[var(--motion-ease-out)] group-open:rotate-180 dark:text-zinc-400"
         />
       </summary>
 
@@ -121,13 +121,17 @@ defmodule MmentumWeb.Layouts do
       id={@id}
       aria-hidden="true"
       class={[
-        "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full ring-1 ring-zinc-950/10 dark:ring-zinc-50/10",
+        "block shrink-0 overflow-hidden rounded-full ring-1 ring-zinc-950/10 dark:ring-zinc-50/10",
         @class
       ]}
+      style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px;"
     >
       <svg
         viewBox="0 0 40 40"
-        class="absolute inset-0 h-full w-full"
+        width="32"
+        height="32"
+        class="block"
+        style="width: 32px; height: 32px; max-width: 32px; max-height: 32px;"
       >
         <defs>
           <clipPath id={"#{@id}-clip"}>
