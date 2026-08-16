@@ -359,9 +359,15 @@ defmodule MmentumWeb.HabitLiveTest do
       assert html =~ "Habit details"
       assert html =~ habit.name
       assert has_element?(show_live, ~s|a[href="/habits"]|, "Today")
-      assert has_element?(show_live, "#habit-#{habit.id}-progress[role=progressbar]")
-      assert has_element?(show_live, "dt", "Current progress")
-      assert has_element?(show_live, "dt", "Momentum")
+      assert has_element?(show_live, "dt", "Current week")
+      assert has_element?(show_live, "#mmentum-score-icon[src='/images/mmentum.svg']")
+
+      assert has_element?(
+               show_live,
+               "#mmentum-score-tooltip[phx-hook=Tooltip][data-tooltip-content*=\"Each completion adds a diminishing boost\"]"
+             )
+
+      assert has_element?(show_live, "dt", "Mmentum score")
       assert has_element?(show_live, "#habit-history-title", "History")
       refute html =~ "Why it matters"
       refute html =~ "What counts"
