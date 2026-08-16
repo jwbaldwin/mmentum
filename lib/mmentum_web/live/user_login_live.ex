@@ -3,14 +3,14 @@ defmodule MmentumWeb.UserLoginLive do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto max-w-sm">
+    <.auth_page>
       <.header class="text-center">
         Log in
         <:subtitle>
           New to Mmentum?
-          <.link navigate={~p"/users/register"} class="text-link">
+          <.text_link navigate={~p"/users/register"}>
             Create an account
-          </.link>
+          </.text_link>
         </:subtitle>
       </.header>
 
@@ -20,9 +20,9 @@ defmodule MmentumWeb.UserLoginLive do
 
         <:actions>
           <.input field={@form[:remember_me]} type="checkbox" label="Keep me logged in" />
-          <.link href={~p"/users/reset_password"} class="text-link text-sm">
+          <.text_link href={~p"/users/reset_password"} class="text-sm">
             Forgot your password?
-          </.link>
+          </.text_link>
         </:actions>
         <:actions>
           <.button phx-disable-with="Logging in..." class="w-full">
@@ -30,7 +30,7 @@ defmodule MmentumWeb.UserLoginLive do
           </.button>
         </:actions>
       </.simple_form>
-    </div>
+    </.auth_page>
     """
   end
 

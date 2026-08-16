@@ -28,6 +28,45 @@ defmodule Mmentum.HabitsTest do
       assert_raise Ecto.NoResultsError, fn -> Habits.get_habit!(attacker, -1) end
     end
 
+    test "get_habit_with_current_progress!/3 preloads current completion activity" do
+      user = user_fixture()
+      habit = habit_fixture(user: user)
+      {:ok, log} = Habits.record_completion(user, habit.id)
+
+      habit =
+        Habits.get_habit_with_current_progress!(
+          user,
+          habit.id,
+          Mmentum.Time.current_time(user.time_zone)
+        )
+
+      assert habit.logs == [log]
+    end
+
+    test "list_habits_with_current_progress/2 keeps only today's activity for daily habits" do
+      user = user_fixture()
+      habit = habit_fixture(user: user, periodicity: :day)
+      current_log = insert_log(user, habit, ~N[2026-08-16 09:00:00])
+      _previous_log = insert_log(user, habit, ~N[2026-08-15 21:00:00])
+      current_time = DateTime.new!(~D[2026-08-16], ~T[12:00:00], "Etc/UTC")
+
+      [loaded_habit] = Habits.list_habits_with_current_progress(user, current_time)
+
+      assert Enum.map(loaded_habit.logs, & &1.id) == [current_log.id]
+    end
+
+    test "list_habits_with_current_progress/2 keeps the whole current month for monthly habits" do
+      user = user_fixture()
+      habit = habit_fixture(user: user, periodicity: :month)
+      current_log = insert_log(user, habit, ~N[2026-08-01 09:00:00])
+      _previous_log = insert_log(user, habit, ~N[2026-07-31 21:00:00])
+      current_time = DateTime.new!(~D[2026-08-16], ~T[12:00:00], "Etc/UTC")
+
+      [loaded_habit] = Habits.list_habits_with_current_progress(user, current_time)
+
+      assert Enum.map(loaded_habit.logs, & &1.id) == [current_log.id]
+    end
+
     test "create_habit/2 creates a habit for the user" do
       user = user_fixture()
       valid_attrs = %{min_completions: 3, name: "some name", periodicity: :week}
@@ -168,5 +207,14 @@ defmodule Mmentum.HabitsTest do
       assert {:error, :not_found} = Habits.remove_most_recent_completion(attacker, habit.id)
       assert Repo.get!(Log, log.id)
     end
+  end
+
+  defp insert_log(user, habit, inserted_at) do
+    Repo.insert!(%Log{
+      user_id: user.id,
+      habit_id: habit.id,
+      inserted_at: inserted_at,
+      updated_at: inserted_at
+    })
   end
 end

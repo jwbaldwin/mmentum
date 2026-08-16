@@ -9,7 +9,13 @@ defmodule MmentumWeb.HabitLiveTest do
   import Mmentum.HabitsFixtures
 
   @create_attrs %{min_completions: 3, name: "some name"}
-  @update_attrs %{min_completions: 4, name: "some updated name"}
+  @update_attrs %{
+    identity: "I am someone who follows through",
+    min_completions: 4,
+    name: "some updated name",
+    what_counts: "Twenty focused minutes",
+    why_it_matters: "Consistency builds confidence"
+  }
   @invalid_attrs %{min_completions: nil, name: nil}
 
   defp create_habit(%{user: user}) do
@@ -43,15 +49,50 @@ defmodule MmentumWeb.HabitLiveTest do
       assert html =~ habit.name
     end
 
-    test "uses live navigation for shared authenticated links", %{conn: conn} do
+    test "renders completion tooltips", %{conn: conn, habit: habit} do
       {:ok, index_live, _html} = live(conn, ~p"/habits")
 
-      assert has_element?(index_live, ~s|header a[href="/"][data-phx-link="redirect"]|)
+      remove_tooltip =
+        index_live
+        |> element("#habit-#{habit.id}-remove-completion-tooltip[phx-hook=Tooltip]")
+        |> render()
+
+      assert remove_tooltip =~ ~s(data-tooltip-disabled="true")
+
+      assert has_element?(
+               index_live,
+               "#habit-#{habit.id}-record-completion-tooltip[phx-hook=Tooltip][data-tooltip-content='Record completion']"
+             )
+
+      refute has_element?(index_live, "#habit-#{habit.id} button[title]")
+    end
+
+    test "uses accessible live navigation for shared authenticated links", %{conn: conn, user: user} do
+      {:ok, index_live, _html} = live(conn, ~p"/habits")
+
+      assert has_element?(index_live, ~s|header nav[aria-label="Primary"]|)
+
+      assert has_element?(
+               index_live,
+               ~s|header a[href="/"][data-phx-link="redirect"][aria-label="Dashboard"] img[alt=""]|
+             )
+
+      assert has_element?(
+               index_live,
+               ~s|#account-menu summary[aria-label="Account menu for #{user.full_name}"]|
+             )
 
       assert has_element?(
                index_live,
                ~s|#account-menu a[href="/users/settings"][data-phx-link="redirect"]|
              )
+
+      assert has_element?(
+               index_live,
+               ~s|header #new-habit-button[href="/habits/new"][data-phx-link="redirect"]|
+             )
+
+      refute has_element?(index_live, "main #new-habit-button")
     end
 
     test "greets users with one-word and multi-part names" do
@@ -80,12 +121,7 @@ defmodule MmentumWeb.HabitLiveTest do
     end
 
     test "saves new habit", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/habits")
-
-      assert index_live |> element(~s|a[href="/habits/new"]|) |> render_click() =~
-               "New habit"
-
-      assert_patch(index_live, ~p"/habits/new")
+      {:ok, index_live, _html} = live(conn, ~p"/habits/new")
 
       refute has_element?(index_live, "#habit_max_completions")
 
@@ -108,11 +144,7 @@ defmodule MmentumWeb.HabitLiveTest do
     end
 
     test "saves a flexible range and treats its maximum as optional", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/habits")
-
-      index_live
-      |> element(~s|a[href="/habits/new"]|)
-      |> render_click()
+      {:ok, index_live, _html} = live(conn, ~p"/habits/new")
 
       index_live
       |> form("#habit-form",
@@ -183,29 +215,23 @@ defmodule MmentumWeb.HabitLiveTest do
       assert has_element?(index_live, "#{add_button}[disabled]")
     end
 
-    test "updates habit in listing", %{conn: conn, habit: habit} do
+    test "opens a habit from the dashboard", %{conn: conn, habit: habit} do
       {:ok, index_live, _html} = live(conn, ~p"/habits")
 
-      assert index_live
-             |> element(~s|#habit-#{habit.id} a[href="/habits/#{habit.id}/edit"]|)
-             |> render_click() =~
-               "Edit habit"
+      index_live
+      |> element(~s|#habit-#{habit.id} a[href="/habits/#{habit.id}"]|)
+      |> render_click()
 
-      assert_patch(index_live, ~p"/habits/#{habit}/edit")
+      assert_redirect(index_live, ~p"/habits/#{habit}")
+    end
 
-      assert index_live
-             |> form("#habit-form", habit: @invalid_attrs)
-             |> render_change() =~ "can&#39;t be blank"
+    test "shows what counts beneath the habit", %{conn: conn, habit: habit, user: user} do
+      {:ok, habit} =
+        Habits.update_habit(user, habit.id, %{what_counts: "Walk outside for ten minutes"})
 
-      assert index_live
-             |> form("#habit-form", habit: @update_attrs)
-             |> render_submit()
+      {:ok, index_live, _html} = live(conn, ~p"/habits")
 
-      assert_patch(index_live, ~p"/habits")
-
-      html = render(index_live)
-      assert html =~ "Habit updated."
-      assert html =~ "some updated name"
+      assert has_element?(index_live, "#habit-#{habit.id} p", habit.what_counts)
     end
 
     test "removes a flexible maximum when editing back to an exact target", %{
@@ -216,16 +242,16 @@ defmodule MmentumWeb.HabitLiveTest do
       {:ok, habit} =
         Habits.update_habit(user, habit.id, %{min_completions: 2, max_completions: 3})
 
-      {:ok, index_live, _html} = live(conn, ~p"/habits")
+      {:ok, show_live, _html} = live(conn, ~p"/habits/#{habit}")
 
-      index_live
-      |> element(~s|#habit-#{habit.id} a[href="/habits/#{habit.id}/edit"]|)
+      show_live
+      |> element(~s|a[href="/habits/#{habit.id}/show/edit"]|)
       |> render_click()
 
-      assert has_element?(index_live, "#habit-has-flexible-target[checked]")
-      assert has_element?(index_live, "#habit_max_completions")
+      assert has_element?(show_live, "#habit-has-flexible-target[checked]")
+      assert has_element?(show_live, "#habit_max_completions")
 
-      index_live
+      show_live
       |> form("#habit-form",
         habit: %{
           has_flexible_target: "false",
@@ -236,9 +262,9 @@ defmodule MmentumWeb.HabitLiveTest do
       )
       |> render_change()
 
-      refute has_element?(index_live, "#habit_max_completions")
+      refute has_element?(show_live, "#habit_max_completions")
 
-      index_live
+      show_live
       |> form("#habit-form",
         habit: %{
           has_flexible_target: "false",
@@ -250,7 +276,7 @@ defmodule MmentumWeb.HabitLiveTest do
       |> render_submit()
 
       assert Repo.get!(Mmentum.Habits.Habit, habit.id).max_completions == nil
-      assert render(index_live) =~ "2 per week"
+      assert render(show_live) =~ "2 per week"
     end
 
     test "shows the habit's current periodicity when editing", %{
@@ -259,23 +285,13 @@ defmodule MmentumWeb.HabitLiveTest do
       user: user
     } do
       {:ok, habit} = Habits.update_habit(user, habit.id, %{periodicity: :month})
-      {:ok, index_live, _html} = live(conn, ~p"/habits")
+      {:ok, show_live, _html} = live(conn, ~p"/habits/#{habit}")
 
-      index_live
-      |> element(~s|#habit-#{habit.id} a[href="/habits/#{habit.id}/edit"]|)
+      show_live
+      |> element(~s|a[href="/habits/#{habit.id}/show/edit"]|)
       |> render_click()
 
-      assert has_element?(index_live, "#habit_periodicity option[value=month][selected]")
-    end
-
-    test "deletes habit in listing", %{conn: conn, habit: habit} do
-      {:ok, index_live, _html} = live(conn, ~p"/habits")
-
-      assert index_live
-             |> element(~s|#habit-#{habit.id} button[phx-click="delete"]|)
-             |> render_click()
-
-      refute has_element?(index_live, "#habit-#{habit.id}")
+      assert has_element?(show_live, "#habit_periodicity option[value=month][selected]")
     end
 
     test "marks the next progress segment complete after recording a completion", %{
@@ -297,24 +313,29 @@ defmodule MmentumWeb.HabitLiveTest do
 
       assert has_element?(
                index_live,
-               ~s|#{progress}[style*="--progress-fill-offset-desktop: 44.0px"]|
+               "#habit-#{habit.id}-progress-status[aria-live=polite][aria-atomic=true]",
+               "1 of 3 completed"
              )
 
       assert has_element?(index_live, ~s|#{first_step}[data-state="complete"]|)
+    end
+
+    test "removes the user's most recent completion", %{conn: conn, habit: habit, user: user} do
+      {:ok, log} = Habits.record_completion(user, habit.id)
+      {:ok, index_live, _html} = live(conn, ~p"/habits")
+
+      index_live
+      |> element(~s|#habit-#{habit.id} button[phx-click="remove_log"]|)
+      |> render_click()
+
+      refute Repo.get(Mmentum.Logs.Log, log.id)
+      assert has_element?(index_live, ~s|#habit-#{habit.id}-progress[data-completed="0"]|)
     end
 
     test "does not edit another user's habit", %{conn: conn} do
       habit = habit_fixture()
 
       assert_raise Ecto.NoResultsError, fn -> live(conn, ~p"/habits/#{habit}/edit") end
-    end
-
-    test "does not delete another user's habit", %{conn: conn} do
-      habit = habit_fixture()
-      {:ok, index_live, _html} = live(conn, ~p"/habits")
-
-      assert render_hook(index_live, "delete", %{"id" => habit.id}) =~ "Habit not found."
-      assert Repo.get!(Mmentum.Habits.Habit, habit.id)
     end
 
     test "does not add or remove another user's completions", %{conn: conn} do
@@ -333,10 +354,32 @@ defmodule MmentumWeb.HabitLiveTest do
     setup [:register_and_log_in_user, :create_habit]
 
     test "displays habit", %{conn: conn, habit: habit} do
-      {:ok, _show_live, html} = live(conn, ~p"/habits/#{habit}")
+      {:ok, show_live, html} = live(conn, ~p"/habits/#{habit}")
 
       assert html =~ "Habit details"
       assert html =~ habit.name
+      assert has_element?(show_live, ~s|a[href="/habits"]|, "Today")
+      assert has_element?(show_live, "#habit-#{habit.id}-progress[role=progressbar]")
+      assert has_element?(show_live, "dt", "Current progress")
+      assert has_element?(show_live, "dt", "Momentum")
+      assert has_element?(show_live, "#habit-history-title", "History")
+      refute html =~ "Why it matters"
+      refute html =~ "What counts"
+    end
+
+    test "shows the habit's identity and meaning", %{conn: conn, habit: habit, user: user} do
+      {:ok, habit} =
+        Habits.update_habit(user, habit.id, %{
+          identity: "I am someone who takes care of my body",
+          why_it_matters: "I want energy for the people I love",
+          what_counts: "Complete the movement planned for today"
+        })
+
+      {:ok, _show_live, html} = live(conn, ~p"/habits/#{habit}")
+
+      assert html =~ habit.identity
+      assert html =~ habit.why_it_matters
+      assert html =~ habit.what_counts
     end
 
     test "updates habit within modal", %{conn: conn, habit: habit} do
@@ -360,6 +403,20 @@ defmodule MmentumWeb.HabitLiveTest do
       html = render(show_live)
       assert html =~ "Habit updated."
       assert html =~ "some updated name"
+      assert html =~ @update_attrs.identity
+      assert html =~ @update_attrs.why_it_matters
+      assert html =~ @update_attrs.what_counts
+    end
+
+    test "deletes habit from its detail page", %{conn: conn, habit: habit} do
+      {:ok, show_live, _html} = live(conn, ~p"/habits/#{habit}")
+
+      show_live
+      |> element(~s|button[phx-click="delete"]|)
+      |> render_click()
+
+      assert_redirect(show_live, ~p"/habits")
+      refute Repo.get(Mmentum.Habits.Habit, habit.id)
     end
 
     test "does not show or edit another user's habit", %{conn: conn} do
