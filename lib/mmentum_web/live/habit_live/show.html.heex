@@ -1,13 +1,38 @@
-<.habit_progress_filter />
 <.back navigate={~p"/habits"} class="mb-6">Today</.back>
 
 <article class="max-w-3xl">
-  <.header>
+  <.header variant="dashboard">
     {@habit.name}
-    <:subtitle :if={@habit.identity}>{@habit.identity}</:subtitle>
-    <:subtitle :if={!@habit.identity}><.cadence habit={@habit} /></:subtitle>
+    <:subtitle>
+      <div class="flex items-center gap-4 font-normal leading-none text-zinc-500 dark:text-zinc-400">
+        <.tooltip
+          id="mmentum-score-tooltip"
+          content="Mmentum Score tracks habit strength from 0 to 100. Each completion slowly builds your momentum towards your goal. But you're not penalized for not picking a daily goal and breaking a 'streak'."
+        >
+          <div
+            id="mmentum-score"
+            class="mt-1 flex items-center gap-3"
+          >
+            <img
+              id="mmentum-score-icon"
+              class="theme-logo shrink-0"
+              style="width: 1.5rem; height: 1.25rem; max-width: 1.75rem"
+              src={~p"/images/mmentum.svg"}
+              width="20"
+              height="16"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>{@momentum}</span>
+          </div>
+        </.tooltip>
+        <span>•</span>
+        <.cadence habit={@habit} />
+      </div>
+    </:subtitle>
     <:actions>
       <.button_link
+        id="edit-habit"
         patch={~p"/habits/#{@habit}/show/edit"}
         phx-click={JS.push_focus()}
         variant="quiet"
@@ -19,72 +44,123 @@
     </:actions>
   </.header>
 
-  <dl class="mt-8 grid grid-cols-2 divide-x divide-zinc-200 rounded-panel bg-zinc-50 ring-1 ring-zinc-950/[0.06] dark:divide-zinc-800 dark:bg-zinc-950 dark:ring-zinc-50/10">
-    <div class="min-w-0 px-4 py-3.5 sm:px-5">
-      <dt class="text-xs font-medium leading-4 text-muted dark:text-zinc-400">
-        Current week
-      </dt>
-      <dd class="mt-1 truncate text-sm font-semibold leading-5 text-zinc-900 dark:text-zinc-100">
-        {min(@completed, @habit.min_completions)} of <.cadence habit={@habit} />
-        <span :if={@completed >= @habit.min_completions}> · Goal met</span>
-      </dd>
-    </div>
-    <div class="min-w-0 px-4 py-3.5 sm:px-5">
-      <dt class="h-4 text-muted dark:text-zinc-400">
-        <.tooltip
-          id="mmentum-score-tooltip"
-          content="Mmentum score tracks habit strength from 0 to 100. Each completion adds a diminishing boost, evidence for the identity you're building. Between completions, the score decays exponentially at a pace based on the habit's cadence instead of resetting like a streak."
-        >
-          <span
-            tabindex="0"
-            class="inline-flex rounded-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20"
-          >
-            <img
-              id="mmentum-score-icon"
-              class="theme-logo h-4 w-auto opacity-60 dark:opacity-70"
-              src={~p"/images/mmentum.svg"}
-              width="16"
-              height="14"
-              alt=""
-              aria-hidden="true"
-            />
-            <span class="sr-only">Mmentum score</span>
-          </span>
-        </.tooltip>
-      </dt>
-      <dd class="mt-1 text-sm font-semibold leading-5 text-zinc-900 dark:text-zinc-100">
-        {@momentum}
-      </dd>
-    </div>
-  </dl>
-
   <section
-    :if={@habit.why_it_matters || @habit.what_counts}
-    class="mt-8 grid gap-6 border-t border-zinc-100 pt-7 dark:border-zinc-900 sm:grid-cols-2"
-    aria-label="Habit meaning"
+    id="habit-details"
+    class="pt-8"
+    aria-labelledby="habit-meaning-title"
   >
-    <div :if={@habit.why_it_matters}>
-      <p class="text-xs font-medium leading-4 text-muted dark:text-zinc-400">Why it matters</p>
-      <p class="mt-2 text-sm font-normal leading-6 text-zinc-700 dark:text-zinc-300">
-        {@habit.why_it_matters}
-      </p>
-    </div>
-    <div :if={@habit.what_counts}>
-      <p class="text-xs font-medium leading-4 text-muted dark:text-zinc-400">What counts</p>
-      <p class="mt-2 text-sm font-normal leading-6 text-zinc-700 dark:text-zinc-300">
-        {@habit.what_counts}
-      </p>
+    <div class="flex items-center justify-between gap-4">
+      <.button_link
+        :if={!@habit.identity && !@habit.why_it_matters && !@habit.what_counts}
+        id="add-habit-details"
+        patch={~p"/habits/#{@habit}/show/edit"}
+        phx-click={JS.push_focus()}
+        variant="quiet"
+        size="compact"
+        class="font-normal"
+      >
+        <.icon name="hero-plus" class="h-4 w-4" />
+        Add details to give this habit some more context
+      </.button_link>
+      <div
+        :if={@habit.identity || @habit.why_it_matters || @habit.what_counts}
+        class="mt-6 max-w-2xl space-y-6"
+      >
+        <div :if={@habit.identity}>
+          <h3 class="text-xs font-medium leading-4 text-muted dark:text-zinc-400">Identity</h3>
+          <p id="habit-identity" class="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-300">
+            {@habit.identity}
+          </p>
+        </div>
+        <div :if={@habit.why_it_matters}>
+          <h3 class="text-xs font-medium leading-4 text-muted dark:text-zinc-400">Why it matters</h3>
+          <p class="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-300">
+            {@habit.why_it_matters}
+          </p>
+        </div>
+        <div :if={@habit.what_counts}>
+          <h3 class="text-xs font-medium leading-4 text-muted dark:text-zinc-400">What counts</h3>
+          <p class="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-300">
+            {@habit.what_counts}
+          </p>
+        </div>
+      </div>
     </div>
   </section>
 
+  <figure
+    id="habit-long-term-progress"
+    class="mt-10 border-t border-zinc-100 pt-8 dark:border-zinc-900"
+    aria-labelledby="habit-contributions-title habit-contributions-summary"
+  >
+    <figcaption>
+      <p id="habit-contributions-summary" class="mt-1 text-xs leading-5 text-muted dark:text-zinc-400">
+        {@contribution_calendar.summary} · {@contribution_calendar.week_count} weeks
+      </p>
+    </figcaption>
+
+    <div
+      id="habit-contribution-calendar"
+      role="img"
+      aria-label={@contribution_calendar.aria_label}
+      class="mt-5 overflow-x-auto pb-2"
+    >
+      <div
+        aria-hidden="true"
+        class="mb-2 ml-8 grid w-max gap-1.5"
+        style="grid-template-columns: repeat(12, 1rem)"
+      >
+        <span
+          :for={month <- @contribution_calendar.month_labels}
+          class="w-4 whitespace-nowrap text-[10px] leading-4 text-muted dark:text-zinc-500"
+        >
+          {month}
+        </span>
+      </div>
+      <div class="flex w-max items-start">
+        <div
+          aria-hidden="true"
+          class="mr-2 grid grid-rows-7 gap-1.5 text-[10px] leading-4 text-muted dark:text-zinc-500"
+        >
+          <span class="h-4">Mon</span>
+          <span class="h-4"></span>
+          <span class="h-4">Wed</span>
+          <span class="h-4"></span>
+          <span class="h-4">Fri</span>
+          <span class="h-4"></span>
+          <span class="h-4"></span>
+        </div>
+        <div class="grid grid-flow-col grid-rows-7 gap-1.5" aria-hidden="true">
+          <time
+            :for={day <- @contribution_calendar.days}
+            datetime={day.date}
+            title={day.label}
+            class={[
+              "block h-4 w-4 rounded-[0.25rem]",
+              day.level == 0 && "bg-zinc-100 dark:bg-zinc-900",
+              day.level == 1 && "bg-brand/35 dark:bg-brand/45",
+              day.level == 2 && "bg-brand/65 dark:bg-brand/70",
+              day.level == 3 && "bg-brand",
+              day.current? &&
+                "ring-1 ring-zinc-900 ring-offset-1 ring-offset-white dark:ring-zinc-100 dark:ring-offset-zinc-950"
+            ]}
+          ></time>
+        </div>
+      </div>
+    </div>
+    <p class="mt-2 text-xs leading-5 text-muted dark:text-zinc-500">
+      Each square is one local day. Higher-contrast squares hold more completions; empty days are neutral.
+    </p>
+  </figure>
+
   <section
     class="mt-10 flow-root border-t border-zinc-100 pt-8 dark:border-zinc-900"
-    aria-labelledby="habit-history-title"
+    aria-labelledby="habit-activity-title"
   >
     <div class="mb-6">
-      <.section_title id="habit-history-title">History</.section_title>
+      <.section_title id="habit-activity-title">Recent activity</.section_title>
     </div>
-    <ul role="list" class="space-y-6">
+    <ul id="habit-activity" role="list" phx-update="stream" class="space-y-6">
       <%= for {row_id, log} <- @streams.logs do %>
         <li class="relative flex gap-x-4" id={row_id}>
           <div class="absolute left-0 top-0 flex w-6 justify-center -bottom-6">

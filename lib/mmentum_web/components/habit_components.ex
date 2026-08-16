@@ -66,6 +66,31 @@ defmodule MmentumWeb.HabitComponents do
           <span :for={_step <- 1..@completion_cap} class="habit-progress__fill-step"></span>
         </span>
       </span>
+      <span class="habit-progress__optional-masks" aria-hidden="true">
+        <span
+          :for={step <- 1..@completion_cap}
+          class="habit-progress__optional-mask"
+          data-kind={if step in @optional_steps, do: "optional", else: "required"}
+          data-state={if(step <= @completed, do: "complete", else: "pending")}
+        >
+          <svg
+            :if={step in @optional_steps && step > @completed}
+            class="habit-progress__optional-ring"
+            viewBox="0 0 32 32"
+            aria-hidden="true"
+          >
+            <circle cx="16" cy="16" r="16" fill="var(--progress-surface)" />
+            <path
+              d="M2.48 12.38 A14 14 0 1 1 2.48 19.62"
+              fill="none"
+              stroke="var(--progress-optional)"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-dasharray="3.5 3.5"
+            />
+          </svg>
+        </span>
+      </span>
     </div>
     <span
       id={"habit-#{@habit.id}-progress-status"}
