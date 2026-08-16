@@ -19,14 +19,10 @@
     </:actions>
   </.header>
 
-  <div class="mt-7 overflow-x-auto py-1">
-    <.habit_progress habit={@habit} completed={@completed} />
-  </div>
-
-  <dl class="mt-6 grid grid-cols-2 divide-x divide-zinc-200 rounded-panel bg-zinc-50 ring-1 ring-zinc-950/[0.06] dark:divide-zinc-800 dark:bg-zinc-950 dark:ring-zinc-50/10">
+  <dl class="mt-8 grid grid-cols-2 divide-x divide-zinc-200 rounded-panel bg-zinc-50 ring-1 ring-zinc-950/[0.06] dark:divide-zinc-800 dark:bg-zinc-950 dark:ring-zinc-50/10">
     <div class="min-w-0 px-4 py-3.5 sm:px-5">
       <dt class="text-xs font-medium leading-4 text-muted dark:text-zinc-400">
-        Current progress
+        Current week
       </dt>
       <dd class="mt-1 truncate text-sm font-semibold leading-5 text-zinc-900 dark:text-zinc-100">
         {min(@completed, @habit.min_completions)} of <.cadence habit={@habit} />
@@ -34,7 +30,28 @@
       </dd>
     </div>
     <div class="min-w-0 px-4 py-3.5 sm:px-5">
-      <dt class="text-xs font-medium leading-4 text-muted dark:text-zinc-400">Momentum</dt>
+      <dt class="h-4 text-muted dark:text-zinc-400">
+        <.tooltip
+          id="mmentum-score-tooltip"
+          content="Mmentum score tracks habit strength from 0 to 100. Each completion adds a diminishing boost, evidence for the identity you're building. Between completions, the score decays exponentially at a pace based on the habit's cadence instead of resetting like a streak."
+        >
+          <span
+            tabindex="0"
+            class="inline-flex rounded-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20"
+          >
+            <img
+              id="mmentum-score-icon"
+              class="theme-logo h-4 w-auto opacity-60 dark:opacity-70"
+              src={~p"/images/mmentum.svg"}
+              width="16"
+              height="14"
+              alt=""
+              aria-hidden="true"
+            />
+            <span class="sr-only">Mmentum score</span>
+          </span>
+        </.tooltip>
+      </dt>
       <dd class="mt-1 text-sm font-semibold leading-5 text-zinc-900 dark:text-zinc-100">
         {@momentum}
       </dd>
@@ -66,9 +83,6 @@
   >
     <div class="mb-6">
       <.section_title id="habit-history-title">History</.section_title>
-      <p class="mt-1 text-sm font-normal leading-6 text-muted dark:text-zinc-400">
-        The evidence behind this habit's momentum.
-      </p>
     </div>
     <ul role="list" class="space-y-6">
       <%= for {row_id, log} <- @streams.logs do %>
@@ -112,9 +126,6 @@
   </section>
 
   <footer class="mt-10 flex items-center justify-between gap-6 border-t border-zinc-100 pt-6 dark:border-zinc-900">
-    <p class="text-xs font-normal leading-5 text-muted dark:text-zinc-400">
-      This also removes its completion history.
-    </p>
     <.button
       type="button"
       variant="destructive"
