@@ -11,14 +11,13 @@
     id={"habit-#{habit.id}"}
     class="border-b border-zinc-100 py-4 first:pt-0 last:border-0 last:pb-0 dark:border-zinc-900"
   >
-    <% completion_cap = habit.max_completions || habit.min_completions %>
-    <% completed = min(length(habit.logs), completion_cap) %>
+    <% completed = length(habit.logs) %>
     <div class="mb-3 min-w-0">
       <.link
         navigate={~p"/habits/#{habit}"}
-        class="inline-flex max-w-full rounded-control transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20"
+        class="motion-press inline-flex max-w-full rounded-control transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20"
       >
-        <h2 class="truncate text-xl font-semibold leading-7 tracking-[-0.015em] text-zinc-900 dark:text-zinc-100">
+        <h2 class="break-words text-xl font-semibold leading-7 tracking-[-0.015em] text-zinc-900 dark:text-zinc-100">
           {habit.name}
         </h2>
       </.link>
@@ -26,8 +25,16 @@
         {min(completed, habit.min_completions)} of <.cadence habit={habit} />
         <span :if={completed >= habit.min_completions}> · Goal met</span>
       </p>
+      <p :if={habit.what_counts} class="mt-1 text-sm leading-5 text-zinc-600 dark:text-zinc-300">
+        {habit.what_counts}
+      </p>
     </div>
-    <.habit_progress habit={habit} completed={completed} />
+    <div class="flex items-center gap-2 sm:gap-3">
+      <div class="min-w-0 flex-1 overflow-x-auto py-1">
+        <.habit_progress habit={habit} completed={completed} />
+      </div>
+      <.completion_controls habit={habit} completed={completed} />
+    </div>
   </section>
 </div>
 <div :if={@time_of_day && length(@habits) == 0} class="py-20 text-center sm:py-24">

@@ -20,6 +20,10 @@ defmodule Mmentum.Habits.Habit do
     timestamps()
   end
 
+  @doc "Returns the most completions displayed for the habit's current period"
+  def completion_cap(%__MODULE__{max_completions: nil, min_completions: minimum}), do: minimum
+  def completion_cap(%__MODULE__{max_completions: maximum}), do: maximum
+
   @doc false
   def changeset(habit, attrs) do
     habit

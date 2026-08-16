@@ -64,7 +64,7 @@ defmodule MmentumWeb.CoreComponents do
     >
       <div
         id={"#{@id}-bg"}
-        class="fixed inset-0 bg-zinc-50/90 dark:bg-zinc-950/90"
+        class="motion-modal-backdrop fixed inset-0 bg-zinc-50/90 dark:bg-zinc-950/90"
         aria-hidden="true"
       />
       <div
@@ -82,13 +82,13 @@ defmodule MmentumWeb.CoreComponents do
               phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
               phx-key="escape"
               phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-              class="relative hidden origin-center rounded-modal bg-white p-6 shadow-modal ring-1 ring-zinc-950/10 dark:bg-zinc-950 dark:shadow-[0_28px_72px_rgb(0_0_0/0.48),0_8px_24px_rgb(0_0_0/0.28)] dark:ring-zinc-50/10 sm:p-8"
+              class="motion-modal-panel relative hidden origin-center rounded-modal bg-white p-6 shadow-modal ring-1 ring-zinc-950/10 dark:bg-zinc-950 dark:shadow-[0_28px_72px_rgb(0_0_0/0.48),0_8px_24px_rgb(0_0_0/0.28)] dark:ring-zinc-50/10 sm:p-8"
             >
               <div class="absolute right-4 top-4 sm:right-5 sm:top-5">
                 <button
                   phx-click={JS.exec("data-cancel", to: "##{@id}")}
                   type="button"
-                  class="flex h-9 w-9 items-center justify-center rounded-control text-zinc-400 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:text-zinc-700 enabled:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 focus-visible:ring-offset-2 dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-zinc-300 dark:focus-visible:ring-offset-zinc-950"
+                  class="motion-press flex h-9 w-9 items-center justify-center rounded-control text-zinc-400 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:text-zinc-700 enabled:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 focus-visible:ring-offset-2 dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-zinc-300 dark:focus-visible:ring-offset-zinc-950"
                   aria-label={gettext("close")}
                 >
                   <.icon name="hero-x-mark-solid" class="h-5 w-5" />
@@ -195,7 +195,7 @@ defmodule MmentumWeb.CoreComponents do
 
   defp button_classes(size, variant, class, press_class) do
     [
-      "inline-flex items-center justify-center gap-2 rounded-control text-sm font-medium leading-5",
+      "motion-press inline-flex items-center justify-center gap-2 rounded-control text-sm font-medium leading-5",
       "transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)]",
       "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/25 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950",
       "disabled:cursor-not-allowed disabled:opacity-50 phx-submit-loading:cursor-wait phx-submit-loading:opacity-65",
@@ -653,7 +653,7 @@ defmodule MmentumWeb.CoreComponents do
     <div class={@class}>
       <.link
         navigate={@navigate}
-        class="inline-flex items-center gap-1.5 rounded-control text-sm font-medium leading-5 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 dark:text-zinc-300 dark:hover:text-zinc-50"
+        class="motion-press inline-flex items-center gap-1.5 rounded-control text-sm font-medium leading-5 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 dark:text-zinc-300 dark:hover:text-zinc-50"
       >
         <.icon name="hero-arrow-left-solid" class="h-3 w-3" />
         {render_slot(@inner_block)}

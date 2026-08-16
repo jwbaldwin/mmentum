@@ -1,0 +1,46 @@
+@media (prefers-reduced-transparency: reduce) {
+  .account-menu-popover {
+    background: var(--color-white);
+    backdrop-filter: none;
+  }
+
+  .dark .account-menu-popover {
+    background: var(--color-zinc-950);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root.theme-changing *,
+  :root.theme-changing *::before,
+  :root.theme-changing *::after {
+    transition-duration: 0.01ms !important;
+  }
+
+  .motion-modal-panel {
+    transform: none !important;
+    scale: 1 !important;
+  }
+
+  .motion-modal-panel,
+  .motion-modal-backdrop,
+  .motion-press,
+  .appearance-morph,
+  .appearance-roll-track,
+  .tippy-box {
+    transition-duration: 0.01ms !important;
+  }
+
+  .motion-press {
+    transform: none !important;
+  }
+
+  .habit-progress__fill {
+    transition: none;
+    will-change: auto;
+  }
+
+  #toast-group [phx-hook="LiveToast"] {
+    transform: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
