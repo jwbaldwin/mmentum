@@ -3,6 +3,7 @@ defmodule MmentumWeb.HabitLiveTest do
 
   alias Mmentum.Habits
   alias Mmentum.Logs
+  alias Mmentum.Logs.Log
   alias Mmentum.Repo
 
   import Phoenix.LiveViewTest
@@ -195,6 +196,7 @@ defmodule MmentumWeb.HabitLiveTest do
       add_button = ~s|#habit-#{habit.id} button[phx-click="add_log"]|
 
       assert has_element?(index_live, ~s|#{optional_step}[data-kind="optional"][data-state="pending"]|)
+      assert has_element?(index_live, "#{progress} .habit-progress__optional-ring")
 
       index_live |> element(add_button) |> render_click()
       index_live |> element(add_button) |> render_click()
@@ -206,6 +208,7 @@ defmodule MmentumWeb.HabitLiveTest do
       index_live |> element(add_button) |> render_click()
 
       assert has_element?(index_live, ~s|#{optional_step}[data-state="complete"]|)
+      refute has_element?(index_live, "#{progress} .habit-progress__optional-ring")
 
       assert has_element?(
                index_live,
@@ -245,7 +248,7 @@ defmodule MmentumWeb.HabitLiveTest do
       {:ok, show_live, _html} = live(conn, ~p"/habits/#{habit}")
 
       show_live
-      |> element(~s|a[href="/habits/#{habit.id}/show/edit"]|)
+      |> element("#edit-habit")
       |> render_click()
 
       assert has_element?(show_live, "#habit-has-flexible-target[checked]")
@@ -288,7 +291,7 @@ defmodule MmentumWeb.HabitLiveTest do
       {:ok, show_live, _html} = live(conn, ~p"/habits/#{habit}")
 
       show_live
-      |> element(~s|a[href="/habits/#{habit.id}/show/edit"]|)
+      |> element("#edit-habit")
       |> render_click()
 
       assert has_element?(show_live, "#habit_periodicity option[value=month][selected]")
@@ -353,22 +356,37 @@ defmodule MmentumWeb.HabitLiveTest do
   describe "Show" do
     setup [:register_and_log_in_user, :create_habit]
 
-    test "displays habit", %{conn: conn, habit: habit} do
+    test "displays the habit score, details, contribution history, and activity", %{
+      conn: conn,
+      habit: habit
+    } do
       {:ok, show_live, html} = live(conn, ~p"/habits/#{habit}")
 
       assert html =~ "Habit details"
       assert html =~ habit.name
       assert has_element?(show_live, ~s|a[href="/habits"]|, "Today")
-      assert has_element?(show_live, "dt", "Current week")
+      assert has_element?(show_live, "header h1[class*='text-3xl']", habit.name)
+      assert has_element?(show_live, "header", "3 per week")
+      refute has_element?(show_live, "#habit-current-progress")
+      assert has_element?(show_live, "#habit-mmentum #mmentum-score", "0")
       assert has_element?(show_live, "#mmentum-score-icon[src='/images/mmentum.svg']")
+      assert has_element?(show_live, "#mmentum-score-title", "Mmentum")
+      assert has_element?(show_live, "#habit-mmentum", "Grows with consistency")
+      assert has_element?(show_live, "#habit-contributions-title", "Long-term progress")
+      assert has_element?(show_live, "#habit-contribution-calendar[aria-label*='none recorded']")
+      assert has_element?(show_live, "#habit-contribution-calendar time[datetime][title]")
+      refute has_element?(show_live, "#habit-contribution-calendar time[tabindex]")
 
-      assert has_element?(
-               show_live,
-               "#mmentum-score-tooltip[phx-hook=Tooltip][data-tooltip-content*=\"Each completion adds a diminishing boost\"]"
-             )
+      refute has_element?(show_live, "#mmentum-score-tooltip")
+      assert has_element?(show_live, "#habit-mmentum", "eases down between contributions")
 
-      assert has_element?(show_live, "dt", "Mmentum score")
-      assert has_element?(show_live, "#habit-history-title", "History")
+      refute has_element?(show_live, "#record-habit-completion")
+      refute has_element?(show_live, "#undo-habit-completion")
+      assert has_element?(show_live, "#habit-meaning-title", "Habit details")
+      assert has_element?(show_live, "#habit-meaning-empty", "Add an identity")
+      assert has_element?(show_live, "#add-habit-details", "Add details")
+      assert has_element?(show_live, "#habit-activity-title", "Recent activity")
+      assert has_element?(show_live, "#habit-activity[phx-update='stream']")
       refute html =~ "Why it matters"
       refute html =~ "What counts"
     end
@@ -381,18 +399,57 @@ defmodule MmentumWeb.HabitLiveTest do
           what_counts: "Complete the movement planned for today"
         })
 
-      {:ok, _show_live, html} = live(conn, ~p"/habits/#{habit}")
+      {:ok, show_live, html} = live(conn, ~p"/habits/#{habit}")
 
-      assert html =~ habit.identity
-      assert html =~ habit.why_it_matters
-      assert html =~ habit.what_counts
+      assert has_element?(show_live, "header", "3 per week")
+      assert has_element?(show_live, "#habit-identity", habit.identity)
+      assert has_element?(show_live, "#habit-meaning", habit.why_it_matters)
+      assert has_element?(show_live, "#habit-meaning", habit.what_counts)
+      refute has_element?(show_live, "#habit-meaning-empty")
+      assert html =~ "Habit details"
+    end
+
+    test "shows newest completion activity first and habit creation last", %{
+      conn: conn,
+      habit: habit,
+      user: user
+    } do
+      now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+      older_time = NaiveDateTime.add(now, -2, :day)
+      newer_time = NaiveDateTime.add(now, -1, :day)
+
+      older_log =
+        Repo.insert!(%Log{
+          habit_id: habit.id,
+          inserted_at: older_time,
+          updated_at: older_time,
+          user_id: user.id
+        })
+
+      newer_log =
+        Repo.insert!(%Log{
+          habit_id: habit.id,
+          inserted_at: newer_time,
+          updated_at: newer_time,
+          user_id: user.id
+        })
+
+      {:ok, show_live, _html} = live(conn, ~p"/habits/#{habit}")
+      html = render(show_live)
+
+      {newer_position, _length} = :binary.match(html, ~s|id="logs-#{newer_log.id}"|)
+      {older_position, _length} = :binary.match(html, ~s|id="logs-#{older_log.id}"|)
+      {creation_position, _length} = :binary.match(html, ~s|id="habit-created-#{habit.id}"|)
+
+      assert newer_position < older_position
+      assert older_position < creation_position
+      assert has_element?(show_live, "#habit-contribution-calendar[aria-label*='2 completions across 2 days']")
     end
 
     test "updates habit within modal", %{conn: conn, habit: habit} do
       {:ok, show_live, _html} = live(conn, ~p"/habits/#{habit}")
 
-      assert show_live |> element(~s|a[href="/habits/#{habit.id}/show/edit"]|) |> render_click() =~
-               "Edit habit"
+      assert show_live |> element("#edit-habit") |> render_click() =~ "Edit habit"
 
       assert_patch(show_live, ~p"/habits/#{habit}/show/edit")
 
