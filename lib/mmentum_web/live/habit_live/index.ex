@@ -66,7 +66,7 @@ defmodule MmentumWeb.HabitLive.Index do
 
   defp list_habits(socket) do
     user = get_current_user(socket)
-    Habits.list_habits_with_range(user, Time.current_time(user.time_zone))
+    Habits.list_habits_with_current_progress(user, Time.current_time(user.time_zone))
   end
 
   defp assign_dashboard(socket) do
@@ -74,7 +74,7 @@ defmodule MmentumWeb.HabitLive.Index do
     current_time = Time.current_time(user.time_zone)
 
     assign(socket, %{
-      habits: Habits.list_habits_with_range(user, current_time),
+      habits: Habits.list_habits_with_current_progress(user, current_time),
       day_info: build_day_info(current_time),
       greeting: greeting_for_time_of_day(user, current_time),
       time_of_day: Time.time_of_day(current_time)

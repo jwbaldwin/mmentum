@@ -67,10 +67,20 @@ defmodule MmentumWeb.HabitLiveTest do
       refute has_element?(index_live, "#habit-#{habit.id} button[title]")
     end
 
-    test "uses live navigation for shared authenticated links", %{conn: conn} do
+    test "uses accessible live navigation for shared authenticated links", %{conn: conn, user: user} do
       {:ok, index_live, _html} = live(conn, ~p"/habits")
 
-      assert has_element?(index_live, ~s|header a[href="/"][data-phx-link="redirect"]|)
+      assert has_element?(index_live, ~s|header nav[aria-label="Primary"]|)
+
+      assert has_element?(
+               index_live,
+               ~s|header a[href="/"][data-phx-link="redirect"][aria-label="Dashboard"] img[alt=""]|
+             )
+
+      assert has_element?(
+               index_live,
+               ~s|#account-menu summary[aria-label="Account menu for #{user.full_name}"]|
+             )
 
       assert has_element?(
                index_live,
@@ -215,6 +225,15 @@ defmodule MmentumWeb.HabitLiveTest do
       assert_redirect(index_live, ~p"/habits/#{habit}")
     end
 
+    test "shows what counts beneath the habit", %{conn: conn, habit: habit, user: user} do
+      {:ok, habit} =
+        Habits.update_habit(user, habit.id, %{what_counts: "Walk outside for ten minutes"})
+
+      {:ok, index_live, _html} = live(conn, ~p"/habits")
+
+      assert has_element?(index_live, "#habit-#{habit.id} p", habit.what_counts)
+    end
+
     test "removes a flexible maximum when editing back to an exact target", %{
       conn: conn,
       habit: habit,
@@ -294,10 +313,23 @@ defmodule MmentumWeb.HabitLiveTest do
 
       assert has_element?(
                index_live,
-               ~s|#{progress}[style*="--progress-fill-offset-desktop: 44.0px"]|
+               "#habit-#{habit.id}-progress-status[aria-live=polite][aria-atomic=true]",
+               "1 of 3 completed"
              )
 
       assert has_element?(index_live, ~s|#{first_step}[data-state="complete"]|)
+    end
+
+    test "removes the user's most recent completion", %{conn: conn, habit: habit, user: user} do
+      {:ok, log} = Habits.record_completion(user, habit.id)
+      {:ok, index_live, _html} = live(conn, ~p"/habits")
+
+      index_live
+      |> element(~s|#habit-#{habit.id} button[phx-click="remove_log"]|)
+      |> render_click()
+
+      refute Repo.get(Mmentum.Logs.Log, log.id)
+      assert has_element?(index_live, ~s|#habit-#{habit.id}-progress[data-completed="0"]|)
     end
 
     test "does not edit another user's habit", %{conn: conn} do
@@ -327,6 +359,7 @@ defmodule MmentumWeb.HabitLiveTest do
       assert html =~ "Habit details"
       assert html =~ habit.name
       assert has_element?(show_live, ~s|a[href="/habits"]|, "Today")
+      assert has_element?(show_live, "#habit-#{habit.id}-progress[role=progressbar]")
       assert has_element?(show_live, "dt", "Current progress")
       assert has_element?(show_live, "dt", "Momentum")
       assert has_element?(show_live, "#habit-history-title", "History")

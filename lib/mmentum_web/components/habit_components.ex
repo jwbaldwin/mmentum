@@ -5,9 +5,6 @@ defmodule MmentumWeb.HabitComponents do
 
   attr :habit, Habit, required: true
 
-  @doc """
-  Simple component to display the habit's frequency range
-  """
   def cadence(assigns) do
     ~H"""
     <%= if @habit.max_completions do %>
@@ -22,78 +19,89 @@ defmodule MmentumWeb.HabitComponents do
   attr :completed, :integer, required: true
 
   def habit_progress(assigns) do
-    completion_cap = assigns.habit.max_completions || assigns.habit.min_completions
-
     assigns =
       assign(assigns,
-        completion_cap: completion_cap,
-        optional_steps: optional_steps(assigns.habit)
+        completion_cap: Habit.completion_cap(assigns.habit),
+        optional_steps: optional_steps(assigns.habit),
+        completion_summary: completion_summary(assigns.habit, assigns.completed)
       )
 
     ~H"""
-    <div class="flex items-center gap-2 sm:gap-3">
-      <div class="min-w-0 flex-1 overflow-x-auto py-1">
-        <div
-          id={"habit-#{@habit.id}-progress"}
-          class="habit-progress"
-          data-completed={@completed}
-          role="progressbar"
-          aria-label={"#{@habit.name} required completions"}
-          aria-valuemin="0"
-          aria-valuemax={@habit.min_completions}
-          aria-valuenow={min(@completed, @habit.min_completions)}
-          aria-valuetext={completion_summary(@habit, @completed)}
-          style={progress_style(@completion_cap, @completed)}
-        >
-          <span class="habit-progress__shape" aria-hidden="true">
-            <span :if={@completion_cap > 1} class="habit-progress__track"></span>
-            <span
-              :for={step <- 1..@completion_cap}
-              id={"habit-#{@habit.id}-progress-step-#{step}"}
-              class="habit-progress__step"
-              data-kind={if step in @optional_steps, do: "optional", else: "required"}
-              data-state={if(step <= @completed, do: "complete", else: "pending")}
-            ></span>
-          </span>
+    <div
+      id={"habit-#{@habit.id}-progress"}
+      class="habit-progress"
+      data-completed={@completed}
+      role="progressbar"
+      aria-label={"#{@habit.name} required completions"}
+      aria-valuemin="0"
+      aria-valuemax={@habit.min_completions}
+      aria-valuenow={min(@completed, @habit.min_completions)}
+      aria-valuetext={@completion_summary}
+      style={progress_style(@completion_cap, @completed)}
+    >
+      <span class="habit-progress__shape" aria-hidden="true">
+        <span :if={@completion_cap > 1} class="habit-progress__track"></span>
+        <span
+          :for={step <- 1..@completion_cap}
+          id={"habit-#{@habit.id}-progress-step-#{step}"}
+          class="habit-progress__step"
+          data-kind={if step in @optional_steps, do: "optional", else: "required"}
+          data-state={if(step <= @completed, do: "complete", else: "pending")}
+        ></span>
+      </span>
+      <span
+        class={[
+          "habit-progress__fill",
+          @completed > 0 && @completed < @completion_cap && "habit-progress__fill--partial"
+        ]}
+        aria-hidden="true"
+      >
+        <span class="habit-progress__fill-fluid">
           <span
-            class={[
-              "habit-progress__fill",
-              @completed > 0 && @completed < @completion_cap &&
-                "habit-progress__fill--partial"
-            ]}
-            aria-hidden="true"
-          >
-            <span class="habit-progress__fill-fluid">
-              <span
-                :for={_step <- 1..@completion_cap}
-                class="habit-progress__fill-fluid-step"
-              ></span>
-            </span>
-            <span class="habit-progress__fill-beads">
-              <span
-                :for={_step <- 1..@completion_cap}
-                class="habit-progress__fill-step"
-              ></span>
-            </span>
-          </span>
-        </div>
-      </div>
-      <div class="flex shrink-0 items-center gap-1">
-        <.completion_control
-          habit={@habit}
-          event="remove_log"
-          label="Remove completion"
-          icon="hero-backward-solid"
-          disabled={@completed == 0}
-        />
-        <.completion_control
-          habit={@habit}
-          event="add_log"
-          label="Record completion"
-          icon="hero-forward-solid"
-          disabled={@completed >= @completion_cap}
-        />
-      </div>
+            :for={_step <- 1..@completion_cap}
+            class="habit-progress__fill-fluid-step"
+          ></span>
+        </span>
+        <span class="habit-progress__fill-beads">
+          <span :for={_step <- 1..@completion_cap} class="habit-progress__fill-step"></span>
+        </span>
+      </span>
+    </div>
+    <span
+      id={"habit-#{@habit.id}-progress-status"}
+      class="sr-only"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      {@completion_summary}
+    </span>
+    """
+  end
+
+  attr :habit, Habit, required: true
+  attr :completed, :integer, required: true
+
+  def completion_controls(assigns) do
+    assigns = assign(assigns, :completion_cap, Habit.completion_cap(assigns.habit))
+
+    ~H"""
+    <div class="flex shrink-0 items-center gap-1">
+      <.completion_control
+        habit={@habit}
+        event="remove_log"
+        label="Remove completion"
+        icon="hero-backward-solid"
+        id_suffix="remove-completion"
+        disabled={@completed == 0}
+      />
+      <.completion_control
+        habit={@habit}
+        event="add_log"
+        label="Record completion"
+        icon="hero-forward-solid"
+        id_suffix="record-completion"
+        disabled={@completed >= @completion_cap}
+      />
     </div>
     """
   end
@@ -123,12 +131,13 @@ defmodule MmentumWeb.HabitComponents do
   attr :event, :string, required: true
   attr :label, :string, required: true
   attr :icon, :string, required: true
+  attr :id_suffix, :string, required: true
   attr :disabled, :boolean, required: true
 
   defp completion_control(assigns) do
     ~H"""
     <.tooltip
-      id={"habit-#{@habit.id}-#{String.replace(@label, " ", "-") |> String.downcase()}-tooltip"}
+      id={"habit-#{@habit.id}-#{@id_suffix}-tooltip"}
       content={@label}
       disabled={@disabled}
     >
@@ -137,8 +146,8 @@ defmodule MmentumWeb.HabitComponents do
         phx-value-id={@habit.id}
         type="button"
         class={[
-          "h-12 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] dark:text-zinc-300",
-          "duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-900 enabled:active:scale-[0.98] dark:hover:text-zinc-100",
+          "motion-press flex h-12 w-12 items-center justify-center rounded-control text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] dark:text-zinc-300",
+          "duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-900 enabled:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/25",
           "phx-click-loading:pointer-events-none phx-click-loading:cursor-wait phx-click-loading:opacity-60",
           @disabled && "cursor-not-allowed disabled:text-zinc-200 dark:disabled:text-zinc-800"
         ]}
@@ -177,14 +186,9 @@ defmodule MmentumWeb.HabitComponents do
       end
 
     cond do
-      completed < minimum ->
-        required_text
-
-      optional_completed == 0 ->
-        "#{required_text}; goal met; #{optional_text} available"
-
-      true ->
-        "#{required_text}; goal met; #{optional_completed} of #{optional_text} completed"
+      completed < minimum -> required_text
+      optional_completed == 0 -> "#{required_text}; goal met; #{optional_text} available"
+      true -> "#{required_text}; goal met; #{optional_completed} of #{optional_text} completed"
     end
   end
 

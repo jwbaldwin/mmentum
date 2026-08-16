@@ -16,9 +16,12 @@ defmodule MmentumWeb.Layouts do
       phx-window-keydown={JS.remove_attribute("open", to: "#account-menu")}
       phx-key="escape"
     >
-      <summary class="flex w-[min(14rem,calc(100vw-4rem))] min-w-0 cursor-pointer list-none select-none items-center gap-2.5 rounded-xl px-2 py-1.5 text-left text-zinc-900 transition-[background-color,box-shadow] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:shadow-[inset_0_0_0_1px_rgb(24_24_27/0.06)] focus:outline-none focus-visible:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-focus)_24%,transparent),inset_0_0_0_1px_rgb(24_24_27/0.08)] group-open:bg-zinc-100 group-open:shadow-[inset_0_0_0_1px_rgb(24_24_27/0.06)] dark:text-zinc-100 dark:hover:bg-zinc-900 dark:hover:shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)] dark:focus-visible:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-focus)_24%,transparent),inset_0_0_0_1px_rgb(255_255_255/0.1)] dark:group-open:bg-zinc-900 dark:group-open:shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)] [&::-webkit-details-marker]:hidden">
+      <summary
+        aria-label={"Account menu for #{@current_user.full_name}"}
+        class="flex h-11 w-11 min-w-0 cursor-pointer list-none select-none items-center justify-center rounded-xl text-left text-zinc-900 transition-[background-color,box-shadow] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:shadow-[inset_0_0_0_1px_rgb(24_24_27/0.06)] focus:outline-none focus-visible:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-focus)_24%,transparent),inset_0_0_0_1px_rgb(24_24_27/0.08)] group-open:bg-zinc-100 group-open:shadow-[inset_0_0_0_1px_rgb(24_24_27/0.06)] dark:text-zinc-100 dark:hover:bg-zinc-900 dark:hover:shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)] dark:focus-visible:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-focus)_24%,transparent),inset_0_0_0_1px_rgb(255_255_255/0.1)] dark:group-open:bg-zinc-900 dark:group-open:shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)] sm:h-auto sm:w-[min(14rem,calc(100vw-4rem))] sm:justify-start sm:gap-2.5 sm:px-2 sm:py-1.5 [&::-webkit-details-marker]:hidden"
+      >
         <.avatar id="account-avatar" seed={@current_user.email} />
-        <span class="min-w-0 flex-1">
+        <span class="hidden min-w-0 flex-1 sm:block">
           <span class="block truncate text-[0.8125rem] font-medium leading-[1.125rem] text-zinc-900 dark:text-zinc-100">
             {@current_user.full_name}
           </span>
@@ -28,7 +31,7 @@ defmodule MmentumWeb.Layouts do
         </span>
         <.icon
           name="hero-chevron-down-mini"
-          class="h-3.5 w-3.5 flex-none text-muted transition-transform duration-[160ms] ease-[var(--motion-ease-out)] group-open:rotate-180 dark:text-zinc-400"
+          class="hidden h-3.5 w-3.5 flex-none text-muted transition-transform duration-[160ms] ease-[var(--motion-ease-out)] group-open:rotate-180 dark:text-zinc-400 sm:block"
         />
       </summary>
 
@@ -58,7 +61,7 @@ defmodule MmentumWeb.Layouts do
       data-theme-cycle
       data-roll-ready="false"
       aria-label="Appearance: Auto. Switch to Light"
-      class="flex min-h-9 w-full items-center gap-2.5 rounded-control px-2.5 py-2 text-left text-zinc-700 transition-[background-color,color,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:text-zinc-900 focus-visible:bg-zinc-100 focus-visible:text-zinc-900 focus-visible:outline-none active:scale-[0.98] dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100 dark:focus-visible:bg-zinc-900 dark:focus-visible:text-zinc-100"
+      class="motion-press flex min-h-9 w-full items-center gap-2.5 rounded-control px-2.5 py-2 text-left text-zinc-700 transition-[background-color,color,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:text-zinc-900 focus-visible:bg-zinc-100 focus-visible:text-zinc-900 focus-visible:outline-none active:scale-[0.98] dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100 dark:focus-visible:bg-zinc-900 dark:focus-visible:text-zinc-100"
     >
       <svg
         data-appearance-icon

@@ -1,10 +1,11 @@
+<.habit_progress_filter />
 <.back navigate={~p"/habits"} class="mb-6">Today</.back>
 
 <article class="max-w-3xl">
   <.header>
     {@habit.name}
     <:subtitle :if={@habit.identity}>{@habit.identity}</:subtitle>
-    <:subtitle :if={!@habit.identity}>{target_description(@habit)}</:subtitle>
+    <:subtitle :if={!@habit.identity}><.cadence habit={@habit} /></:subtitle>
     <:actions>
       <.button_link
         patch={~p"/habits/#{@habit}/show/edit"}
@@ -18,13 +19,17 @@
     </:actions>
   </.header>
 
-  <dl class="mt-7 grid grid-cols-2 divide-x divide-zinc-200 rounded-panel bg-zinc-50 ring-1 ring-zinc-950/[0.06] dark:divide-zinc-800 dark:bg-zinc-950 dark:ring-zinc-50/10">
+  <div class="mt-7 overflow-x-auto py-1">
+    <.habit_progress habit={@habit} completed={@completed} />
+  </div>
+
+  <dl class="mt-6 grid grid-cols-2 divide-x divide-zinc-200 rounded-panel bg-zinc-50 ring-1 ring-zinc-950/[0.06] dark:divide-zinc-800 dark:bg-zinc-950 dark:ring-zinc-50/10">
     <div class="min-w-0 px-4 py-3.5 sm:px-5">
       <dt class="text-xs font-medium leading-4 text-muted dark:text-zinc-400">
         Current progress
       </dt>
       <dd class="mt-1 truncate text-sm font-semibold leading-5 text-zinc-900 dark:text-zinc-100">
-        {min(@completed, @habit.min_completions)} of <MmentumWeb.HabitComponents.cadence habit={@habit} />
+        {min(@completed, @habit.min_completions)} of <.cadence habit={@habit} />
         <span :if={@completed >= @habit.min_completions}> · Goal met</span>
       </dd>
     </div>

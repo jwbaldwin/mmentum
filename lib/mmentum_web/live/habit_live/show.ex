@@ -1,6 +1,8 @@
 defmodule MmentumWeb.HabitLive.Show do
   use MmentumWeb, :live_view
 
+  import MmentumWeb.HabitComponents
+
   alias Mmentum.Habits
   alias Mmentum.Logs
   alias Mmentum.Time
@@ -21,7 +23,7 @@ defmodule MmentumWeb.HabitLive.Show do
      socket
      |> assign(:page_title, page_title(socket.assigns.live_action))
      |> assign(:habit, habit)
-     |> assign(:completed, min(length(habit.logs), habit.max_completions || habit.min_completions))
+     |> assign(:completed, length(habit.logs))
      |> assign(:momentum, round(Habits.get_current_momentum(habit)))
      |> stream(:logs, logs, reset: true)}
   end
@@ -48,13 +50,4 @@ defmodule MmentumWeb.HabitLive.Show do
 
   defp page_title(:show), do: "Habit details"
   defp page_title(:edit), do: "Edit habit"
-
-  defp target_description(%{max_completions: nil} = habit) do
-    unit = if habit.min_completions == 1, do: "time", else: "times"
-    "#{habit.min_completions} #{unit} per #{habit.periodicity}"
-  end
-
-  defp target_description(habit) do
-    "#{habit.min_completions}–#{habit.max_completions} times per #{habit.periodicity}"
-  end
 end

@@ -1,13 +1,15 @@
 <header class="px-4 sm:px-6 lg:px-8">
-  <div class="flex items-center justify-between border-b border-zinc-100 py-3 text-sm dark:border-zinc-900">
-    <div class="flex items-center gap-4">
-      <.link
-        navigate={~p"/"}
-        class="rounded-control focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20"
-      >
-        <img class="theme-logo" src={~p"/images/mmentum.svg"} width="36" alt="Mmentum" />
-      </.link>
-    </div>
+  <nav
+    aria-label="Primary"
+    class="flex items-center justify-between border-b border-zinc-100 py-3 text-sm dark:border-zinc-900"
+  >
+    <.link
+      navigate={~p"/"}
+      aria-label="Dashboard"
+      class="rounded-control focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20"
+    >
+      <img class="theme-logo" src={~p"/images/mmentum.svg"} width="36" alt="" />
+    </.link>
     <div class="flex items-center gap-1 font-semibold leading-6 text-zinc-900 dark:text-zinc-100">
       <%= if @current_user do %>
         <.tooltip id="new-habit-tooltip" content="New habit" placement="bottom">
@@ -29,7 +31,7 @@
           <li>
             <.link
               href={~p"/users/register"}
-              class="rounded-control text-sm font-medium leading-5 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 dark:text-zinc-300 dark:hover:text-zinc-50"
+              class="motion-press rounded-control text-sm font-medium leading-5 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 dark:text-zinc-300 dark:hover:text-zinc-50"
             >
               Create account
             </.link>
@@ -37,7 +39,7 @@
           <li>
             <.link
               href={~p"/login"}
-              class="rounded-control text-sm font-medium leading-5 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 dark:text-zinc-300 dark:hover:text-zinc-50"
+              class="motion-press rounded-control text-sm font-medium leading-5 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 dark:text-zinc-300 dark:hover:text-zinc-50"
             >
               Log in
             </.link>
@@ -45,7 +47,7 @@
         </ul>
       <% end %>
     </div>
-  </div>
+  </nav>
 </header>
 <main class="px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
   <div class="mx-auto max-w-4xl">
