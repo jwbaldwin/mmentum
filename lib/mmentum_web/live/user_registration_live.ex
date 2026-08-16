@@ -6,14 +6,14 @@ defmodule MmentumWeb.UserRegistrationLive do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto max-w-sm">
+    <.auth_page>
       <.header class="text-center">
         Create your account
         <:subtitle>
           Already have an account?
-          <.link navigate={~p"/login"} class="text-link">
+          <.text_link navigate={~p"/login"}>
             Log in
-          </.link>
+          </.text_link>
         </:subtitle>
       </.header>
 
@@ -38,7 +38,7 @@ defmodule MmentumWeb.UserRegistrationLive do
           <.button phx-disable-with="Creating account..." class="w-full">Create account</.button>
         </:actions>
       </.simple_form>
-    </div>
+    </.auth_page>
     """
   end
 

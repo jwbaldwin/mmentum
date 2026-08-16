@@ -14,7 +14,9 @@ defmodule MmentumWeb.UserSettingsLive do
       <div class="mt-10 divide-y divide-zinc-200 dark:divide-zinc-800">
         <section class="pb-8">
           <.section_title>Time zone</.section_title>
-          <p class="mt-1 type-body text-muted dark:text-zinc-400">Used to place completions on the correct day</p>
+          <p class="mt-1 text-sm font-normal leading-6 text-muted dark:text-zinc-400">
+            Used to place completions on the correct day
+          </p>
           <.simple_form
             for={@time_zone_form}
             id="time_zone_form"
@@ -34,7 +36,9 @@ defmodule MmentumWeb.UserSettingsLive do
         </section>
         <section class="py-8">
           <.section_title>Email address</.section_title>
-          <p class="mt-1 type-body text-muted dark:text-zinc-400">Change the address you use to log in</p>
+          <p class="mt-1 text-sm font-normal leading-6 text-muted dark:text-zinc-400">
+            Change the address you use to log in
+          </p>
           <.simple_form
             for={@email_form}
             id="email_form"
@@ -59,7 +63,9 @@ defmodule MmentumWeb.UserSettingsLive do
         </section>
         <section class="pt-8">
           <.section_title>Password</.section_title>
-          <p class="mt-1 type-body text-muted dark:text-zinc-400">Use at least 12 characters</p>
+          <p class="mt-1 text-sm font-normal leading-6 text-muted dark:text-zinc-400">
+            Use at least 12 characters
+          </p>
           <.simple_form
             for={@password_form}
             id="password_form"

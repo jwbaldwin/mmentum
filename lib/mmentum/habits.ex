@@ -13,21 +13,31 @@ defmodule Mmentum.Habits do
   alias Mmentum.Logs.Log
   alias Mmentum.Time
 
-  @allowed_ranges [:year, :month, :week, :day]
-
-  @doc """
-  Retrieve the user's list of habits with all logs in the specified range
-  """
-  def list_habits_with_range(%User{id: user_id} = user, %DateTime{} = current_time, range \\ :week)
-      when range in @allowed_ranges do
-    start_of_range = Time.start_of_range(current_time, range)
-    end_of_range = Time.end_of_range(current_time, range)
+  @doc "Lists the user's habits with completion activity from each habit's current period"
+  def list_habits_with_current_progress(%User{id: user_id} = user, %DateTime{} = current_time) do
+    periodicities = Ecto.Enum.values(Habit, :periodicity)
+    starts = Enum.map(periodicities, &Time.start_of_range(current_time, &1))
+    ends = Enum.map(periodicities, &Time.end_of_range(current_time, &1))
+    broad_start = Enum.min(starts, NaiveDateTime)
+    broad_end = Enum.max(ends, NaiveDateTime)
 
     Habit
     |> where(user_id: ^user_id)
     |> order_by([habit], asc: habit.inserted_at, asc: habit.id)
-    |> preload(logs: ^Logs.in_range_query(user, start_of_range, end_of_range))
+    |> preload(logs: ^Logs.in_range_query(user, broad_start, broad_end))
     |> Repo.all()
+    |> Enum.map(fn habit ->
+      start_of_period = Time.start_of_range(current_time, habit.periodicity)
+      end_of_period = Time.end_of_range(current_time, habit.periodicity)
+
+      current_logs =
+        Enum.filter(habit.logs, fn log ->
+          NaiveDateTime.compare(log.inserted_at, start_of_period) != :lt and
+            NaiveDateTime.compare(log.inserted_at, end_of_period) != :gt
+        end)
+
+      %{habit | logs: current_logs}
+    end)
   end
 
   @doc """
@@ -35,6 +45,19 @@ defmodule Mmentum.Habits do
   """
   def get_habit!(%User{id: user_id}, id) do
     Repo.get_by!(Habit, id: id, user_id: user_id)
+  end
+
+  @doc "Gets one of the user's habits with completion activity from its current period"
+  def get_habit_with_current_progress!(%User{} = user, id, %DateTime{} = current_time) do
+    habit = get_habit!(user, id)
+    start_of_range = Time.start_of_range(current_time, habit.periodicity)
+    end_of_range = Time.end_of_range(current_time, habit.periodicity)
+
+    Repo.preload(
+      habit,
+      [logs: Logs.in_range_query(user, start_of_range, end_of_range)],
+      force: true
+    )
   end
 
   @doc """

@@ -1,6 +1,8 @@
 defmodule MmentumWeb.HabitLive.Index do
   use MmentumWeb, :live_view
 
+  import MmentumWeb.HabitComponents
+
   alias Mmentum.Habits
   alias Mmentum.Habits.Habit
   alias Mmentum.Time
@@ -45,14 +47,6 @@ defmodule MmentumWeb.HabitLive.Index do
   end
 
   @impl true
-  def handle_event("delete", %{"id" => id}, socket) do
-    case Habits.delete_habit(get_current_user(socket), id) do
-      {:ok, _habit} -> {:noreply, assign(socket, :habits, list_habits(socket))}
-      {:error, :not_found} -> {:noreply, habit_not_found(socket)}
-      {:error, %Ecto.Changeset{} = changeset} -> {:noreply, assign(socket, changeset: changeset)}
-    end
-  end
-
   def handle_event("add_log", %{"id" => habit_id}, socket) do
     case Habits.record_completion(get_current_user(socket), habit_id) do
       {:ok, _log} -> {:noreply, assign(socket, :habits, list_habits(socket))}
@@ -72,7 +66,7 @@ defmodule MmentumWeb.HabitLive.Index do
 
   defp list_habits(socket) do
     user = get_current_user(socket)
-    Habits.list_habits_with_range(user, Time.current_time(user.time_zone))
+    Habits.list_habits_with_current_progress(user, Time.current_time(user.time_zone))
   end
 
   defp assign_dashboard(socket) do
@@ -80,7 +74,7 @@ defmodule MmentumWeb.HabitLive.Index do
     current_time = Time.current_time(user.time_zone)
 
     assign(socket, %{
-      habits: Habits.list_habits_with_range(user, current_time),
+      habits: Habits.list_habits_with_current_progress(user, current_time),
       day_info: build_day_info(current_time),
       greeting: greeting_for_time_of_day(user, current_time),
       time_of_day: Time.time_of_day(current_time)
@@ -111,52 +105,6 @@ defmodule MmentumWeb.HabitLive.Index do
       _ ->
         "Happy #{current_day}, keep your momentum going!"
     end
-  end
-
-  defp completion_summary(%Habit{max_completions: nil, min_completions: target}, completed) do
-    "#{completed} of #{target} completed"
-  end
-
-  defp completion_summary(
-         %Habit{min_completions: min_completions, max_completions: max_completions},
-         completed
-       ) do
-    required_completed = min(completed, min_completions)
-    optional_completed = max(completed - min_completions, 0)
-    optional_total = max_completions - min_completions
-    required_text = "#{required_completed} of #{min_completions} required completions"
-
-    optional_text =
-      case optional_total do
-        1 -> "1 optional completion"
-        count -> "#{count} optional completions"
-      end
-
-    cond do
-      completed < min_completions ->
-        required_text
-
-      optional_completed == 0 ->
-        "#{required_text}; goal met; #{optional_text} available"
-
-      true ->
-        "#{required_text}; goal met; #{optional_completed} of #{optional_text} completed"
-    end
-  end
-
-  defp progress_style(completion_cap, completed) do
-    total_connections = max(completion_cap - 1, 1)
-    completed_connections = min(max(completed - 1, 0), total_connections)
-    remaining = if completed == 0, do: 1.0, else: 1 - completed_connections / total_connections
-    fill_offset = if completed == 0, do: 0.0, else: remaining
-
-    [
-      "--progress-fill-right-percent: #{Float.round(remaining * 100, 4)}%",
-      "--progress-fill-offset-narrow: #{Float.round(fill_offset * 28, 4)}px",
-      "--progress-fill-offset-mobile: #{Float.round(fill_offset * 32, 4)}px",
-      "--progress-fill-offset-desktop: #{Float.round(fill_offset * 44, 4)}px"
-    ]
-    |> Enum.join("; ")
   end
 
   defp habit_not_found(socket), do: put_flash(socket, :error, "Habit not found.")

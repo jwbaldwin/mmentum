@@ -14,9 +14,16 @@
 ARG ELIXIR_VERSION=1.20.2
 ARG OTP_VERSION=29.0.2
 ARG DEBIAN_VERSION=bookworm-20260623-slim
+ARG NODE_VERSION=24
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
+FROM node:${NODE_VERSION}-bookworm-slim AS assets-deps
+
+WORKDIR /app/assets
+
+COPY assets/package.json assets/package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 
 FROM ${BUILDER_IMAGE} AS builder
 
@@ -50,6 +57,7 @@ COPY priv priv
 COPY lib lib
 
 COPY assets assets
+COPY --from=assets-deps /app/assets/node_modules assets/node_modules
 
 # compile assets
 RUN mix assets.deploy

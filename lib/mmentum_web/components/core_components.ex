@@ -88,7 +88,7 @@ defmodule MmentumWeb.CoreComponents do
                 <button
                   phx-click={JS.exec("data-cancel", to: "##{@id}")}
                   type="button"
-                  class="button-feedback flex h-9 w-9 items-center justify-center rounded-control text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 focus-visible:ring-offset-2 dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-zinc-300 dark:focus-visible:ring-offset-zinc-950"
+                  class="motion-press flex h-9 w-9 items-center justify-center rounded-control text-zinc-400 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:bg-zinc-100 hover:text-zinc-700 enabled:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 focus-visible:ring-offset-2 dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-zinc-300 dark:focus-visible:ring-offset-zinc-950"
                   aria-label={gettext("close")}
                 >
                   <.icon name="hero-x-mark-solid" class="h-5 w-5" />
@@ -151,7 +151,7 @@ defmodule MmentumWeb.CoreComponents do
       <.button phx-click="go" class="ml-2">Send!</.button>
   """
   attr :type, :string, default: nil
-  attr :variant, :string, default: "primary", values: ~w(primary destructive)
+  attr :variant, :string, default: "primary", values: ~w(primary quiet destructive)
   attr :size, :string, default: "default", values: ~w(default compact)
   attr :class, :any, default: nil
   attr :rest, :global, include: ~w(disabled form name value)
@@ -162,14 +162,7 @@ defmodule MmentumWeb.CoreComponents do
     ~H"""
     <button
       type={@type}
-      class={[
-        "button-feedback inline-flex items-center justify-center gap-2 rounded-control type-label",
-        "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/25 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950",
-        "disabled:cursor-not-allowed disabled:opacity-50 phx-submit-loading:cursor-wait phx-submit-loading:opacity-65",
-        button_size(@size),
-        button_variant(@variant),
-        @class
-      ]}
+      class={button_classes(@size, @variant, @class, "enabled:active:scale-[0.98]")}
       {@rest}
     >
       {render_slot(@inner_block)}
@@ -177,8 +170,48 @@ defmodule MmentumWeb.CoreComponents do
     """
   end
 
+  attr :navigate, :any, default: nil
+  attr :patch, :any, default: nil
+  attr :href, :any, default: nil
+  attr :variant, :string, default: "primary", values: ~w(primary quiet destructive)
+  attr :size, :string, default: "default", values: ~w(default compact)
+  attr :class, :any, default: nil
+  attr :rest, :global
+  slot :inner_block, required: true
+
+  def button_link(assigns) do
+    ~H"""
+    <.link
+      navigate={@navigate}
+      patch={@patch}
+      href={@href}
+      class={button_classes(@size, @variant, @class, "active:scale-[0.98]")}
+      {@rest}
+    >
+      {render_slot(@inner_block)}
+    </.link>
+    """
+  end
+
+  defp button_classes(size, variant, class, press_class) do
+    [
+      "motion-press inline-flex items-center justify-center gap-2 rounded-control text-sm font-medium leading-5",
+      "transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)]",
+      "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/25 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950",
+      "disabled:cursor-not-allowed disabled:opacity-50 phx-submit-loading:cursor-wait phx-submit-loading:opacity-65",
+      press_class,
+      button_size(size),
+      button_variant(variant),
+      class
+    ]
+  end
+
   defp button_variant("primary") do
     "bg-action text-white shadow-control hover:bg-action-hover active:text-white/80 dark:bg-zinc-100 dark:text-zinc-950 dark:shadow-[0_1px_2px_rgb(0_0_0/0.22)] dark:hover:bg-zinc-200 dark:active:text-zinc-950/80"
+  end
+
+  defp button_variant("quiet") do
+    "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950 active:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50 dark:active:bg-zinc-800"
   end
 
   defp button_variant("destructive") do
@@ -187,6 +220,89 @@ defmodule MmentumWeb.CoreComponents do
 
   defp button_size("default"), do: "min-h-11 px-4 py-2.5"
   defp button_size("compact"), do: "min-h-9 px-2.5 py-1.5"
+
+  @doc """
+  Renders a tooltip for a single focusable element.
+
+  The trigger must provide its own accessible label when it has no visible text.
+
+  ## Examples
+
+      <.tooltip id="edit-tooltip" content="Edit habit">
+        <button type="button" aria-label="Edit habit">
+          <.icon name="hero-pencil" />
+        </button>
+      </.tooltip>
+  """
+  attr :id, :string, required: true
+  attr :content, :string, required: true
+
+  attr :placement, :string,
+    default: "top",
+    values:
+      ~w(top top-start top-end right right-start right-end bottom bottom-start bottom-end left left-start left-end)
+
+  attr :delay, :integer, default: 400
+  attr :disabled, :boolean, default: false
+  attr :class, :any, default: nil
+  slot :inner_block, required: true
+
+  def tooltip(assigns) do
+    ~H"""
+    <span
+      id={@id}
+      phx-hook="Tooltip"
+      class={["inline-flex", @class]}
+      data-tooltip-content={@content}
+      data-tooltip-placement={@placement}
+      data-tooltip-delay={@delay}
+      data-tooltip-disabled={to_string(@disabled)}
+    >
+      {render_slot(@inner_block)}
+    </span>
+    """
+  end
+
+  slot :inner_block, required: true
+
+  def auth_page(assigns) do
+    ~H"""
+    <div class="mx-auto max-w-sm">{render_slot(@inner_block)}</div>
+    """
+  end
+
+  def auth_navigation(assigns) do
+    ~H"""
+    <nav aria-label="Account" class="mt-5 flex items-center justify-center gap-4 text-sm font-normal leading-6">
+      <.text_link href="/users/register">Create account</.text_link>
+      <span aria-hidden="true" class="text-zinc-300 dark:text-zinc-700">/</span>
+      <.text_link href="/login">Log in</.text_link>
+    </nav>
+    """
+  end
+
+  attr :navigate, :any, default: nil
+  attr :href, :any, default: nil
+  attr :class, :any, default: nil
+  attr :rest, :global
+  slot :inner_block, required: true
+
+  def text_link(assigns) do
+    ~H"""
+    <.link
+      navigate={@navigate}
+      href={@href}
+      class={[
+        "rounded-sm font-medium text-brand underline-offset-[0.2em] transition-colors duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)]",
+        "hover:text-[color-mix(in_srgb,var(--color-brand)_82%,black)] hover:underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus/25",
+        @class
+      ]}
+      {@rest}
+    >
+      {render_slot(@inner_block)}
+    </.link>
+    """
+  end
 
   @doc """
   Renders an input with label and error messages.
@@ -252,7 +368,7 @@ defmodule MmentumWeb.CoreComponents do
 
     ~H"""
     <div phx-feedback-for={@name}>
-      <label class="flex items-center gap-3 type-body text-zinc-600 dark:text-zinc-400">
+      <label class="flex items-center gap-3 text-sm font-normal leading-6 text-zinc-600 dark:text-zinc-400">
         <input type="hidden" name={@name} value="false" />
         <input
           type="checkbox"
@@ -347,7 +463,7 @@ defmodule MmentumWeb.CoreComponents do
 
   def label(assigns) do
     ~H"""
-    <label for={@for} class="block type-label text-zinc-800 dark:text-zinc-200">
+    <label for={@for} class="block text-sm font-medium leading-5 text-zinc-800 dark:text-zinc-200">
       {render_slot(@inner_block)}
     </label>
     """
@@ -381,13 +497,19 @@ defmodule MmentumWeb.CoreComponents do
     ~H"""
     <header class={[@actions != [] && "flex items-start justify-between gap-4 sm:gap-6", @class]}>
       <div class="min-w-0">
-        <h1 class={if(@variant == "dashboard", do: "type-display-title", else: "type-page-title")}>
+        <h1 class={
+          if(@variant == "dashboard",
+            do:
+              "text-3xl font-semibold leading-9 tracking-[-0.03em] text-zinc-900 dark:text-zinc-100 sm:text-4xl sm:leading-10",
+            else: "text-2xl font-semibold leading-8 tracking-tight text-zinc-900 dark:text-zinc-100"
+          )
+        }>
           {render_slot(@inner_block)}
         </h1>
         <p
           :if={@subtitle != []}
           class={[
-            "type-body text-muted dark:text-zinc-400",
+            "text-sm font-normal leading-6 text-muted dark:text-zinc-400",
             if(@variant == "dashboard", do: "mt-1 sm:text-base sm:leading-7", else: "mt-2")
           ]}
         >
@@ -400,12 +522,15 @@ defmodule MmentumWeb.CoreComponents do
   end
 
   @doc "Renders a section title"
+  attr :id, :string, default: nil
   attr :class, :any, default: nil
   slot :inner_block, required: true
 
   def section_title(assigns) do
     ~H"""
-    <h2 class={["type-section-title", @class]}>{render_slot(@inner_block)}</h2>
+    <h2 id={@id} class={["text-base font-semibold leading-6 text-zinc-900 dark:text-zinc-100", @class]}>
+      {render_slot(@inner_block)}
+    </h2>
     """
   end
 
@@ -443,7 +568,7 @@ defmodule MmentumWeb.CoreComponents do
     ~H"""
     <div class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
       <table class="w-[40rem] mt-11 sm:w-full">
-        <thead class="text-left text-sm leading-6 text-zinc-500 dark:text-zinc-400">
+        <thead class="text-sm text-left leading-6 text-zinc-500 dark:text-zinc-400">
           <tr>
             <th :for={col <- @col} class="p-0 pr-6 pb-4 font-normal">{col[:label]}</th>
             <th class="relative p-0 pb-4"><span class="sr-only">{gettext("Actions")}</span></th>
@@ -503,7 +628,7 @@ defmodule MmentumWeb.CoreComponents do
     ~H"""
     <div class="mt-10">
       <dl class="-my-4 divide-y divide-zinc-100 dark:divide-zinc-900">
-        <div :for={item <- @item} class="flex gap-4 py-4 type-body sm:gap-8">
+        <div :for={item <- @item} class="flex gap-4 py-4 text-sm font-normal leading-6 sm:gap-8">
           <dt class="w-1/3 flex-none text-muted dark:text-zinc-400 sm:w-1/4">{item.title}</dt>
           <dd class="text-zinc-800 dark:text-zinc-200">{render_slot(item)}</dd>
         </div>
@@ -520,14 +645,15 @@ defmodule MmentumWeb.CoreComponents do
       <.back navigate={~p"/posts"}>Back to posts</.back>
   """
   attr :navigate, :any, required: true
+  attr :class, :any, default: "mt-12"
   slot :inner_block, required: true
 
   def back(assigns) do
     ~H"""
-    <div class="mt-12">
+    <div class={@class}>
       <.link
         navigate={@navigate}
-        class="button-feedback inline-flex items-center gap-1.5 rounded-control type-label text-zinc-700 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 dark:text-zinc-300 dark:hover:text-zinc-50"
+        class="motion-press inline-flex items-center gap-1.5 rounded-control text-sm font-medium leading-5 text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20 dark:text-zinc-300 dark:hover:text-zinc-50"
       >
         <.icon name="hero-arrow-left-solid" class="h-3 w-3" />
         {render_slot(@inner_block)}
@@ -561,7 +687,6 @@ defmodule MmentumWeb.CoreComponents do
     [
       "mmentum-toast group/toast pointer-events-auto relative col-start-1 col-end-1 row-start-1 row-end-2",
       "w-full max-w-[calc(100vw-2rem)] items-center justify-between overflow-hidden rounded-panel border border-zinc-200 bg-white p-4 pr-10 shadow-floating dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-[0_10px_28px_rgb(0_0_0/0.32),0_2px_8px_rgb(0_0_0/0.2)]",
-      "[@media(scripting:enabled)]:opacity-0 [@media(scripting:enabled){[data-phx-main]_&}]:opacity-100",
       if(assigns[:rest][:hidden] == true, do: "hidden", else: "flex"),
       icon_class
     ]
@@ -609,7 +734,7 @@ defmodule MmentumWeb.CoreComponents do
       to: selector,
       time: 200,
       transition:
-        {"transition-[opacity,transform] ease-[var(--motion-ease-out)] duration-[var(--motion-duration-modal)]",
+        {"transition-[opacity,scale] ease-[var(--motion-ease-out)] duration-[var(--motion-duration-modal)]",
          "opacity-0 scale-[0.98]", "opacity-100 scale-100"}
     )
   end
@@ -619,7 +744,7 @@ defmodule MmentumWeb.CoreComponents do
       to: selector,
       time: 140,
       transition:
-        {"transition-[opacity,transform] ease-[var(--motion-ease-out)] duration-[var(--motion-duration-exit)]",
+        {"transition-[opacity,scale] ease-[var(--motion-ease-out)] duration-[var(--motion-duration-exit)]",
          "opacity-100 scale-100", "opacity-0 scale-[0.98]"}
     )
   end
