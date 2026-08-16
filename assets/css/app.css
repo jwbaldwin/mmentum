@@ -163,6 +163,7 @@ body {
     var(--color-zinc-100) 65%,
     var(--color-zinc-200)
   );
+  --progress-optional: var(--color-zinc-400);
   --progress-fill-offset: var(--progress-fill-offset-narrow);
 
   position: relative;
@@ -178,6 +179,7 @@ body {
     var(--color-zinc-900) 65%,
     var(--color-zinc-800)
   );
+  --progress-optional: var(--color-zinc-600);
 }
 
 .habit-progress__shape {
@@ -214,6 +216,11 @@ body {
   height: var(--progress-dot-size);
   border-radius: 9999px;
   background: var(--progress-pending);
+}
+
+.habit-progress__step[data-kind="optional"] {
+  border: 2px dashed var(--progress-optional);
+  background: color-mix(in srgb, var(--progress-pending) 35%, transparent);
 }
 
 .habit-progress__fill {

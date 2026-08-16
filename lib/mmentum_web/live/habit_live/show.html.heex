@@ -10,8 +10,9 @@
 
 <.list>
   <:item title="Name">{@habit.name}</:item>
-  <:item title="Iterations">{@habit.iterations}</:item>
-  <:item title="Periodicity">{@habit.periodicity}</:item>
+  <:item title="Cadence">
+    <MmentumWeb.HabitComponents.cadence habit={@habit} />
+  </:item>
 </.list>
 
 <section class="mt-12 flow-root">

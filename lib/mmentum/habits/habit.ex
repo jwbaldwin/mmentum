@@ -3,7 +3,8 @@ defmodule Mmentum.Habits.Habit do
   import Ecto.Changeset
 
   schema "habits" do
-    field :iterations, :integer
+    field :min_completions, :integer
+    field :max_completions, :integer
     field :periodicity, Ecto.Enum, values: [:day, :week, :month], default: :week
     field :name, :string
 
@@ -21,12 +22,27 @@ defmodule Mmentum.Habits.Habit do
     habit
     |> cast(attrs, [
       :name,
-      :iterations,
+      :min_completions,
+      :max_completions,
       :periodicity,
       :momentum_score,
       :momentum_last_updated
     ])
-    |> validate_required([:name, :iterations, :periodicity])
+    |> validate_required([:name, :min_completions, :periodicity])
+    |> validate_number(:min_completions, greater_than: 0, less_than_or_equal_to: 31)
+    |> validate_number(:max_completions, greater_than: 0, less_than_or_equal_to: 31)
+    |> validate_completion_range()
     |> validate_number(:momentum_score, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
+  end
+
+  defp validate_completion_range(changeset) do
+    min_completions = get_field(changeset, :min_completions)
+    max_completions = get_field(changeset, :max_completions)
+
+    if max_completions <= min_completions do
+      add_error(changeset, :max_completions, "must be greater than the minimum")
+    else
+      changeset
+    end
   end
 end

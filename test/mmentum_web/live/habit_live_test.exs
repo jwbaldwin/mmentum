@@ -8,9 +8,9 @@ defmodule MmentumWeb.HabitLiveTest do
   import Phoenix.LiveViewTest
   import Mmentum.HabitsFixtures
 
-  @create_attrs %{iterations: 42, name: "some name"}
-  @update_attrs %{iterations: 43, name: "some updated name"}
-  @invalid_attrs %{iterations: nil, name: nil}
+  @create_attrs %{min_completions: 3, name: "some name"}
+  @update_attrs %{min_completions: 4, name: "some updated name"}
+  @invalid_attrs %{min_completions: nil, name: nil}
 
   defp create_habit(%{user: user}) do
     habit = habit_fixture(user: user)
@@ -87,12 +87,14 @@ defmodule MmentumWeb.HabitLiveTest do
 
       assert_patch(index_live, ~p"/habits/new")
 
+      refute has_element?(index_live, "#habit_max_completions")
+
       assert index_live
              |> form("#habit-form", habit: @invalid_attrs)
              |> render_change() =~ "can&#39;t be blank"
 
       assert has_element?(index_live, "#habit_name[aria-invalid=true]")
-      assert has_element?(index_live, "#habit_iterations[aria-invalid=true]")
+      assert has_element?(index_live, "#habit_min_completions[aria-invalid=true]")
 
       assert index_live
              |> form("#habit-form", habit: @create_attrs)
@@ -103,6 +105,82 @@ defmodule MmentumWeb.HabitLiveTest do
       html = render(index_live)
       assert html =~ "Habit created."
       assert html =~ "some name"
+    end
+
+    test "saves a flexible range and treats its maximum as optional", %{conn: conn} do
+      {:ok, index_live, _html} = live(conn, ~p"/habits")
+
+      index_live
+      |> element(~s|a[href="/habits/new"]|)
+      |> render_click()
+
+      index_live
+      |> form("#habit-form",
+        habit: %{
+          has_flexible_target: "true",
+          min_completions: 2,
+          name: "Go to the gym",
+          periodicity: "week"
+        }
+      )
+      |> render_change()
+
+      assert has_element?(index_live, "#habit_max_completions")
+
+      assert index_live
+             |> form("#habit-form",
+               habit: %{
+                 has_flexible_target: "true",
+                 max_completions: "",
+                 min_completions: 2,
+                 name: "Go to the gym",
+                 periodicity: "week"
+               }
+             )
+             |> render_submit() =~ "can&#39;t be blank"
+
+      assert has_element?(index_live, "#habit_max_completions[aria-invalid=true]")
+
+      index_live
+      |> form("#habit-form",
+        habit: %{
+          has_flexible_target: "true",
+          max_completions: 3,
+          min_completions: 2,
+          name: "Go to the gym",
+          periodicity: "week"
+        }
+      )
+      |> render_submit()
+
+      assert_patch(index_live, ~p"/habits")
+      html = render(index_live)
+      assert html =~ "2–3 per week"
+
+      habit = Repo.get_by!(Mmentum.Habits.Habit, name: "Go to the gym")
+      progress = "#habit-#{habit.id}-progress"
+      optional_step = "#habit-#{habit.id}-progress-step-3"
+      add_button = ~s|#habit-#{habit.id} button[phx-click="add_log"]|
+
+      assert has_element?(index_live, ~s|#{optional_step}[data-kind="optional"][data-state="pending"]|)
+
+      index_live |> element(add_button) |> render_click()
+      index_live |> element(add_button) |> render_click()
+
+      assert has_element?(index_live, ~s|#{progress}[aria-valuenow="2"][aria-valuemax="2"]|)
+      assert render(index_live) =~ "Goal met"
+      assert has_element?(index_live, "#{add_button}:not([disabled])")
+
+      index_live |> element(add_button) |> render_click()
+
+      assert has_element?(index_live, ~s|#{optional_step}[data-state="complete"]|)
+
+      assert has_element?(
+               index_live,
+               ~s|#{progress}[aria-valuetext="2 of 2 required completions; goal met; 1 of 1 optional completion completed"]|
+             )
+
+      assert has_element?(index_live, "#{add_button}[disabled]")
     end
 
     test "updates habit in listing", %{conn: conn, habit: habit} do
@@ -128,6 +206,51 @@ defmodule MmentumWeb.HabitLiveTest do
       html = render(index_live)
       assert html =~ "Habit updated."
       assert html =~ "some updated name"
+    end
+
+    test "removes a flexible maximum when editing back to an exact target", %{
+      conn: conn,
+      habit: habit,
+      user: user
+    } do
+      {:ok, habit} =
+        Habits.update_habit(user, habit.id, %{min_completions: 2, max_completions: 3})
+
+      {:ok, index_live, _html} = live(conn, ~p"/habits")
+
+      index_live
+      |> element(~s|#habit-#{habit.id} a[href="/habits/#{habit.id}/edit"]|)
+      |> render_click()
+
+      assert has_element?(index_live, "#habit-has-flexible-target[checked]")
+      assert has_element?(index_live, "#habit_max_completions")
+
+      index_live
+      |> form("#habit-form",
+        habit: %{
+          has_flexible_target: "false",
+          min_completions: 2,
+          name: habit.name,
+          periodicity: "week"
+        }
+      )
+      |> render_change()
+
+      refute has_element?(index_live, "#habit_max_completions")
+
+      index_live
+      |> form("#habit-form",
+        habit: %{
+          has_flexible_target: "false",
+          min_completions: 2,
+          name: habit.name,
+          periodicity: "week"
+        }
+      )
+      |> render_submit()
+
+      assert Repo.get!(Mmentum.Habits.Habit, habit.id).max_completions == nil
+      assert render(index_live) =~ "2 per week"
     end
 
     test "shows the habit's current periodicity when editing", %{
