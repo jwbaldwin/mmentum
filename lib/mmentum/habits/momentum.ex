@@ -1,91 +1,70 @@
 defmodule Mmentum.Habits.Momentum do
   @moduledoc """
-  Momentum score system for habit tracking.
+  Measures how strongly recent completions support a habit's chosen cadence
 
-  Uses continuous momentum scoring instead of binary streaks. The score represents 
-  "momentum" - it rises with each completion and naturally decays over time, creating 
-  a fluid representation of habit consistency
+  Each completion is one vote for the identity behind the habit. Momentum is the
+  share of expected votes recorded across the current period and the seven before
+  it. A period contributes no more than the habit's minimum target, so steady
+  practice matters more than bursts
+
+  The score is `counted votes / (8 × minimum target) × 100`. The denominator always
+  holds eight full targets, so a new habit earns trust one vote at a time
+
+  The fixed eight-period window provides the decay: new periods move old votes out
+  of the score without changing the permanent completion history
+
+  This module sits outside the Handler, Service, Finder, and Value roles because it
+  owns one shared domain calculation with no queries, side effects, or output shaping
   """
 
-  @max_score 100.0
-  @milliseconds_per_day 86_400_000
+  alias Mmentum.Habits.Habit
+  alias Mmentum.Time
 
-  @doc """
-  Calculates the current momentum score by applying exponential decay from last update.
+  @period_count 8
+  @utc_timezone "Etc/UTC"
 
-  ## Parameters
-  - `score`: Previous momentum score (0-100)
-  - `last_updated`: Unix timestamp in milliseconds when score was last updated
-  - `current_time`: Current Unix timestamp in milliseconds
-  - `half_life_days`: Number of days for score to decay by 50%
+  @doc "Returns the percentage of expected votes recorded across the last eight habit periods"
+  def score(%Habit{} = habit, logs, %DateTime{} = current_time) do
+    counted_votes =
+      logs
+      |> completion_counts(habit.periodicity, current_time)
+      |> Map.values()
+      |> Enum.sum_by(&min(&1, habit.min_completions))
 
-  ## Formula
-  S(t) = S_prev × e^(-λ × Δt)
-  where λ = ln(2) / half_life_days
-  """
-  def calculate_current_score(score, last_updated, current_time, half_life_days) do
-    if last_updated == nil do
-      score
-    else
-      delta_time_days = (current_time - last_updated) / @milliseconds_per_day
-      lambda = :math.log(2) / half_life_days
-      decayed_score = score * :math.exp(-lambda * delta_time_days)
-
-      # Ensure score doesn't go below 0
-      max(0.0, decayed_score)
-    end
+    counted_votes / (@period_count * habit.min_completions) * 100
   end
 
-  @doc """
-  Records a habit completion by applying decay and then adding a boost with diminishing returns.
+  defp completion_counts(logs, periodicity, current_time) do
+    recent_periods =
+      0..(@period_count - 1)
+      |> Enum.map(fn periods_ago ->
+        current_time
+        |> Time.shift_by_periods(periodicity, -periods_ago)
+        |> Time.start_of_range(periodicity)
+      end)
+      |> MapSet.new()
 
-  ## Parameters
-  - `score`: Current momentum score (0-100)
-  - `last_updated`: Unix timestamp in milliseconds when score was last updated
-  - `current_time`: Current Unix timestamp in milliseconds
-  - `half_life_days`: Number of days for score to decay by 50%
-  - `boost_amount`: Base boost amount (default 60)
+    current_time_utc =
+      current_time
+      |> DateTime.shift_zone!(@utc_timezone)
+      |> DateTime.to_naive()
 
-  ## Process
-  1. Calculate decayed score from last update to now
-  2. Apply boost with diminishing returns: boost × (1 - current_score/100)
-  3. Cap at maximum score of 100
+    Enum.reduce(logs, %{}, fn log, counts ->
+      period = completion_period(log.inserted_at, periodicity, current_time.time_zone)
 
-  Returns: {new_score, current_time}
-  """
-  def record_completion(score, last_updated, current_time, half_life_days, boost_amount \\ 60.0) do
-    current_score = calculate_current_score(score, last_updated, current_time, half_life_days)
-
-    boost = boost_amount * (1 - current_score / @max_score)
-    new_score = min(@max_score, current_score + boost)
-
-    {new_score, current_time}
+      if NaiveDateTime.compare(log.inserted_at, current_time_utc) != :gt and
+           MapSet.member?(recent_periods, period) do
+        Map.update(counts, period, 1, &(&1 + 1))
+      else
+        counts
+      end
+    end)
   end
 
-  @doc """
-  Gets the default half-life days based on habit periodicity.
-
-  ## Defaults
-  - Daily habits: 1.0 days
-  - 3x/week habits: 2.3 days  
-  - Weekly habits: 5-7 days
-  """
-  def get_default_half_life(:day), do: 1.0
-  def get_default_half_life(:week), do: 6.0
-  def get_default_half_life(:month), do: 18.0
-
-  @doc """
-  Converts a momentum score into a user-facing tier label
-  """
-  def get_momentum_tier(score) when score >= 80.0, do: "On Fire 🔥"
-  def get_momentum_tier(score) when score >= 50.0, do: "Rolling"
-  def get_momentum_tier(score) when score >= 20.0, do: "Warming Up"
-  def get_momentum_tier(_score), do: "Cooling Off"
-
-  @doc """
-  Gets current Unix timestamp in milliseconds
-  """
-  def current_timestamp do
-    System.system_time(:millisecond)
+  defp completion_period(inserted_at, periodicity, time_zone) do
+    inserted_at
+    |> DateTime.from_naive!(@utc_timezone)
+    |> DateTime.shift_zone!(time_zone)
+    |> Time.start_of_range(periodicity)
   end
 end

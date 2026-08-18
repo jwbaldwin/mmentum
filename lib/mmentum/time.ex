@@ -73,6 +73,11 @@ defmodule Mmentum.Time do
     Date.diff(Date.end_of_month(current_date), current_date)
   end
 
+  @doc "Moves a time by whole calendar periods while keeping its timezone"
+  def shift_by_periods(%DateTime{} = time, :day, count), do: DateTime.shift(time, day: count)
+  def shift_by_periods(%DateTime{} = time, :week, count), do: DateTime.shift(time, day: count * 7)
+  def shift_by_periods(%DateTime{} = time, :month, count), do: DateTime.shift(time, month: count)
+
   @doc """
   Returns the date time for the start of some range in [:year, :month, :week, :day]
   """

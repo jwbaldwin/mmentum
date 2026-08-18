@@ -1,109 +1,88 @@
 defmodule Mmentum.Habits.MomentumTest do
   use ExUnit.Case, async: true
+
+  alias Mmentum.Habits.Habit
   alias Mmentum.Habits.Momentum
 
-  describe "calculate_current_score/4" do
-    test "returns original score when no time has passed" do
-      score = 50.0
-      current_time = 1000
-      last_updated = 1000
-      half_life = 1.0
+  test "starts at zero without identity votes" do
+    habit = habit(:week, 3)
 
-      result = Momentum.calculate_current_score(score, last_updated, current_time, half_life)
-      assert result == 50.0
-    end
-
-    test "applies exponential decay after one half-life" do
-      score = 60.0
-      # 1 day later
-      current_time = 1000 + 86_400_000
-      last_updated = 1000
-      # 1 day half-life
-      half_life = 1.0
-
-      result = Momentum.calculate_current_score(score, last_updated, current_time, half_life)
-      # After 1 half-life, score should be approximately 30.0
-      assert_in_delta result, 30.0, 0.1
-    end
-
-    test "handles nil last_updated" do
-      score = 50.0
-      current_time = 1000
-      last_updated = nil
-      half_life = 1.0
-
-      result = Momentum.calculate_current_score(score, last_updated, current_time, half_life)
-      assert result == 50.0
-    end
+    assert Momentum.score(habit, [], ~U[2026-08-18 12:00:00Z]) == 0.0
   end
 
-  describe "record_completion/5" do
-    test "cold start scenario" do
-      score = 0.0
-      current_time = 1000
-      last_updated = nil
-      half_life = 1.0
-      boost_amount = 60.0
+  test "each completion fills one expected vote in the eight-period window" do
+    habit = habit(:week, 2)
+    current_time = ~U[2026-08-18 12:00:00Z]
 
-      {new_score, new_timestamp} =
-        Momentum.record_completion(score, last_updated, current_time, half_life, boost_amount)
-
-      # Should get full boost: 0 + 60*(1-0/100) = 60
-      assert new_score == 60.0
-      assert new_timestamp == current_time
-    end
-
-    test "hot streak scenario with diminishing returns" do
-      score = 90.0
-      current_time = 1000
-      last_updated = 1000
-      half_life = 1.0
-      boost_amount = 60.0
-
-      {new_score, new_timestamp} =
-        Momentum.record_completion(score, last_updated, current_time, half_life, boost_amount)
-
-      # Should get reduced boost: 90 + 60*(1-90/100) = 90 + 6 = 96
-      assert new_score == 96.0
-      assert new_timestamp == current_time
-    end
-
-    test "applies decay before boost" do
-      score = 96.0
-      # 1 day later
-      current_time = 1000 + 86_400_000
-      last_updated = 1000
-      half_life = 1.0
-      boost_amount = 60.0
-
-      {new_score, new_timestamp} =
-        Momentum.record_completion(score, last_updated, current_time, half_life, boost_amount)
-
-      # First decay: 96 * e^(-ln(2)) ≈ 48
-      # Then boost: 48 + 60*(1-48/100) = 48 + 31.2 = 79.2
-      assert_in_delta new_score, 79.2, 1.0
-      assert new_timestamp == current_time
-    end
+    assert Momentum.score(habit, [log(~N[2026-08-18 10:00:00])], current_time) == 6.25
   end
 
-  describe "get_momentum_tier/1" do
-    test "returns correct tiers" do
-      assert Momentum.get_momentum_tier(95.0) == "On Fire 🔥"
-      assert Momentum.get_momentum_tier(80.0) == "On Fire 🔥"
-      assert Momentum.get_momentum_tier(65.0) == "Rolling"
-      assert Momentum.get_momentum_tier(50.0) == "Rolling"
-      assert Momentum.get_momentum_tier(35.0) == "Warming Up"
-      assert Momentum.get_momentum_tier(20.0) == "Warming Up"
-      assert Momentum.get_momentum_tier(10.0) == "Cooling Off"
-      assert Momentum.get_momentum_tier(0.0) == "Cooling Off"
-    end
+  test "a period contributes no more than its minimum target" do
+    habit = habit(:week, 2)
+    current_time = ~U[2026-08-18 12:00:00Z]
+
+    logs = [
+      log(~N[2026-08-17 10:00:00]),
+      log(~N[2026-08-18 10:00:00]),
+      log(~N[2026-08-18 11:00:00])
+    ]
+
+    assert Momentum.score(habit, logs, current_time) == 12.5
   end
 
-  describe "get_default_half_life/1" do
-    test "returns correct defaults for each periodicity" do
-      assert Momentum.get_default_half_life(:day) == 1.0
-      assert Momentum.get_default_half_life(:week) == 6.0
-      assert Momentum.get_default_half_life(:month) == 18.0
-    end
+  test "eight complete periods build a full score" do
+    habit = habit(:day, 1)
+    current_time = ~U[2026-08-18 12:00:00Z]
+
+    logs =
+      Enum.map(0..7, fn days_ago ->
+        log(NaiveDateTime.add(~N[2026-08-18 10:00:00], -days_ago * 86_400))
+      end)
+
+    assert Momentum.score(habit, logs, current_time) == 100.0
   end
+
+  test "old votes decay by leaving the eight-period window" do
+    habit = habit(:day, 1)
+    logs = [log(~N[2026-08-11 10:00:00])]
+
+    assert Momentum.score(habit, logs, ~U[2026-08-18 12:00:00Z]) == 12.5
+    assert Momentum.score(habit, logs, ~U[2026-08-19 12:00:00Z]) == 0.0
+  end
+
+  test "monthly habits use eight calendar months" do
+    habit = habit(:month, 1)
+    current_time = ~U[2026-08-18 12:00:00Z]
+
+    logs = [
+      log(~N[2026-01-15 10:00:00]),
+      log(~N[2025-12-15 10:00:00])
+    ]
+
+    assert Momentum.score(habit, logs, current_time) == 12.5
+  end
+
+  test "daily periods follow the user's local date" do
+    habit = habit(:day, 1)
+    current_time = DateTime.from_naive!(~N[2026-08-18 00:30:00], "America/Los_Angeles")
+
+    logs = [
+      log(~N[2026-08-18 06:45:00]),
+      log(~N[2026-08-18 07:15:00])
+    ]
+
+    assert Momentum.score(habit, logs, current_time) == 25.0
+  end
+
+  test "future completions do not count" do
+    habit = habit(:day, 1)
+
+    assert Momentum.score(habit, [log(~N[2026-08-18 13:00:00])], ~U[2026-08-18 12:00:00Z]) == 0.0
+  end
+
+  defp habit(periodicity, minimum) do
+    %Habit{periodicity: periodicity, min_completions: minimum}
+  end
+
+  defp log(inserted_at), do: %{inserted_at: inserted_at}
 end
