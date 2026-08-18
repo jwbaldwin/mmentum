@@ -14,20 +14,20 @@ defmodule Mmentum.Habits.Values.MomentumSeries do
   @utc_timezone "Etc/UTC"
 
   def build(%Habit{} = habit, logs, %DateTime{} = current_time) do
-    {points, _previous_score} =
+    {points, _previous_sample} =
       habit
       |> sample_times(current_time)
-      |> Enum.map_reduce(nil, fn sample_time, previous_score ->
+      |> Enum.map_reduce(nil, fn sample_time, previous_sample ->
         score = Momentum.score(habit, logs, sample_time)
         rounded_score = Float.round(score, 2)
 
         point = %{
-          completion: previous_score != nil && rounded_score > previous_score,
+          completion: completion_between?(logs, previous_sample, sample_time),
           timestamp: DateTime.to_unix(sample_time, :millisecond),
           score: rounded_score
         }
 
-        {point, rounded_score}
+        {point, sample_time}
       end)
 
     current_score = points |> List.last() |> Map.fetch!(:score)
@@ -37,6 +37,18 @@ defmodule Mmentum.Habits.Values.MomentumSeries do
       points: points,
       score: current_score
     }
+  end
+
+  defp completion_between?(_logs, nil, _sample_time), do: false
+
+  defp completion_between?(logs, previous_sample, sample_time) do
+    previous_sample = previous_sample |> DateTime.shift_zone!(@utc_timezone) |> DateTime.to_naive()
+    sample_time = sample_time |> DateTime.shift_zone!(@utc_timezone) |> DateTime.to_naive()
+
+    Enum.any?(logs, fn log ->
+      NaiveDateTime.compare(log.inserted_at, previous_sample) == :gt &&
+        NaiveDateTime.compare(log.inserted_at, sample_time) != :gt
+    end)
   end
 
   defp sample_times(habit, current_time) do
