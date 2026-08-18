@@ -7,7 +7,7 @@
       <div class="flex items-center gap-4 font-normal leading-none text-zinc-500 dark:text-zinc-400">
         <.tooltip
           id="mmentum-score-tooltip"
-          content="Mmentum Score tracks habit strength from 0 to 100. Each completion slowly builds your momentum towards your goal. But you're not penalized for not picking a daily goal and breaking a 'streak'."
+          content="Each completion is one vote for the identity you're building. Your score shows how many expected votes you recorded across the last eight habit periods."
         >
           <div
             id="mmentum-score"
@@ -23,7 +23,7 @@
               alt=""
               aria-hidden="true"
             />
-            <span>{@momentum}</span>
+            <span>{round(@momentum.score)}</span>
           </div>
         </.tooltip>
         <span>•</span>
@@ -59,8 +59,7 @@
         size="compact"
         class="font-normal"
       >
-        <.icon name="hero-plus" class="h-4 w-4" />
-        Add details to give this habit some more context
+        <.icon name="hero-plus" class="h-4 w-4" /> Add details
       </.button_link>
       <div
         :if={@habit.identity || @habit.why_it_matters || @habit.what_counts}
@@ -89,68 +88,30 @@
   </section>
 
   <figure
-    id="habit-long-term-progress"
+    id="habit-momentum-history"
     class="mt-10 border-t border-zinc-100 pt-8 dark:border-zinc-900"
-    aria-labelledby="habit-contributions-title habit-contributions-summary"
+    aria-labelledby="habit-momentum-history-title"
   >
     <figcaption>
-      <p id="habit-contributions-summary" class="mt-1 text-xs leading-5 text-muted dark:text-zinc-400">
-        {@contribution_calendar.summary} · {@contribution_calendar.week_count} weeks
-      </p>
+      <.section_title id="habit-momentum-history-title">Momentum</.section_title>
     </figcaption>
-
     <div
-      id="habit-contribution-calendar"
-      role="img"
-      aria-label={@contribution_calendar.aria_label}
-      class="mt-5 overflow-x-auto pb-2"
+      id="momentum-chart"
+      phx-hook="MomentumChart"
+      data-points={Jason.encode!(@momentum.points)}
+      data-aria-label={@momentum.aria_label}
+      class="mt-5 w-full text-zinc-950 dark:text-zinc-50"
+      style="height: 11rem; position: relative; width: 100%"
     >
       <div
-        aria-hidden="true"
-        class="mb-2 ml-8 grid w-max gap-1.5"
-        style="grid-template-columns: repeat(12, 1rem)"
+        id="momentum-chart-fallback"
+        role="img"
+        aria-label={@momentum.aria_label}
+        style="background: currentColor; border-radius: 9999px; bottom: 10.75px; height: 2.5px; left: 12px; position: absolute; right: 12px"
       >
-        <span
-          :for={month <- @contribution_calendar.month_labels}
-          class="w-4 whitespace-nowrap text-[10px] leading-4 text-muted dark:text-zinc-500"
-        >
-          {month}
-        </span>
-      </div>
-      <div class="flex w-max items-start">
-        <div
-          aria-hidden="true"
-          class="mr-2 grid grid-rows-7 gap-1.5 text-[10px] leading-4 text-muted dark:text-zinc-500"
-        >
-          <span class="h-4">Mon</span>
-          <span class="h-4"></span>
-          <span class="h-4">Wed</span>
-          <span class="h-4"></span>
-          <span class="h-4">Fri</span>
-          <span class="h-4"></span>
-          <span class="h-4"></span>
-        </div>
-        <div class="grid grid-flow-col grid-rows-7 gap-1.5" aria-hidden="true">
-          <time
-            :for={day <- @contribution_calendar.days}
-            datetime={day.date}
-            title={day.label}
-            class={[
-              "block h-4 w-4 rounded-[0.25rem]",
-              day.level == 0 && "bg-zinc-100 dark:bg-zinc-900",
-              day.level == 1 && "bg-brand/35 dark:bg-brand/45",
-              day.level == 2 && "bg-brand/65 dark:bg-brand/70",
-              day.level == 3 && "bg-brand",
-              day.current? &&
-                "ring-1 ring-zinc-900 ring-offset-1 ring-offset-white dark:ring-zinc-100 dark:ring-offset-zinc-950"
-            ]}
-          ></time>
-        </div>
+        <span style="background: currentColor; border-radius: 9999px; height: 9px; position: absolute; right: -4.5px; top: 50%; transform: translateY(-50%); width: 9px"></span>
       </div>
     </div>
-    <p class="mt-2 text-xs leading-5 text-muted dark:text-zinc-500">
-      Each square is one local day. Higher-contrast squares hold more completions; empty days are neutral.
-    </p>
   </figure>
 
   <section

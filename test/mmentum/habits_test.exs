@@ -159,14 +159,13 @@ defmodule Mmentum.HabitsTest do
   end
 
   describe "completions" do
-    test "record_completion/2 derives ownership and updates momentum" do
+    test "record_completion/2 records activity for an owned habit" do
       user = user_fixture()
       habit = habit_fixture(user: user)
 
       assert {:ok, %Log{} = log} = Habits.record_completion(user, habit.id)
       assert log.user_id == user.id
       assert log.habit_id == habit.id
-      assert Repo.get!(Habit, habit.id).momentum_score > 0
     end
 
     test "record_completion/2 does not add activity to another user's habit" do
@@ -175,7 +174,6 @@ defmodule Mmentum.HabitsTest do
 
       assert {:error, :not_found} = Habits.record_completion(attacker, habit.id)
       assert Repo.aggregate(Log, :count) == 0
-      assert Repo.get!(Habit, habit.id).momentum_score == habit.momentum_score
     end
 
     test "remove_most_recent_completion/2 removes only the latest owned completion" do
@@ -195,7 +193,7 @@ defmodule Mmentum.HabitsTest do
       habit = habit_fixture(user: user)
 
       assert {:error, :no_completion} = Habits.remove_most_recent_completion(user, habit.id)
-      assert Repo.get!(Habit, habit.id).momentum_score == habit.momentum_score
+      assert Repo.aggregate(Log, :count) == 0
     end
 
     test "remove_most_recent_completion/2 does not remove another user's activity" do

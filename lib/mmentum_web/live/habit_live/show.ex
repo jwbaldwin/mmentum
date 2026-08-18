@@ -4,7 +4,7 @@ defmodule MmentumWeb.HabitLive.Show do
   import MmentumWeb.HabitComponents
 
   alias Mmentum.Habits
-  alias Mmentum.Habits.Values.ContributionCalendar
+  alias Mmentum.Habits.Values.MomentumSeries
   alias Mmentum.Logs
   alias Mmentum.Time
 
@@ -46,11 +46,11 @@ defmodule MmentumWeb.HabitLive.Show do
     current_time = Time.current_time(user.time_zone)
     habit = Habits.get_habit!(user, habit_id)
     logs = Logs.list_logs_by_habit(user, habit)
+    momentum = MomentumSeries.build(habit, logs, current_time)
 
     socket
     |> assign(:habit, habit)
-    |> assign(:contribution_calendar, ContributionCalendar.build(logs, current_time))
-    |> assign(:momentum, round(Habits.get_current_momentum(habit)))
+    |> assign(:momentum, momentum)
     |> stream(:logs, logs |> Enum.reverse() |> Enum.take(5), reset: true)
   end
 

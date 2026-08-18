@@ -11,9 +11,6 @@ defmodule Mmentum.Habits.Habit do
     field :why_it_matters, :string
     field :what_counts, :string
 
-    field :momentum_score, :float, default: 0.0
-    field :momentum_last_updated, :integer
-
     belongs_to :user, Mmentum.Accounts.User
     has_many :logs, Mmentum.Logs.Log, on_delete: :delete_all
 
@@ -34,15 +31,12 @@ defmodule Mmentum.Habits.Habit do
       :periodicity,
       :identity,
       :why_it_matters,
-      :what_counts,
-      :momentum_score,
-      :momentum_last_updated
+      :what_counts
     ])
     |> validate_required([:name, :min_completions, :periodicity])
     |> validate_number(:min_completions, greater_than: 0, less_than_or_equal_to: 31)
     |> validate_number(:max_completions, greater_than: 0, less_than_or_equal_to: 31)
     |> validate_completion_range()
-    |> validate_number(:momentum_score, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
   end
 
   defp validate_completion_range(changeset) do

@@ -21,6 +21,7 @@ import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {createLiveToastHook} from "../../deps/live_toast"
+import MomentumChart from "./hooks/momentum_chart"
 import ThemeToggle from "./hooks/theme_toggle"
 import Tooltip from "./hooks/tooltip"
 import topbar from "../vendor/topbar"
@@ -47,7 +48,7 @@ liveToastHook.destroyed = function() {
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {
-  hooks: {LiveToast: liveToastHook, ThemeToggle, Tooltip},
+  hooks: {LiveToast: liveToastHook, MomentumChart, ThemeToggle, Tooltip},
   params: {
     _csrf_token: csrfToken,
     time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone

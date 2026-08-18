@@ -356,7 +356,7 @@ defmodule MmentumWeb.HabitLiveTest do
   describe "Show" do
     setup [:register_and_log_in_user, :create_habit]
 
-    test "displays the habit score, details, contribution history, and activity", %{
+    test "displays the habit score, details, momentum history, and activity", %{
       conn: conn,
       habit: habit
     } do
@@ -368,22 +368,23 @@ defmodule MmentumWeb.HabitLiveTest do
       assert has_element?(show_live, "header h1[class*='text-3xl']", habit.name)
       assert has_element?(show_live, "header", "3 per week")
       refute has_element?(show_live, "#habit-current-progress")
-      assert has_element?(show_live, "#habit-mmentum #mmentum-score", "0")
+      assert has_element?(show_live, "header #mmentum-score", "0")
       assert has_element?(show_live, "#mmentum-score-icon[src='/images/mmentum.svg']")
-      assert has_element?(show_live, "#mmentum-score-title", "Mmentum")
-      assert has_element?(show_live, "#habit-mmentum", "Grows with consistency")
-      assert has_element?(show_live, "#habit-contributions-title", "Long-term progress")
-      assert has_element?(show_live, "#habit-contribution-calendar[aria-label*='none recorded']")
-      assert has_element?(show_live, "#habit-contribution-calendar time[datetime][title]")
-      refute has_element?(show_live, "#habit-contribution-calendar time[tabindex]")
+      assert has_element?(show_live, "#mmentum-score-tooltip")
+      assert has_element?(show_live, "#habit-momentum-history-title", "Momentum")
 
-      refute has_element?(show_live, "#mmentum-score-tooltip")
-      assert has_element?(show_live, "#habit-mmentum", "eases down between contributions")
+      assert has_element?(
+               show_live,
+               "#momentum-chart[phx-hook='MomentumChart'][data-aria-label*='Current score 0'][style*='height: 11rem']"
+             )
 
+      assert has_element?(show_live, "#momentum-chart-fallback[style*='left: 12px'] > span")
+      refute has_element?(show_live, "#habit-contribution-calendar")
+
+      refute html =~ "Grows with consistency"
       refute has_element?(show_live, "#record-habit-completion")
       refute has_element?(show_live, "#undo-habit-completion")
-      assert has_element?(show_live, "#habit-meaning-title", "Habit details")
-      assert has_element?(show_live, "#habit-meaning-empty", "Add an identity")
+      assert has_element?(show_live, "#habit-details")
       assert has_element?(show_live, "#add-habit-details", "Add details")
       assert has_element?(show_live, "#habit-activity-title", "Recent activity")
       assert has_element?(show_live, "#habit-activity[phx-update='stream']")
@@ -403,9 +404,9 @@ defmodule MmentumWeb.HabitLiveTest do
 
       assert has_element?(show_live, "header", "3 per week")
       assert has_element?(show_live, "#habit-identity", habit.identity)
-      assert has_element?(show_live, "#habit-meaning", habit.why_it_matters)
-      assert has_element?(show_live, "#habit-meaning", habit.what_counts)
-      refute has_element?(show_live, "#habit-meaning-empty")
+      assert has_element?(show_live, "#habit-details", habit.why_it_matters)
+      assert has_element?(show_live, "#habit-details", habit.what_counts)
+      refute has_element?(show_live, "#add-habit-details")
       assert html =~ "Habit details"
     end
 
@@ -443,7 +444,7 @@ defmodule MmentumWeb.HabitLiveTest do
 
       assert newer_position < older_position
       assert older_position < creation_position
-      assert has_element?(show_live, "#habit-contribution-calendar[aria-label*='2 completions across 2 days']")
+      assert has_element?(show_live, "#momentum-chart[data-points]")
     end
 
     test "updates habit within modal", %{conn: conn, habit: habit} do
