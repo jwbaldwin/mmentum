@@ -378,7 +378,8 @@ defmodule MmentumWeb.HabitLiveTest do
                "#momentum-chart[phx-hook='MomentumChart'][data-aria-label*='Current score 0'][style*='height: 11rem']"
              )
 
-      assert has_element?(show_live, "#momentum-chart-fallback[style*='left: 12px'] > span")
+      assert has_element?(show_live, "#momentum-chart-fallback[style*='left: 0'] > span")
+      refute has_element?(show_live, "#momentum-chart-controls")
       refute has_element?(show_live, "#habit-contribution-calendar")
 
       refute html =~ "Grows with consistency"

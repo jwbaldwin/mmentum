@@ -44,5 +44,6 @@ defmodule Mmentum.Habits.Values.MomentumSeriesTest do
     assert momentum.score == Float.round(expected_score, 2)
     assert List.last(momentum.points).score == momentum.score
     assert Enum.any?(momentum.points, &(&1.score > 0))
+    assert Enum.any?(momentum.points, & &1.completion)
   end
 end
