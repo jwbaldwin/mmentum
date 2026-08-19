@@ -17,6 +17,12 @@ defmodule MmentumWeb.Router do
     plug :accepts, ["json"]
   end
 
+  scope "/mcp" do
+    pipe_through :api
+
+    forward "/", Mmentum.MCP.Transport.StreamableHTTP
+  end
+
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:mmentum, :dev_routes) do
     # If you want to use the LiveDashboard in production, you should put
