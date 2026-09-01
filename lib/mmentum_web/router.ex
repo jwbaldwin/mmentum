@@ -18,8 +18,6 @@ defmodule MmentumWeb.Router do
   end
 
   scope "/mcp" do
-    pipe_through :api
-
     forward "/", Mmentum.MCP.Transport.StreamableHTTP
   end
 

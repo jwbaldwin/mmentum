@@ -40,13 +40,19 @@ defmodule MmentumWeb.Endpoint do
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
-  plug Plug.Parsers,
-    parsers: [:urlencoded, :multipart, :json],
-    pass: ["*/*"],
-    json_decoder: Phoenix.json_library()
+  @body_parser_options Plug.Parsers.init(
+                         parsers: [:urlencoded, :multipart, :json],
+                         pass: ["*/*"],
+                         json_decoder: Phoenix.json_library()
+                       )
+  plug :parse_request_body
 
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
   plug MmentumWeb.Router
+
+  # MCP parses its body in the router so it can return JSON-RPC parse errors
+  defp parse_request_body(%{path_info: ["mcp" | _rest]} = conn, _options), do: conn
+  defp parse_request_body(conn, _options), do: Plug.Parsers.call(conn, @body_parser_options)
 end

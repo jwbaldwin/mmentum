@@ -94,13 +94,15 @@ The embedded agent includes these tool modules in its agent context in the same 
 
 ### MCP transport
 
-- `Mmentum.MCP.Transport.StreamableHTTP` is a Plug that owns HTTP methods, headers, bodies, content negotiation, and responses
-- `Mmentum.MCP.Server` validates supported MCP requests, asks `Mmentum.Tools` for definitions or execution, and maps ordinary Elixir results into MCP responses
-- OAuth authentication runs in the Phoenix MCP scope before the transport and supplies the authenticated user to tool execution
+- `router.ex` mounts `/mcp` with `forward`, following EMCP's router shape. The endpoint skips its normal body parser for this scope but does not bypass the router
+- `Mmentum.MCP.Transport.StreamableHTTP` reads MCP requests from HTTP, checks that they are valid, and writes HTTP replies. It validates messages once before comparing headers and calling the server
+- `Mmentum.MCP.Server` handles MCP operations such as discovering the server and listing tools. It receives validated requests and returns results or named failures, without handling HTTP
+- `Mmentum.MCP.JSONRPC` builds JSON-RPC replies and maps named errors to numeric codes. The transport chooses HTTP status codes
+- OAuth authentication will run in a dedicated MCP router pipeline before the transport. Do not register real tools before authentication, scopes, and tool validation are ready
 
 The remote request flow is:
 
-`MCP client -> MCP scope authentication -> Streamable HTTP Plug -> MCP server -> Mmentum.Tools -> tool module -> application boundary`
+`MCP client -> router MCP scope/authentication -> Streamable HTTP Plug -> MCP server -> Mmentum.Tools -> tool module -> application boundary`
 
 ## First implementation slice
 
@@ -113,10 +115,30 @@ The first slice creates only:
 
 Do not add a fake tool solely to test the behaviour. Implement and test the behaviour with the first real habit tool. Add each real tool later as its own vertical slice. James will design and write the application implementation behind each tool when that slice begins.
 
+## Second implementation slice
+
+Build the smallest useful MCP `2026-07-28` protocol path without adding a product tool:
+
+- Route stateless Streamable HTTP POST requests through the Phoenix router, leaving their bodies for the transport to parse
+- Require the protocol, method, name, exact content type, and accepted response headers defined by the MCP specification
+- Allow absent Origin headers for non-browser clients and reject browser origins outside the configured application origin
+- Check that routing headers match the JSON-RPC body
+- Implement `server/discover` with the server identity, supported version, and tools capability
+- Implement `tools/list` against the real, currently empty `Mmentum.Tools` catalog
+- Leave `tools/call` unavailable until the first real tool; do not invent execution or tool-error handling ahead of that work
+- Return `resultType`, server metadata, cache hints, and standard JSON-RPC errors
+- Reject legacy GET and DELETE transport requests
+
+Keep OAuth, full JSON Schema validation, and the seven tools in later slices. This slice builds the stateless protocol boundary; client compatibility remains unverified.
+
+The transport returns HTTP 400 for malformed request metadata and header errors, and HTTP 404 for unknown methods. `clientInfo` is optional. Request IDs must be strings or integers; notifications have no ID. Encoded name headers are decoded before comparison.
+
+Primary references: [MCP messages and metadata](https://modelcontextprotocol.io/specification/2026-07-28/basic) and [Streamable HTTP](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http). EMCP provides implementation examples, not the authority for this protocol version.
+
 ## Deferred until implementation spikes
 
 - Confirm real client support for MCP `2026-07-28`
 - Confirm Attesto's Phoenix session integration, refresh-token behavior, and generated persistence
 - Choose the JSON Schema validation mechanism
-- Define exact MCP protocol error codes and client-safe messages
+- Define client-safe messages for real tool execution errors
 - Define the execution context from the needs of the first real tool
