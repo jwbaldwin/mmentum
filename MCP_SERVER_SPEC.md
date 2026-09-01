@@ -109,9 +109,9 @@ The first slice creates only:
 - The Phoenix MCP scope and empty Streamable HTTP Plug boundary
 - `Mmentum.Tools`
 - The `Mmentum.Tools.Tool` behaviour
-- Tests proving that a conforming tool can be listed and invoked through the shared tool catalog
+- Tests proving the empty tool catalog and reserved MCP endpoint behave as expected
 
-Do not implement the seven product tools, their Services, Finders, Values, or new product persistence in this slice. Add each real tool later as its own vertical slice. James will design and write the application implementation behind each tool when that slice begins.
+Do not add a fake tool solely to test the behaviour. Implement and test the behaviour with the first real habit tool. Add each real tool later as its own vertical slice. James will design and write the application implementation behind each tool when that slice begins.
 
 ## Deferred until implementation spikes
 
