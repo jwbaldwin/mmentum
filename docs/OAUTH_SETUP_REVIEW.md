@@ -26,11 +26,16 @@ OAuth routes require HTTPS even in development. The default non-production issue
 
 One local pattern:
 
+Keep generated keys outside the checkout. These commands assume `mkcert` is installed and its local CA is trusted:
+
 ```sh
-mkcert localhost 127.0.0.1 ::1
+umask 077
+oauth_dev_dir="$HOME/.local/share/mmentum/dev-tls"
+mkdir -p "$oauth_dev_dir"
+mkcert -cert-file "$oauth_dev_dir/cert.pem" -key-file "$oauth_dev_dir/key.pem" localhost 127.0.0.1 ::1
 export OAUTH_ISSUER=https://localhost:4443
-export OAUTH_DEV_TLS_CERTFILE="$PWD/localhost+2.pem"
-export OAUTH_DEV_TLS_KEYFILE="$PWD/localhost+2-key.pem"
+export OAUTH_DEV_TLS_CERTFILE="$oauth_dev_dir/cert.pem"
+export OAUTH_DEV_TLS_KEYFILE="$oauth_dev_dir/key.pem"
 export OAUTH_PUBLIC_CLIENTS_JSON='[{"id":"local-client","name":"Local client","redirect_uris":["http://127.0.0.1:6274/oauth/callback"]}]'
 mix setup
 mix phx.server
@@ -39,8 +44,8 @@ mix phx.server
 For repeatable local tokens across restarts, set a stable development signing key instead of relying on the generated in-memory key:
 
 ```sh
-openssl ecparam -name prime256v1 -genkey -noout -out oauth-signing-key.pem
-export OAUTH_SIGNING_PRIVATE_KEY_PEM="$(cat oauth-signing-key.pem)"
+openssl ecparam -name prime256v1 -genkey -noout -out "$oauth_dev_dir/signing-key.pem"
+export OAUTH_SIGNING_PRIVATE_KEY_PEM="$(cat "$oauth_dev_dir/signing-key.pem")"
 ```
 
 Do not commit local certificates, private signing keys, production hostnames, or one-off client registrations.
@@ -56,7 +61,7 @@ OAuth-specific env names:
 
 Existing production env remains required as before, including `DATABASE_URL`, `SECRET_KEY_BASE`, and deployment host/port settings such as `PHX_HOST`, `PORT`, `POOL_SIZE`, `ECTO_IPV6`, and `PHX_SERVER` where applicable.
 
-Startup safety checks reject insecure issuers, malformed clients, duplicate client IDs, client secrets, and missing production signing material. There is no local authentication bypass.
+Startup safety checks reject insecure issuers, malformed client registrations, duplicate client IDs, and a missing production signing-key environment variable. Client-secret authentication is disabled; extra JSON fields are not a supported way to configure it. There is no local authentication bypass.
 
 ## Routes and scopes
 
