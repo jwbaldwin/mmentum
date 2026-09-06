@@ -112,11 +112,11 @@ defmodule Mmentum.Habits do
     end)
   end
 
-  @doc "Removes the user's most recent completion for a habit"
-  def remove_most_recent_completion(%User{} = user, habit_id) do
+  @doc "Removes the latest completion in the habit's current local period, or returns :no_completion"
+  def remove_current_period_completion(%User{} = user, habit_id) do
     Repo.transact(fn repo ->
       with {:ok, habit} <- fetch_locked_habit(repo, user, habit_id),
-           {:ok, log} <- fetch_most_recent_completion(repo, user, habit) do
+           {:ok, log} <- fetch_current_period_completion(repo, user, habit) do
         repo.delete(log)
       end
     end)
@@ -146,10 +146,15 @@ defmodule Mmentum.Habits do
     |> repo.insert()
   end
 
-  defp fetch_most_recent_completion(repo, user, habit) do
+  defp fetch_current_period_completion(repo, user, habit) do
+    current_time = Time.current_time(user.time_zone)
+    start_of_period = Time.start_of_range(current_time, habit.periodicity)
+    next_period = Time.next_start_of_range(current_time, habit.periodicity)
+
     log =
       user
       |> Logs.for_habit_query(habit)
+      |> where([log], log.inserted_at >= ^start_of_period and log.inserted_at < ^next_period)
       |> exclude(:order_by)
       |> order_by([log], desc: log.inserted_at, desc: log.id)
       |> first()

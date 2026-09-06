@@ -56,9 +56,9 @@ defmodule MmentumWeb.HabitLive.Index do
   end
 
   def handle_event("remove_log", %{"id" => habit_id}, socket) do
-    case Habits.remove_most_recent_completion(get_current_user(socket), habit_id) do
+    case Habits.remove_current_period_completion(get_current_user(socket), habit_id) do
       {:ok, _log} -> {:noreply, assign(socket, :habits, list_habits(socket))}
-      {:error, :no_completion} -> {:noreply, socket}
+      {:error, :no_completion} -> {:noreply, assign_dashboard(socket)}
       {:error, :not_found} -> {:noreply, habit_not_found(socket)}
       {:error, %Ecto.Changeset{} = changeset} -> {:noreply, assign(socket, changeset: changeset)}
     end

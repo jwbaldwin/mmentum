@@ -44,6 +44,26 @@ defmodule MmentumWeb.HabitLiveTest do
       assert Mmentum.Accounts.get_user!(user.id).time_zone == "America/New_York"
     end
 
+    test "undo from a stale second tab preserves older history and refreshes its controls", %{conn: conn, user: user} do
+      habit = habit_fixture(user: user, periodicity: :day, min_completions: 1)
+      start = Mmentum.Time.start_of_range(Mmentum.Time.current_time(user.time_zone), :day)
+      previous_time = NaiveDateTime.add(start, -1)
+
+      historical_log =
+        Repo.insert!(%Log{user_id: user.id, habit_id: habit.id, inserted_at: previous_time, updated_at: previous_time})
+
+      {:ok, _log} = Habits.record_completion(user, habit.id)
+      {:ok, first_tab, _html} = live(conn, ~p"/habits")
+      {:ok, stale_tab, _html} = live(conn, ~p"/habits")
+
+      first_tab |> element("#habit-#{habit.id}-remove-completion-tooltip button") |> render_click()
+      stale_tab |> element("#habit-#{habit.id}-remove-completion-tooltip button") |> render_click()
+
+      assert Logs.list_logs_by_habit(user, habit) == [historical_log]
+      assert has_element?(stale_tab, "#habit-#{habit.id}-remove-completion-tooltip button[disabled]")
+      refute has_element?(stale_tab, "#habit-#{habit.id}-record-completion-tooltip button[disabled]")
+    end
+
     test "lists all habits", %{conn: conn, habit: habit} do
       {:ok, _index_live, html} = live(conn, ~p"/habits")
 
