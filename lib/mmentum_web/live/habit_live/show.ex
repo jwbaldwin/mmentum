@@ -10,7 +10,7 @@ defmodule MmentumWeb.HabitLive.Show do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, socket}
+    {:ok, assign(socket, :period_timer, nil)}
   end
 
   @impl true
@@ -19,6 +19,16 @@ defmodule MmentumWeb.HabitLive.Show do
      socket
      |> assign(:page_title, page_title(socket.assigns.live_action))
      |> assign_habit(id)}
+  end
+
+  @impl true
+  def handle_info(:period_boundary, socket) do
+    {:noreply, assign_habit(socket, socket.assigns.habit.id)}
+  end
+
+  # The form's patch reloads the habit and reschedules its timer in handle_params/3
+  def handle_info({MmentumWeb.HabitLive.FormComponent, {:saved, _habit}}, socket) do
+    {:noreply, socket}
   end
 
   @impl true
@@ -48,7 +58,15 @@ defmodule MmentumWeb.HabitLive.Show do
     logs = Logs.list_logs_by_habit(user, habit)
     momentum = MomentumSeries.build(habit, logs, current_time)
 
+    period_timer =
+      if connected?(socket) do
+        if socket.assigns.period_timer, do: Process.cancel_timer(socket.assigns.period_timer)
+        next_period = Time.next_start_of_range(current_time, habit.periodicity) |> DateTime.from_naive!("Etc/UTC")
+        Process.send_after(self(), :period_boundary, DateTime.diff(next_period, current_time, :millisecond) + 1)
+      end
+
     socket
+    |> assign(:period_timer, period_timer)
     |> assign(:habit, habit)
     |> assign(:momentum, momentum)
     |> stream(:logs, logs |> Enum.reverse() |> Enum.take(5), reset: true)
