@@ -65,6 +65,8 @@ defmodule MmentumWeb.HabitLiveTest do
     end
 
     test "period boundary refreshes stale progress, greeting and day text without navigation", %{conn: conn, user: user} do
+      {:ok, user} = Mmentum.Accounts.update_user_time_zone(user, "America/Los_Angeles")
+      conn = log_in_user(conn, user)
       habits = Enum.map([:day, :week, :month], &habit_fixture(user: user, periodicity: &1, min_completions: 1))
 
       logs =
@@ -74,16 +76,19 @@ defmodule MmentumWeb.HabitLiveTest do
         end)
 
       {:ok, dashboard, _html} = live(conn, ~p"/habits")
+      {:ok, stale_dashboard, _html} = live(conn, ~p"/habits")
       timer = :sys.get_state(dashboard.pid).socket.assigns.period_timer
-      assert is_integer(Process.read_timer(timer))
+      current_time = Mmentum.Time.current_time(user.time_zone)
+      next_day = Mmentum.Time.next_start_of_range(current_time, :day) |> DateTime.from_naive!("Etc/UTC")
+      assert_in_delta Process.read_timer(timer), DateTime.diff(next_day, current_time, :millisecond), 1000
 
       # Keep the rendered previous-period completions while the database represents the new period
-      current_time = Mmentum.Time.current_time(user.time_zone)
-
       for {habit, log} <- Enum.zip(habits, logs) do
         previous_time = current_time |> Mmentum.Time.start_of_range(habit.periodicity) |> NaiveDateTime.add(-1)
         log |> Ecto.Changeset.change(inserted_at: previous_time) |> Repo.update!()
         assert has_element?(dashboard, "#habit-#{habit.id}-record-completion-tooltip button[disabled]")
+        stale_dashboard |> element("#habit-#{habit.id}-remove-completion-tooltip button") |> render_click()
+        assert Repo.get!(Log, log.id).inserted_at == previous_time
       end
 
       :sys.replace_state(dashboard.pid, fn state ->
@@ -427,6 +432,9 @@ defmodule MmentumWeb.HabitLiveTest do
       conn: conn,
       user: user
     } do
+      {:ok, user} = Mmentum.Accounts.update_user_time_zone(user, "America/Los_Angeles")
+      conn = log_in_user(conn, user)
+
       for period <- [:day, :week, :month] do
         habit = habit_fixture(user: user, periodicity: period, min_completions: 1)
         {:ok, detail, _html} = live(conn, ~p"/habits/#{habit}")
