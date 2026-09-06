@@ -67,6 +67,31 @@ defmodule Mmentum.HabitsTest do
       assert Enum.map(loaded_habit.logs, & &1.id) == [current_log.id]
     end
 
+    test "progress queries include the first instant and exclude the next local period" do
+      user = user_fixture()
+
+      for {zone, date, period, start_at, next_start} <- [
+            {"America/Los_Angeles", ~D[2026-03-08], :day, ~N[2026-03-08 08:00:00], ~N[2026-03-09 07:00:00]},
+            {"America/Los_Angeles", ~D[2026-11-01], :day, ~N[2026-11-01 07:00:00], ~N[2026-11-02 08:00:00]},
+            {"Africa/Cairo", ~D[2026-04-24], :day, ~N[2026-04-23 22:00:00], ~N[2026-04-24 21:00:00]},
+            {"America/Havana", ~D[2026-11-01], :day, ~N[2026-11-01 04:00:00], ~N[2026-11-02 05:00:00]},
+            {"America/Los_Angeles", ~D[2026-03-09], :week, ~N[2026-03-09 07:00:00], ~N[2026-03-16 07:00:00]},
+            {"America/Los_Angeles", ~D[2026-03-31], :month, ~N[2026-03-01 08:00:00], ~N[2026-04-01 07:00:00]}
+          ] do
+        habit = habit_fixture(user: user, periodicity: period)
+        first = insert_log(user, habit, start_at)
+        last = insert_log(user, habit, NaiveDateTime.add(next_start, -1))
+        insert_log(user, habit, NaiveDateTime.add(start_at, -1))
+        insert_log(user, habit, next_start)
+        current_time = DateTime.new!(date, ~T[12:00:00], zone)
+
+        loaded = Habits.get_habit_with_current_progress!(user, habit.id, current_time)
+        assert Enum.map(loaded.logs, & &1.id) == [first.id, last.id]
+        listed = Enum.find(Habits.list_habits_with_current_progress(user, current_time), &(&1.id == habit.id))
+        assert listed.logs == loaded.logs
+      end
+    end
+
     test "create_habit/2 creates a habit for the user" do
       user = user_fixture()
       valid_attrs = %{min_completions: 3, name: "some name", periodicity: :week}

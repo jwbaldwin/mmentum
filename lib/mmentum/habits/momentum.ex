@@ -38,9 +38,7 @@ defmodule Mmentum.Habits.Momentum do
     recent_periods =
       0..(@period_count - 1)
       |> Enum.map(fn periods_ago ->
-        current_time
-        |> Time.shift_by_periods(periodicity, -periods_ago)
-        |> Time.start_of_range(periodicity)
+        Time.start_of_range(current_time, periodicity, -periods_ago)
       end)
       |> MapSet.new()
 

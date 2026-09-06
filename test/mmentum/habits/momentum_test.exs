@@ -80,6 +80,23 @@ defmodule Mmentum.Habits.MomentumTest do
     assert Momentum.score(habit, [log(~N[2026-08-18 13:00:00])], ~U[2026-08-18 12:00:00Z]) == 0.0
   end
 
+  test "daily momentum includes March 8 immediately after the spring transition" do
+    current_time = DateTime.new!(~D[2026-03-09], ~T[00:30:00], "America/Los_Angeles")
+
+    assert Momentum.score(habit(:day, 1), [log(~N[2026-03-08 18:00:00])], current_time) == 12.5
+    assert Momentum.score(habit(:day, 1), [log(~N[2026-03-01 18:00:00])], current_time) == 0.0
+  end
+
+  test "weekly and monthly windows do not skip periods near DST midnight" do
+    monday = DateTime.new!(~D[2026-03-09], ~T[00:30:00], "America/Los_Angeles")
+    april = DateTime.new!(~D[2026-04-01], ~T[00:30:00], "America/Los_Angeles")
+    fall = DateTime.new!(~D[2026-11-02], ~T[00:30:00], "America/Los_Angeles")
+
+    assert Momentum.score(habit(:week, 1), [log(~N[2026-03-02 18:00:00])], monday) == 12.5
+    assert Momentum.score(habit(:month, 1), [log(~N[2026-03-15 18:00:00])], april) == 12.5
+    assert Momentum.score(habit(:day, 1), [log(~N[2026-11-01 18:00:00])], fall) == 12.5
+  end
+
   defp habit(periodicity, minimum) do
     %Habit{periodicity: periodicity, min_completions: minimum}
   end
