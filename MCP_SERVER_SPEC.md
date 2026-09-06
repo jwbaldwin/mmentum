@@ -36,9 +36,9 @@ The OAuth flow will:
 - Let users review and revoke connected clients
 - Store private signing keys in production secrets and publish public keys through JWKS
 
-Prove both libraries in a focused integration spike before adopting them. The [first integration check](docs/ATTESTO_INTEGRATION_CHECK.md) found that AttestoPhoenix 3.2.1 rejects public clients at its revocation endpoint. Adoption is paused until we resolve that gap; OAuth is not yet wired into Mmentum.
+AttestoPhoenix 3.2.1 rejects public clients at its revocation endpoint. Mmentum therefore uses browser-owned Connected apps Disconnect as its supported revocation path.
 
-Development and test environments may use a config-only local authentication bypass that supplies a chosen local user. Production must refuse to start if this bypass is enabled. Do not build personal access token storage solely to unblock local development.
+OAuth is wired into Mmentum with real bearer authentication in every environment. There is no local authentication bypass. Production requires configured issuer and signing key material at startup.
 
 ## Client compatibility
 
@@ -98,7 +98,7 @@ The embedded agent includes these tool modules in its agent context in the same 
 - `Mmentum.MCP.Transport.StreamableHTTP` reads MCP requests from HTTP, checks that they are valid, and writes HTTP replies. It validates messages once before comparing headers and calling the server
 - `Mmentum.MCP.Server` handles MCP operations such as discovering the server and listing tools. It receives validated requests and returns results or named failures, without handling HTTP
 - `Mmentum.MCP.JSONRPC` builds JSON-RPC replies and maps named errors to numeric codes. The transport chooses HTTP status codes
-- OAuth authentication will run in a dedicated MCP router pipeline before the transport. Do not register real tools before authentication, scopes, and tool validation are ready
+- OAuth authentication runs in a dedicated MCP router pipeline before the transport. Do not register real tools before scopes and tool validation are ready
 
 The remote request flow is:
 
@@ -117,7 +117,7 @@ Do not add a fake tool solely to test the behaviour. Implement and test the beha
 
 ## Second implementation slice
 
-Build the smallest useful MCP `2026-07-28` protocol path without adding a product tool:
+The smallest useful MCP `2026-07-28` protocol path without adding a product tool is implemented:
 
 - Route stateless Streamable HTTP POST requests through the Phoenix router, leaving their bodies for the transport to parse
 - Require the protocol, method, name, exact content type, and accepted response headers defined by the MCP specification
@@ -129,16 +129,16 @@ Build the smallest useful MCP `2026-07-28` protocol path without adding a produc
 - Return `resultType`, server metadata, cache hints, and standard JSON-RPC errors
 - Reject legacy GET and DELETE transport requests
 
-Keep OAuth, full JSON Schema validation, and the seven tools in later slices. This slice builds the stateless protocol boundary; client compatibility remains unverified.
+Full JSON Schema validation and the seven tools remain later slices. Client compatibility remains unverified.
 
 The transport returns HTTP 400 for malformed request metadata and header errors, and HTTP 404 for unknown methods. `clientInfo` is optional. Request IDs must be strings or integers; notifications have no ID. Encoded name headers are decoded before comparison.
 
 Primary references: [MCP messages and metadata](https://modelcontextprotocol.io/specification/2026-07-28/basic) and [Streamable HTTP](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http). EMCP provides implementation examples, not the authority for this protocol version.
 
-## Deferred until implementation spikes
+## Deferred until later slices
 
 - Confirm real client support for MCP `2026-07-28`
-- Confirm Attesto's Phoenix session integration, refresh-token behavior, and generated persistence
+- Exercise OAuth with real browsers and target clients
 - Choose the JSON Schema validation mechanism
 - Define client-safe messages for real tool execution errors
 - Define the execution context from the needs of the first real tool
