@@ -12,6 +12,38 @@ config :mmentum,
 
 config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
+config :mmentum, :oauth_consent, salt: "oauth-consent-request", max_age: 300
+
+config :attesto_phoenix, otp_app: :mmentum
+
+config :mmentum, AttestoPhoenix.Config,
+  keystore: Attesto.Keystore.Static,
+  repo: Mmentum.Repo,
+  load_client: {Mmentum.OAuth, :load_client},
+  client_id: {Mmentum.OAuth, :client_id},
+  client_redirect_uris: {Mmentum.OAuth, :client_redirect_uris},
+  client_public?: {Mmentum.OAuth, :client_public?},
+  verify_client_secret: {Mmentum.OAuth, :verify_client_secret},
+  load_principal: {Mmentum.OAuth, :load_principal},
+  build_principal: {Mmentum.OAuth, :build_principal},
+  authorize_scope: {Mmentum.OAuth, :authorize_scope},
+  authenticate_resource_owner: {MmentumWeb.OAuthController, :authenticate_resource_owner},
+  consent: {MmentumWeb.OAuthController, :consent},
+  authorization_code_private_context: {Mmentum.OAuth, :create_connection},
+  authorization_code_completion: {Mmentum.OAuth, :complete_authorization},
+  authorization_grant_id_claim: "mmentum_grant_id",
+  issue_refresh_token?: {Mmentum.OAuth, :issue_refresh_token?},
+  code_store: AttestoPhoenix.Store.EctoCodeStore,
+  refresh_store: AttestoPhoenix.Store.EctoRefreshStore,
+  scopes_supported: ["mmentum:read", "mmentum:write"],
+  grant_types_supported: ["authorization_code", "refresh_token"],
+  token_endpoint_auth_methods_supported: ["none"],
+  access_token_ttl: 300,
+  refresh_token_ttl: 2_592_000,
+  refresh_token_rotation_grace_seconds: 0,
+  sweep_interval_ms: 60_000,
+  dpop_enabled: false
+
 # Configures the endpoint
 config :mmentum, MmentumWeb.Endpoint,
   adapter: Bandit.PhoenixAdapter,
@@ -60,6 +92,7 @@ config :logger, :console,
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+config :phoenix, :filter_parameters, ["password", "secret", "token", "code", "request"]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

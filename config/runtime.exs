@@ -21,6 +21,14 @@ if System.get_env("PHX_SERVER") do
 end
 
 if config_env() == :prod do
+  oauth_issuer = System.fetch_env!("OAUTH_ISSUER")
+
+  config :mmentum, AttestoPhoenix.Config,
+    issuer: oauth_issuer,
+    audience: oauth_issuer <> "/mcp"
+
+  config :attesto, Attesto.Keystore.Static, signing_pem: System.fetch_env!("OAUTH_SIGNING_PRIVATE_KEY_PEM")
+
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
@@ -107,4 +115,43 @@ if config_env() == :prod do
   # For this example you need include a HTTP client required by Swoosh API client.
   # This app uses Finch, configured in config/prod.exs.
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
+else
+  oauth_issuer = System.get_env("OAUTH_ISSUER", "https://localhost:4443")
+
+  config :mmentum, AttestoPhoenix.Config,
+    issuer: oauth_issuer,
+    audience: oauth_issuer <> "/mcp"
+
+  signing_pem =
+    System.get_env("OAUTH_SIGNING_PRIVATE_KEY_PEM") ||
+      :public_key.pem_encode([
+        :public_key.pem_entry_encode(:ECPrivateKey, :public_key.generate_key({:namedCurve, :secp256r1}))
+      ])
+
+  config :attesto, Attesto.Keystore.Static, signing_pem: signing_pem
+
+  if config_env() == :dev and System.get_env("OAUTH_DEV_TLS_CERTFILE") do
+    oauth_issuer_uri = URI.new!(oauth_issuer)
+
+    config :mmentum, MmentumWeb.Endpoint,
+      url: [scheme: "https", host: oauth_issuer_uri.host, port: oauth_issuer_uri.port],
+      https: [
+        ip: {127, 0, 0, 1},
+        port: oauth_issuer_uri.port,
+        certfile: System.fetch_env!("OAUTH_DEV_TLS_CERTFILE"),
+        keyfile: System.fetch_env!("OAUTH_DEV_TLS_KEYFILE")
+      ]
+  end
 end
+
+clients =
+  case System.get_env("OAUTH_PUBLIC_CLIENTS_JSON") do
+    nil -> Application.get_env(:mmentum, :oauth_clients, [])
+    json -> Jason.decode!(json)
+  end
+
+config :mmentum, :oauth_clients, clients
+
+config :mmentum, AttestoPhoenix.Config,
+  principal_kinds: [Attesto.PrincipalKind.new("user", "user:")],
+  trusted_proxies: Jason.decode!(System.get_env("OAUTH_TRUSTED_PROXIES_JSON", "[]"))

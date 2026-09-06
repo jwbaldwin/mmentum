@@ -12,6 +12,7 @@ defmodule Mmentum.Application do
       MmentumWeb.Telemetry,
       # Start the Ecto repository
       Mmentum.Repo,
+      {AttestoPhoenix.Store.Sweeper, config: Mmentum.OAuth.config()},
       # Start the PubSub system
       {Phoenix.PubSub, name: Mmentum.PubSub},
       # Start Finch

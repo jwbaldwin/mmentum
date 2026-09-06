@@ -34,3 +34,7 @@ config :logger, level: :warning
 
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime
+
+config :mmentum, :oauth_clients, [
+  %{"id" => "oauth-test", "name" => "OAuth test client", "redirect_uris" => ["https://client.example/callback"]}
+]
