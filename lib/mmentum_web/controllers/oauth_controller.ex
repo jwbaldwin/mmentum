@@ -77,6 +77,7 @@ defmodule MmentumWeb.OAuthController do
         token_endpoint_auth_methods_supported: Config.token_endpoint_auth_methods_supported(config),
         authorization_response_iss_parameter_supported: true
       )
+      |> Map.delete("dpop_signing_alg_values_supported")
 
     conn |> put_resp_header("cache-control", "public, max-age=300") |> json(metadata)
   end
