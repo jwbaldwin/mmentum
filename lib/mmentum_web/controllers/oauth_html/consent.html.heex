@@ -1,0 +1,16 @@
+<section class="mx-auto max-w-lg space-y-6">
+  <h1 class="text-2xl font-semibold">Connect {@client["name"]}?</h1>
+  <p>This app is requesting access to your Mmentum account as {@current_user.email}.</p>
+  <p class="break-all text-sm">Resource: {@audience}</p>
+  <ul class="list-inside list-disc">
+    <li :for={scope <- @scopes}>
+      {if scope == "mmentum:read", do: "Read your habits and history", else: "Change your habits and record progress"}
+    </li>
+  </ul>
+  <p>You can disconnect this app at any time from Connected apps. No habit tools are available yet.</p>
+  <.form for={@form} id="oauth-consent" action={~p"/oauth/consent"} class="flex gap-4">
+    <.input field={@form[:request]} type="hidden" />
+    <.button id="oauth-allow" name="decision" value="allow">Allow</.button>
+    <.button id="oauth-deny" name="decision" value="deny" variant="quiet">Deny</.button>
+  </.form>
+</section>

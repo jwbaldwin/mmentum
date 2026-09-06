@@ -1,0 +1,12 @@
+<section class="mx-auto max-w-lg space-y-6">
+  <h1 class="text-2xl font-semibold">Connected apps</h1>
+  <p :if={@connections == []}>No connected apps.</p>
+  <article :for={connection <- @connections} id={"connection-#{connection.id}"} class="space-y-3 border-b py-4">
+    <h2 class="font-semibold">{connection.client_id}</h2>
+    <p class="text-sm">{Enum.join(connection.scopes, ", ")}</p>
+    <p :if={is_nil(connection.refresh_family_id)} class="text-sm">Awaiting token exchange</p>
+    <.form for={%{}} id={"disconnect-#{connection.id}"} action={~p"/users/connections/#{connection.id}"} method="delete">
+      <.button variant="quiet">Disconnect</.button>
+    </.form>
+  </article>
+</section>

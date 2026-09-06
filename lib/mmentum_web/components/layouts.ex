@@ -42,6 +42,9 @@ defmodule MmentumWeb.Layouts do
         <.account_menu_item navigate={~p"/users/settings"} icon="hero-user">
           Settings
         </.account_menu_item>
+        <.account_menu_item href={~p"/users/connections"} icon="hero-link">
+          Connected apps
+        </.account_menu_item>
         <.appearance_toggle />
         <div class="mx-2 my-1 h-px bg-zinc-950/[0.07] dark:bg-zinc-50/[0.07]"></div>
         <.account_menu_item href={~p"/users/log_out"} method="delete" icon="hero-arrow-right-on-rectangle">

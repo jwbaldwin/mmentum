@@ -33,6 +33,8 @@ defmodule Mmentum.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:attesto_phoenix, "~> 3.2"},
+      {:attesto_mcp, "~> 1.3"},
       {:bcrypt_elixir, "~> 3.2"},
       {:phoenix, "~> 1.8"},
       {:phoenix_ecto, "~> 4.7"},

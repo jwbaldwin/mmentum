@@ -17,8 +17,50 @@ defmodule MmentumWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :oauth do
+    plug AttestoPhoenix.Plug.PutConfig, otp_app: :mmentum
+    plug MmentumWeb.Plugs.RequireOAuthHTTPS
+  end
+
+  pipeline :mcp_authentication do
+    plug AttestoMCP.Plug.ProtectResource,
+      config: &Mmentum.OAuth.token_config/0,
+      principal: &Mmentum.OAuth.authenticate_token/2,
+      principal_key: :current_user,
+      resource: "/mcp",
+      base_url: &Mmentum.OAuth.issuer/1,
+      resource_audience: :resource,
+      scopes: ["mmentum:read"]
+  end
+
   scope "/mcp" do
+    pipe_through [:oauth, :mcp_authentication]
     forward "/", Mmentum.MCP.Transport.StreamableHTTP
+  end
+
+  scope "/", MmentumWeb do
+    get "/.well-known/oauth-authorization-server", OAuthController, :discovery
+    get "/.well-known/oauth-protected-resource/mcp", OAuthController, :resource_metadata
+  end
+
+  scope "/" do
+    pipe_through :oauth
+    get "/.well-known/jwks.json", AttestoPhoenix.Controller.JWKSController, :show
+    post "/oauth/token", AttestoPhoenix.Controller.TokenController, :create
+  end
+
+  pipeline :oauth_consent do
+    plug MmentumWeb.Plugs.ReadOAuthConsent
+  end
+
+  scope "/" do
+    pipe_through [:oauth, :browser, :require_authenticated_user]
+    get "/oauth/authorize", AttestoPhoenix.Controller.AuthorizeController, :authorize
+  end
+
+  scope "/" do
+    pipe_through [:oauth, :browser, :require_authenticated_user, :oauth_consent]
+    post "/oauth/consent", AttestoPhoenix.Controller.AuthorizeController, :authorize
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
@@ -55,6 +97,9 @@ defmodule MmentumWeb.Router do
 
   scope "/", MmentumWeb do
     pipe_through [:browser, :require_authenticated_user]
+
+    get "/users/connections", OAuthController, :connections
+    delete "/users/connections/:id", OAuthController, :disconnect
 
     live_session :authenticated,
       on_mount: [{MmentumWeb.UserAuth, :ensure_authenticated}] do

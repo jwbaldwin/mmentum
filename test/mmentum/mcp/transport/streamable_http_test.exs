@@ -1,6 +1,12 @@
 defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
   use MmentumWeb.ConnCase, async: true
 
+  setup do
+    user = Mmentum.AccountsFixtures.user_fixture()
+    tokens = Mmentum.OAuthFixtures.tokens(user)
+    %{conn: Mmentum.OAuthFixtures.bearer_conn(tokens["access_token"])}
+  end
+
   test "POST /mcp serves stateless discovery", %{conn: conn} do
     conn = send_mcp(conn, request("server/discover"))
 
@@ -28,9 +34,9 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
     assert %{"error" => %{"code" => -32_602}} = json_response(conn, 400)
   end
 
-  test "invalid IDs are rejected rather than accepted as notifications" do
+  test "invalid IDs are rejected rather than accepted as notifications", %{conn: conn} do
     for id <- [nil, true, 1.5, [], %{}] do
-      conn = send_mcp(build_conn(), %{request("tools/list") | "id" => id})
+      conn = send_mcp(conn, %{request("tools/list") | "id" => id})
       assert %{"id" => nil, "error" => %{"code" => -32_600}} = json_response(conn, 400)
     end
   end
@@ -76,7 +82,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
   end
 
   test "Origin checks also apply to non-POST requests", %{conn: conn} do
-    conn = conn |> put_req_header("origin", "https://attacker.example") |> get(~p"/mcp")
+    conn = conn |> put_req_header("origin", "https://attacker.example") |> get("https://localhost:4443/mcp")
     assert conn.status == 403
   end
 
@@ -120,7 +126,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
       |> put_req_header("content-type", "application/json")
       |> put_req_header("accept", "application/json, text/event-stream")
       |> put_req_header("mcp-method", "server/discover")
-      |> post(~p"/mcp", Jason.encode!(request("server/discover")))
+      |> post("https://localhost:4443/mcp", Jason.encode!(request("server/discover")))
 
     assert %{"id" => 1, "error" => %{"code" => -32_020, "message" => message}} =
              json_response(conn, 400)
@@ -206,7 +212,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
         {"content-type", "application/json"},
         {"content-type", "text/plain"}
       ])
-      |> post("/mcp", request("server/discover"))
+      |> post("https://localhost:4443/mcp", request("server/discover"))
 
     assert %{"error" => %{"message" => "Content-Type must be application/json"}} =
              json_response(conn, 415)
@@ -234,7 +240,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
       |> put_req_header("accept", "application/json")
       |> put_req_header("mcp-protocol-version", "2026-07-28")
       |> put_req_header("mcp-method", "server/discover")
-      |> post("/mcp", request("server/discover"))
+      |> post("https://localhost:4443/mcp", request("server/discover"))
 
     assert %{"error" => %{"message" => message}} = json_response(conn, 406)
     assert message =~ "text/event-stream"
@@ -247,7 +253,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
       |> put_req_header("accept", "application/json, text/event-stream")
       |> put_req_header("mcp-protocol-version", "2026-07-28")
       |> put_req_header("mcp-method", "server/discover")
-      |> post("/mcp", "{")
+      |> post("https://localhost:4443/mcp", "{")
 
     assert %{"error" => %{"code" => -32_700, "message" => "Parse error"}} =
              Jason.decode!(conn.resp_body)
@@ -262,7 +268,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
       |> put_req_header("accept", "application/json, text/event-stream")
       |> put_req_header("mcp-protocol-version", "2026-07-28")
       |> put_req_header("mcp-method", "server/discover")
-      |> post("/mcp", Jason.encode!([request("server/discover")]))
+      |> post("https://localhost:4443/mcp", Jason.encode!([request("server/discover")]))
 
     assert %{"error" => %{"code" => -32_600, "message" => "Invalid Request"}} =
              Jason.decode!(conn.resp_body)
@@ -275,7 +281,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
       conn
       |> put_req_header("content-type", "application/json")
       |> put_req_header("accept", "application/json, text/event-stream")
-      |> post(~p"/mcp", String.duplicate(" ", 1_000_001))
+      |> post("https://localhost:4443/mcp", String.duplicate(" ", 1_000_001))
 
     assert %{"error" => %{"message" => "Request too large"}} = json_response(conn, 413)
   end
@@ -287,13 +293,13 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
       |> put_req_header("accept", "application/json, text/event-stream")
       |> put_req_header("mcp-protocol-version", "2026-07-28")
       |> put_req_header("mcp-method", "tools/list")
-      |> post("/mcp/", Jason.encode!(request("tools/list")))
+      |> post("https://localhost:4443/mcp/", Jason.encode!(request("tools/list")))
 
     assert json_response(conn, 200)["result"]["tools"] == []
   end
 
-  test "non-POST methods are rejected" do
-    connections = [get(build_conn(), "/mcp"), delete(build_conn(), "/mcp")]
+  test "non-POST methods are rejected", %{conn: conn} do
+    connections = [get(conn, "https://localhost:4443/mcp"), delete(conn, "https://localhost:4443/mcp")]
 
     for conn <- connections do
       assert conn.status == 405
@@ -326,7 +332,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
         :error -> conn
       end
 
-    post(conn, ~p"/mcp", Jason.encode!(request))
+    post(conn, "https://localhost:4443/mcp", Jason.encode!(request))
   end
 
   defp request(method, version \\ "2026-07-28") do
