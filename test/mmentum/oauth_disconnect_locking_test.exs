@@ -19,8 +19,11 @@ defmodule Mmentum.OAuthDisconnectLockingTest do
         {user, connection}
       end)
 
-    completion_pid =
-      spawn_unboxed(fn ->
+    on_exit(fn -> cleanup_user(user.id) end)
+    start_supervised!({Task.Supervisor, name: __MODULE__})
+
+    {completion_pid, completion_monitor} =
+      start_database_task(fn ->
         result =
           OAuth.complete_authorization(
             %{
@@ -43,8 +46,8 @@ defmodule Mmentum.OAuthDisconnectLockingTest do
 
     assert_receive {:completion_holds_lock, ^completion_pid}
 
-    disconnect_pid =
-      spawn_unboxed(fn ->
+    {disconnect_pid, disconnect_monitor} =
+      start_database_task(fn ->
         backend_pid = Repo.query!("select pg_backend_pid()", []).rows |> hd() |> hd()
         send(parent, {:disconnect_backend_pid, backend_pid})
         send(parent, {:disconnect_result, OAuth.disconnect(user, connection.id)})
@@ -61,12 +64,13 @@ defmodule Mmentum.OAuthDisconnectLockingTest do
 
     assert unboxed(fn -> Repo.get!(Connection, connection.id).revoked_at end)
 
-    cleanup_user(user.id)
-    refute Process.alive?(disconnect_pid)
+    assert_receive {:DOWN, ^completion_monitor, :process, ^completion_pid, :normal}
+    assert_receive {:DOWN, ^disconnect_monitor, :process, ^disconnect_pid, :normal}
   end
 
-  defp spawn_unboxed(fun) do
-    spawn(fn -> unboxed(fun) end)
+  defp start_database_task(fun) do
+    {:ok, pid} = Task.Supervisor.start_child(__MODULE__, fn -> unboxed(fun) end)
+    {pid, Process.monitor(pid)}
   end
 
   defp unboxed(fun) do
