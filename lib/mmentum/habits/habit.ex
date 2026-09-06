@@ -37,6 +37,10 @@ defmodule Mmentum.Habits.Habit do
     |> validate_number(:min_completions, greater_than: 0, less_than_or_equal_to: 31)
     |> validate_number(:max_completions, greater_than: 0, less_than_or_equal_to: 31)
     |> validate_completion_range()
+    |> check_constraint(:max_completions,
+      name: :habits_completion_range,
+      message: "must be greater than the minimum"
+    )
   end
 
   defp validate_completion_range(changeset) do
