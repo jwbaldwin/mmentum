@@ -36,7 +36,7 @@ The OAuth flow will:
 - Let users review and revoke connected clients
 - Store private signing keys in production secrets and publish public keys through JWKS
 
-Prove both libraries in a focused integration spike before adopting them.
+Prove both libraries in a focused integration spike before adopting them. The [first integration check](docs/ATTESTO_INTEGRATION_CHECK.md) found that AttestoPhoenix 3.2.1 rejects public clients at its revocation endpoint. Adoption is paused until we resolve that gap; OAuth is not yet wired into Mmentum.
 
 Development and test environments may use a config-only local authentication bypass that supplies a chosen local user. Production must refuse to start if this bypass is enabled. Do not build personal access token storage solely to unblock local development.
 
