@@ -9,6 +9,8 @@ defmodule MmentumWeb.HabitLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
+    socket = assign(socket, :period_timer, nil)
+
     if get_current_user(socket).time_zone do
       {:ok, assign_dashboard(socket)}
     else
@@ -43,13 +45,17 @@ defmodule MmentumWeb.HabitLive.Index do
 
   @impl true
   def handle_info({MmentumWeb.HabitLive.FormComponent, {:saved, _habit}}, socket) do
-    {:noreply, assign(socket, :habits, list_habits(socket))}
+    {:noreply, assign_dashboard(socket)}
+  end
+
+  def handle_info(:period_boundary, socket) do
+    {:noreply, assign_dashboard(socket)}
   end
 
   @impl true
   def handle_event("add_log", %{"id" => habit_id}, socket) do
     case Habits.record_completion(get_current_user(socket), habit_id) do
-      {:ok, _log} -> {:noreply, assign(socket, :habits, list_habits(socket))}
+      {:ok, _log} -> {:noreply, assign_dashboard(socket)}
       {:error, :not_found} -> {:noreply, habit_not_found(socket)}
       {:error, %Ecto.Changeset{} = changeset} -> {:noreply, assign(socket, changeset: changeset)}
     end
@@ -57,23 +63,26 @@ defmodule MmentumWeb.HabitLive.Index do
 
   def handle_event("remove_log", %{"id" => habit_id}, socket) do
     case Habits.remove_current_period_completion(get_current_user(socket), habit_id) do
-      {:ok, _log} -> {:noreply, assign(socket, :habits, list_habits(socket))}
+      {:ok, _log} -> {:noreply, assign_dashboard(socket)}
       {:error, :no_completion} -> {:noreply, assign_dashboard(socket)}
       {:error, :not_found} -> {:noreply, habit_not_found(socket)}
       {:error, %Ecto.Changeset{} = changeset} -> {:noreply, assign(socket, changeset: changeset)}
     end
   end
 
-  defp list_habits(socket) do
-    user = get_current_user(socket)
-    Habits.list_habits_with_current_progress(user, Time.current_time(user.time_zone))
-  end
-
   defp assign_dashboard(socket) do
     user = get_current_user(socket)
     current_time = Time.current_time(user.time_zone)
 
+    period_timer =
+      if connected?(socket) do
+        if socket.assigns.period_timer, do: Process.cancel_timer(socket.assigns.period_timer)
+        next_day = Time.next_start_of_range(current_time, :day) |> DateTime.from_naive!("Etc/UTC")
+        Process.send_after(self(), :period_boundary, DateTime.diff(next_day, current_time, :millisecond) + 1)
+      end
+
     assign(socket, %{
+      period_timer: period_timer,
       habits: Habits.list_habits_with_current_progress(user, current_time),
       day_info: build_day_info(current_time),
       greeting: greeting_for_time_of_day(user, current_time),

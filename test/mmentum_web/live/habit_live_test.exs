@@ -64,6 +64,53 @@ defmodule MmentumWeb.HabitLiveTest do
       refute has_element?(stale_tab, "#habit-#{habit.id}-record-completion-tooltip button[disabled]")
     end
 
+    test "period boundary refreshes stale progress, greeting and day text without navigation", %{conn: conn, user: user} do
+      habits = Enum.map([:day, :week, :month], &habit_fixture(user: user, periodicity: &1, min_completions: 1))
+
+      logs =
+        Enum.map(habits, fn habit ->
+          {:ok, log} = Habits.record_completion(user, habit.id)
+          log
+        end)
+
+      {:ok, dashboard, _html} = live(conn, ~p"/habits")
+      timer = :sys.get_state(dashboard.pid).socket.assigns.period_timer
+      assert is_integer(Process.read_timer(timer))
+
+      # Keep the rendered previous-period completions while the database represents the new period
+      current_time = Mmentum.Time.current_time(user.time_zone)
+
+      for {habit, log} <- Enum.zip(habits, logs) do
+        previous_time = current_time |> Mmentum.Time.start_of_range(habit.periodicity) |> NaiveDateTime.add(-1)
+        log |> Ecto.Changeset.change(inserted_at: previous_time) |> Repo.update!()
+        assert has_element?(dashboard, "#habit-#{habit.id}-record-completion-tooltip button[disabled]")
+      end
+
+      :sys.replace_state(dashboard.pid, fn state ->
+        socket =
+          Phoenix.Component.assign(state.socket, greeting: "Old greeting", day_info: "Old day", time_of_day: :old)
+
+        %{state | socket: socket}
+      end)
+
+      send(dashboard.pid, :period_boundary)
+      html = render(dashboard)
+      assigns = :sys.get_state(dashboard.pid).socket.assigns
+
+      assert assigns.greeting == Mmentum.Time.greeting_for_time_of_day(current_time) <> ", Test"
+      assert html =~ Mmentum.Time.current_day(current_time)
+      refute assigns.day_info == "Old day"
+      assert assigns.time_of_day == Mmentum.Time.time_of_day(current_time)
+      assert Process.read_timer(timer) == false
+      assert is_integer(Process.read_timer(assigns.period_timer))
+
+      for habit <- habits do
+        refute has_element?(dashboard, "#habit-#{habit.id}-record-completion-tooltip button[disabled]")
+        assert has_element?(dashboard, "#habit-#{habit.id}-remove-completion-tooltip button[disabled]")
+        assert length(Logs.list_logs_by_habit(user, habit)) == 1
+      end
+    end
+
     test "lists all habits", %{conn: conn, habit: habit} do
       {:ok, _index_live, html} = live(conn, ~p"/habits")
 
@@ -375,6 +422,37 @@ defmodule MmentumWeb.HabitLiveTest do
 
   describe "Show" do
     setup [:register_and_log_in_user, :create_habit]
+
+    test "period boundary refreshes momentum and replaces the one-shot timer for each cadence", %{
+      conn: conn,
+      user: user
+    } do
+      for period <- [:day, :week, :month] do
+        habit = habit_fixture(user: user, periodicity: period, min_completions: 1)
+        {:ok, detail, _html} = live(conn, ~p"/habits/#{habit}")
+        timer = :sys.get_state(detail.pid).socket.assigns.period_timer
+        current_time = Mmentum.Time.current_time(user.time_zone)
+        next_period = Mmentum.Time.next_start_of_range(current_time, period) |> DateTime.from_naive!("Etc/UTC")
+        expected_delay = DateTime.diff(next_period, current_time, :millisecond)
+        assert_in_delta Process.read_timer(timer), expected_delay, 1000
+
+        {:ok, log} = Habits.record_completion(user, habit.id)
+        send(detail.pid, :period_boundary)
+        render(detail)
+        assigns = :sys.get_state(detail.pid).socket.assigns
+
+        assert assigns.momentum.score == 12.5
+        assert has_element?(detail, "#logs-#{log.id}")
+        assert Process.read_timer(timer) == false
+        assert is_integer(Process.read_timer(assigns.period_timer))
+
+        timer = assigns.period_timer
+        detail |> element("#edit-habit") |> render_click()
+        render(detail)
+        assert Process.read_timer(timer) == false
+        assert is_integer(Process.read_timer(:sys.get_state(detail.pid).socket.assigns.period_timer))
+      end
+    end
 
     test "displays the habit score, details, momentum history, and activity", %{
       conn: conn,
