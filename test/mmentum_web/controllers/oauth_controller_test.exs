@@ -12,6 +12,43 @@ defmodule MmentumWeb.OAuthControllerTest do
     %{user: Mmentum.AccountsFixtures.user_fixture()}
   end
 
+  test "OAuth discovery advertises only the configured public-client flow" do
+    metadata =
+      OAuthFixtures.https_conn()
+      |> get(OAuth.config().issuer <> "/.well-known/oauth-authorization-server")
+      |> json_response(200)
+
+    assert metadata["issuer"] == OAuth.config().issuer
+    assert metadata["authorization_endpoint"] == OAuth.config().issuer <> "/oauth/authorize"
+    assert metadata["token_endpoint"] == OAuth.config().issuer <> "/oauth/token"
+    assert metadata["grant_types_supported"] == ["authorization_code", "refresh_token"]
+    assert metadata["token_endpoint_auth_methods_supported"] == ["none"]
+    assert metadata["code_challenge_methods_supported"] == ["S256"]
+
+    for unsupported <-
+          ~w(dpop_signing_alg_values_supported revocation_endpoint registration_endpoint pushed_authorization_request_endpoint introspection_endpoint userinfo_endpoint) do
+      refute Map.has_key?(metadata, unsupported), "advertised unsupported capability #{unsupported}"
+    end
+
+    resource =
+      OAuthFixtures.https_conn()
+      |> get(OAuth.config().issuer <> "/.well-known/oauth-protected-resource/mcp")
+      |> json_response(200)
+
+    assert resource["resource"] == OAuth.config().audience
+    assert resource["authorization_servers"] == [OAuth.config().issuer]
+  end
+
+  test "JWKS publishes verification keys without private key material" do
+    assert %{"keys" => [_ | _] = keys} =
+             OAuthFixtures.https_conn() |> get(OAuth.config().issuer <> "/.well-known/jwks.json") |> json_response(200)
+
+    for key <- keys do
+      assert is_binary(key["kid"])
+      for private_field <- ~w(d p q dp dq qi oth k), do: refute(Map.has_key?(key, private_field))
+    end
+  end
+
   test "stores the authorization request while unauthenticated and returns after login", %{user: user} do
     {params, _verifier} = OAuthFixtures.authorization_params()
 
