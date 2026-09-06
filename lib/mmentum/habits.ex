@@ -16,7 +16,7 @@ defmodule Mmentum.Habits do
   def list_habits_with_current_progress(%User{id: user_id} = user, %DateTime{} = current_time) do
     periodicities = Ecto.Enum.values(Habit, :periodicity)
     starts = Enum.map(periodicities, &Time.start_of_range(current_time, &1))
-    ends = Enum.map(periodicities, &Time.end_of_range(current_time, &1))
+    ends = Enum.map(periodicities, &Time.next_start_of_range(current_time, &1))
     broad_start = Enum.min(starts, NaiveDateTime)
     broad_end = Enum.max(ends, NaiveDateTime)
 
@@ -27,12 +27,12 @@ defmodule Mmentum.Habits do
     |> Repo.all()
     |> Enum.map(fn habit ->
       start_of_period = Time.start_of_range(current_time, habit.periodicity)
-      end_of_period = Time.end_of_range(current_time, habit.periodicity)
+      end_of_period = Time.next_start_of_range(current_time, habit.periodicity)
 
       current_logs =
         Enum.filter(habit.logs, fn log ->
           NaiveDateTime.compare(log.inserted_at, start_of_period) != :lt and
-            NaiveDateTime.compare(log.inserted_at, end_of_period) != :gt
+            NaiveDateTime.compare(log.inserted_at, end_of_period) == :lt
         end)
 
       %{habit | logs: current_logs}
@@ -50,7 +50,7 @@ defmodule Mmentum.Habits do
   def get_habit_with_current_progress!(%User{} = user, id, %DateTime{} = current_time) do
     habit = get_habit!(user, id)
     start_of_range = Time.start_of_range(current_time, habit.periodicity)
-    end_of_range = Time.end_of_range(current_time, habit.periodicity)
+    end_of_range = Time.next_start_of_range(current_time, habit.periodicity)
 
     Repo.preload(
       habit,

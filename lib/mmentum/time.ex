@@ -73,27 +73,19 @@ defmodule Mmentum.Time do
     Date.diff(Date.end_of_month(current_date), current_date)
   end
 
-  @doc "Moves a time by whole calendar periods while keeping its timezone"
-  def shift_by_periods(%DateTime{} = time, :day, count), do: DateTime.shift(time, day: count)
-  def shift_by_periods(%DateTime{} = time, :week, count), do: DateTime.shift(time, day: count * 7)
-  def shift_by_periods(%DateTime{} = time, :month, count), do: DateTime.shift(time, month: count)
-
-  @doc """
-  Returns the date time for the start of some range in [:year, :month, :week, :day]
-  """
-  def start_of_range(%DateTime{} = time, range) do
+  @doc "Returns the inclusive UTC start of a local calendar period, optionally offset by periods"
+  def start_of_range(%DateTime{} = time, range, offset \\ 0) do
     time
+    |> DateTime.to_date()
     |> beginning_of_range(range)
+    |> shift_date(range, offset)
+    |> local_day_start(time.time_zone)
     |> to_utc_naive()
   end
 
-  @doc """
-  Returns the date time for the end of some range in [:year, :month, :week, :day]
-  """
-  def end_of_range(%DateTime{} = time, range) do
-    time
-    |> end_of_range_for_time(range)
-    |> to_utc_naive()
+  @doc "Returns the exclusive UTC end of a local calendar period, optionally offset by periods"
+  def next_start_of_range(%DateTime{} = time, range, offset \\ 0) do
+    start_of_range(time, range, offset + 1)
   end
 
   @doc """
@@ -130,56 +122,23 @@ defmodule Mmentum.Time do
     end
   end
 
-  defp beginning_of_range(%DateTime{} = time, :year) do
-    time.year
-    |> Date.new!(1, 1)
-    |> DateTime.new!(~T[00:00:00], time.time_zone)
-  end
+  defp beginning_of_range(date, :year), do: Date.new!(date.year, 1, 1)
+  defp beginning_of_range(date, :month), do: Date.beginning_of_month(date)
+  defp beginning_of_range(date, :week), do: beginning_of_week(date)
+  defp beginning_of_range(date, :day), do: date
 
-  defp beginning_of_range(%DateTime{} = time, :month) do
-    time
-    |> DateTime.to_date()
-    |> Date.beginning_of_month()
-    |> DateTime.new!(~T[00:00:00], time.time_zone)
-  end
+  defp shift_date(date, :year, count), do: Date.shift(date, year: count)
+  defp shift_date(date, :month, count), do: Date.shift(date, month: count)
+  defp shift_date(date, :week, count), do: Date.add(date, count * 7)
+  defp shift_date(date, :day, count), do: Date.add(date, count)
 
-  defp beginning_of_range(%DateTime{} = time, :week) do
-    time
-    |> DateTime.to_date()
-    |> beginning_of_week()
-    |> DateTime.new!(~T[00:00:00], time.time_zone)
-  end
-
-  defp beginning_of_range(%DateTime{} = time, :day) do
-    time
-    |> DateTime.to_date()
-    |> DateTime.new!(~T[00:00:00], time.time_zone)
-  end
-
-  defp end_of_range_for_time(%DateTime{} = time, :year) do
-    time.year
-    |> Date.new!(12, 31)
-    |> DateTime.new!(~T[23:59:59.999999], time.time_zone)
-  end
-
-  defp end_of_range_for_time(%DateTime{} = time, :month) do
-    time
-    |> DateTime.to_date()
-    |> Date.end_of_month()
-    |> DateTime.new!(~T[23:59:59.999999], time.time_zone)
-  end
-
-  defp end_of_range_for_time(%DateTime{} = time, :week) do
-    time
-    |> DateTime.to_date()
-    |> end_of_week()
-    |> DateTime.new!(~T[23:59:59.999999], time.time_zone)
-  end
-
-  defp end_of_range_for_time(%DateTime{} = time, :day) do
-    time
-    |> DateTime.to_date()
-    |> DateTime.new!(~T[23:59:59.999999], time.time_zone)
+  # A calendar day starts at its first occurrence, or the first valid instant after a gap
+  defp local_day_start(date, time_zone) do
+    case DateTime.new(date, ~T[00:00:00], time_zone) do
+      {:ok, time} -> time
+      {:ambiguous, first, _second} -> first
+      {:gap, _before, after_gap} -> after_gap
+    end
   end
 
   defp beginning_of_week(date), do: Date.add(date, 1 - Date.day_of_week(date))

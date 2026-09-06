@@ -32,13 +32,13 @@ defmodule Mmentum.Logs do
   end
 
   @doc """
-  Builds a scoped query for completion activity within UTC boundaries
+  Builds a scoped query for completion activity within inclusive-start, exclusive-end UTC boundaries
   """
   def in_range_query(%User{id: user_id}, start_of_range, end_of_range) do
     from(log in Log,
       where:
         log.user_id == ^user_id and log.inserted_at >= ^start_of_range and
-          log.inserted_at <= ^end_of_range,
+          log.inserted_at < ^end_of_range,
       order_by: [asc: log.inserted_at, asc: log.id]
     )
   end

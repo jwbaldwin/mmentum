@@ -58,8 +58,8 @@ defmodule Mmentum.Habits.Values.MomentumSeries do
       (@history_periods - 1)..1//-1
       |> Enum.map(fn periods_ago ->
         current_time
-        |> Time.shift_by_periods(habit.periodicity, -periods_ago)
-        |> Time.end_of_range(habit.periodicity)
+        |> Time.next_start_of_range(habit.periodicity, -periods_ago)
+        |> NaiveDateTime.add(-1, :microsecond)
         |> DateTime.from_naive!(@utc_timezone)
         |> DateTime.shift_zone!(current_time.time_zone)
       end)

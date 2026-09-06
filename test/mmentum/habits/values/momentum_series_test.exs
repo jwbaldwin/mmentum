@@ -46,4 +46,24 @@ defmodule Mmentum.Habits.Values.MomentumSeriesTest do
     assert Enum.any?(momentum.points, &(&1.score > 0))
     assert Enum.any?(momentum.points, & &1.completion)
   end
+
+  test "daily chart samples each local date once across the spring transition" do
+    habit = %Habit{min_completions: 1, periodicity: :day, inserted_at: ~N[2026-03-01 00:00:00]}
+    current_time = DateTime.new!(~D[2026-03-09], ~T[00:30:00], "America/Los_Angeles")
+    momentum = MomentumSeries.build(habit, [%{inserted_at: ~N[2026-03-08 18:00:00]}], current_time)
+
+    dates =
+      momentum.points
+      |> Enum.drop(1)
+      |> Enum.map(fn point ->
+        point.timestamp
+        |> DateTime.from_unix!(:millisecond)
+        |> DateTime.shift_zone!("America/Los_Angeles")
+        |> DateTime.to_date()
+      end)
+
+    assert dates == Enum.map(2..9, &Date.new!(2026, 3, &1))
+    assert momentum.score == 12.5
+    assert Enum.at(momentum.points, -2).score == 12.5
+  end
 end
