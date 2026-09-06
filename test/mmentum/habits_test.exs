@@ -201,33 +201,48 @@ defmodule Mmentum.HabitsTest do
       assert Repo.aggregate(Log, :count) == 0
     end
 
-    test "remove_most_recent_completion/2 removes only the latest owned completion" do
+    test "remove_current_period_completion/2 removes only the latest owned completion" do
       user = user_fixture()
       habit = habit_fixture(user: user)
       {:ok, first_log} = Habits.record_completion(user, habit.id)
       {:ok, second_log} = Habits.record_completion(user, habit.id)
 
-      assert {:ok, removed_log} = Habits.remove_most_recent_completion(user, habit.id)
+      assert {:ok, removed_log} = Habits.remove_current_period_completion(user, habit.id)
       assert removed_log.id == second_log.id
       assert [remaining_log] = Logs.list_logs_by_habit(user, habit)
       assert remaining_log.id == first_log.id
     end
 
-    test "remove_most_recent_completion/2 leaves an empty habit unchanged" do
+    test "remove_current_period_completion/2 leaves an empty habit unchanged" do
       user = user_fixture()
       habit = habit_fixture(user: user)
 
-      assert {:error, :no_completion} = Habits.remove_most_recent_completion(user, habit.id)
+      assert {:error, :no_completion} = Habits.remove_current_period_completion(user, habit.id)
       assert Repo.aggregate(Log, :count) == 0
     end
 
-    test "remove_most_recent_completion/2 does not remove another user's activity" do
+    test "undo never removes history when the current day, week or month is empty" do
+      user = user_fixture(%{time_zone: "America/Los_Angeles"})
+      current_time = Mmentum.Time.current_time(user.time_zone)
+
+      for period <- [:day, :week, :month] do
+        habit = habit_fixture(user: user, periodicity: period)
+        start = Mmentum.Time.start_of_range(current_time, period)
+        historical_log = insert_log(user, habit, NaiveDateTime.add(start, -1))
+        future_log = insert_log(user, habit, Mmentum.Time.next_start_of_range(current_time, period))
+
+        assert {:error, :no_completion} = Habits.remove_current_period_completion(user, habit.id)
+        assert Logs.list_logs_by_habit(user, habit) == [historical_log, future_log]
+      end
+    end
+
+    test "remove_current_period_completion/2 does not remove another user's activity" do
       owner = user_fixture()
       attacker = user_fixture()
       habit = habit_fixture(user: owner)
       {:ok, log} = Habits.record_completion(owner, habit.id)
 
-      assert {:error, :not_found} = Habits.remove_most_recent_completion(attacker, habit.id)
+      assert {:error, :not_found} = Habits.remove_current_period_completion(attacker, habit.id)
       assert Repo.get!(Log, log.id)
     end
   end
