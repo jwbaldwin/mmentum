@@ -72,11 +72,13 @@ defmodule Mmentum.Habits do
   Updates one of the user's habits
   """
   def update_habit(%User{} = user, id, attrs) do
-    with {:ok, habit} <- fetch_habit(user, id) do
-      habit
-      |> Habit.changeset(attrs)
-      |> Repo.update()
-    end
+    Repo.transact(fn repo ->
+      with {:ok, habit} <- fetch_locked_habit(repo, user, id) do
+        habit
+        |> Habit.changeset(attrs)
+        |> repo.update()
+      end
+    end)
   end
 
   @doc """
@@ -120,13 +122,6 @@ defmodule Mmentum.Habits do
         repo.delete(log)
       end
     end)
-  end
-
-  defp fetch_habit(%User{id: user_id}, id) do
-    case Repo.get_by(Habit, id: id, user_id: user_id) do
-      nil -> {:error, :not_found}
-      habit -> {:ok, habit}
-    end
   end
 
   defp fetch_locked_habit(repo, %User{id: user_id}, id) do

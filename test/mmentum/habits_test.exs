@@ -146,6 +146,39 @@ defmodule Mmentum.HabitsTest do
       assert habit.name == "updated"
     end
 
+    test "updates validate a partial target edit against the stored other target" do
+      user = user_fixture()
+      habit = habit_fixture(user: user, min_completions: 2, max_completions: 5)
+      assert {:ok, _habit} = Habits.update_habit(user, habit.id, %{min_completions: 4})
+
+      for maximum <- [3, 4] do
+        assert {:error, changeset} = Habits.update_habit(user, habit.id, %{max_completions: maximum})
+        assert errors_on(changeset).max_completions == ["must be greater than the minimum"]
+      end
+
+      assert {:ok, habit} = Habits.update_habit(user, habit.id, %{max_completions: nil})
+      assert habit.max_completions == nil
+    end
+
+    test "database rejects inverted and equal ranges even when changeset validation is bypassed" do
+      habit = habit_fixture(min_completions: 2, max_completions: 5)
+
+      for maximum <- [1, 2] do
+        changeset =
+          habit
+          |> Ecto.Changeset.change(max_completions: maximum)
+          |> Ecto.Changeset.check_constraint(:max_completions, name: :habits_completion_range)
+
+        assert {:error, changeset} = Repo.update(changeset, mode: :savepoint)
+        assert {"is invalid", metadata} = Keyword.fetch!(changeset.errors, :max_completions)
+        assert metadata[:constraint] == :check
+        assert metadata[:constraint_name] == "habits_completion_range"
+      end
+
+      assert Repo.get!(Habit, habit.id).max_completions == 5
+      assert %{max_completions: nil} = habit |> Ecto.Changeset.change(max_completions: nil) |> Repo.update!()
+    end
+
     test "update_habit/3 returns an error changeset for invalid data" do
       user = user_fixture()
       habit = habit_fixture(user: user)
