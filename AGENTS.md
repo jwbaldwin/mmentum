@@ -6,6 +6,7 @@ Read `docs/DESIGN_PRINCIPLES.md` and `docs/CODE_STYLE_GUIDANCE.md` before implem
 
 ## Design And Collaboration Defaults
 
+- Make the work easy to review. Show concrete code and explain what changed, where, how, and why in plain language; distinguish proposals from agreed decisions
 - Prefer familiar framework and language conventions. Principle of least surprise: A reader should find behavior where they expect it
 - Parse and validate external input at the earliest I/O boundary. Pass validated values inward and don't repeat those checks. Business rules and authorization still belong where the operation runs
 - Keep related decisions together under one clear owner. Avoid scattering the same knowledge across modules or adding layers that merely pass it along
