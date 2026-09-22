@@ -19,7 +19,8 @@ defmodule Mmentum.MCP.JSONRPC do
     error = %{"code" => Map.fetch!(@error_codes, reason), "message" => message}
     error = if is_nil(data), do: error, else: Map.put(error, "data", data)
 
-    %{"jsonrpc" => "2.0", "id" => id, "error" => error}
+    response = %{"jsonrpc" => "2.0", "error" => error}
+    if is_nil(id), do: response, else: Map.put(response, "id", id)
   end
 
   @doc "Returns a valid request id, or nil when an invalid request cannot be identified"
