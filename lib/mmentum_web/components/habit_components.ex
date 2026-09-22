@@ -161,27 +161,21 @@ defmodule MmentumWeb.HabitComponents do
 
   defp completion_control(assigns) do
     ~H"""
-    <.tooltip
-      id={"habit-#{@habit.id}-#{@id_suffix}-tooltip"}
-      content={@label}
+    <button
+      phx-click={@event}
+      phx-value-id={@habit.id}
+      type="button"
+      class={[
+        "motion-press flex h-12 w-12 items-center justify-center rounded-control text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] dark:text-zinc-300",
+        "duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-700 enabled:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/25",
+        "phx-click-loading:pointer-events-none phx-click-loading:cursor-wait phx-click-loading:opacity-60",
+        @disabled && "cursor-not-allowed disabled:text-zinc-200 dark:disabled:text-zinc-800"
+      ]}
       disabled={@disabled}
+      aria-label={"#{@label} for #{@habit.name}"}
     >
-      <button
-        phx-click={@event}
-        phx-value-id={@habit.id}
-        type="button"
-        class={[
-          "motion-press flex h-12 w-12 items-center justify-center rounded-control text-zinc-700 transition-[color,background-color,border-color,box-shadow,scale] dark:text-zinc-300",
-          "duration-[var(--motion-duration-press)] ease-[var(--motion-ease-out)] hover:text-zinc-900 enabled:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/25",
-          "phx-click-loading:pointer-events-none phx-click-loading:cursor-wait phx-click-loading:opacity-60",
-          @disabled && "cursor-not-allowed disabled:text-zinc-200 dark:disabled:text-zinc-800"
-        ]}
-        disabled={@disabled}
-        aria-label={"#{@label} for #{@habit.name}"}
-      >
-        <.icon name={@icon} class="h-6 w-6" />
-      </button>
-    </.tooltip>
+      <.icon name={@icon} class="h-6 w-6" />
+    </button>
     """
   end
 
