@@ -2,13 +2,13 @@
 
 ## Protocol implementation
 
-Mmentum will implement its hosted MCP server as a small, stateless Phoenix transport rather than depend on an Elixir MCP SDK.
+Mmentum implements MCP `2026-07-28` with a stateless Phoenix HTTP transport. It currently supports server discovery and an empty tool catalog. Habit tools are planned in [`mcp-tools.md`](mcp-tools.md).
 
-There is no officially supported Elixir SDK. The community `mcp_elixir_sdk` package is active but implements MCP `2025-11-25` and does not document support for the newer `2026-07-28` protocol. That newer protocol materially changes the HTTP boundary by removing initialization handshakes, protocol sessions, and GET/SSE session handling in favor of stateless requests.
+In this protocol version, each request carries its protocol version and client capabilities in `params._meta`. There is no `initialize` exchange or MCP session to remember them. `server/discover` reports what the server supports; clients can also send an operation directly. OAuth grants and browser login sessions still exist independently of MCP requests.
 
-Use the local [`EMCP`](https://github.com/PJUllrich/emcp) checkout as the main reference implementation. Reuse and adapt as much of its Plug transport, JSON-RPC parsing, errors, schema validation, tool registration, prompts, resources, and tests as remains useful under MCP `2026-07-28`. Do not inherit EMCP's older protocol flow, session model, `Plug.Conn`-coupled tools, or MCP-shaped tool results when those conflict with this specification.
+The official specification defines the contract. [`EMCP`](https://github.com/PJUllrich/emcp) supplied implementation examples, but its older initialization and session handling do not apply here.
 
-Mmentum will therefore:
+Design decisions:
 
 - Target MCP `2026-07-28`
 - Implement protocol features when they improve or enable the user experience
@@ -17,42 +17,41 @@ Mmentum will therefore:
 - Add `2025-11-25` compatibility only if an important client requires it
 - Implement OAuth with maintained libraries rather than writing OAuth itself
 
-The initial product tool surface is defined in [`mcp-tools.md`](mcp-tools.md).
-
 ## Authorization
 
-Mmentum will use OAuth 2.1 for public client connections.
+Mmentum uses OAuth Authorization Code with PKCE for public clients.
 
-Use [`attesto_phoenix`](https://github.com/XukuLLC/attesto_phoenix) for authorization, token, discovery, consent, revocation, and JWKS endpoints. Use `attesto_mcp` for MCP protected-resource metadata and bearer-token validation.
+[`attesto_phoenix`](https://github.com/XukuLLC/attesto_phoenix) supplies authorization, token issuance, consent, and public signing keys. Mmentum publishes discovery documents describing the supported flow. `attesto_mcp` supplies protected-resource metadata and bearer-token validation.
 
-The OAuth flow will:
+The OAuth flow:
 
-- Reuse Mmentum's existing Phoenix login and user sessions
-- Use Authorization Code with PKCE for public MCP clients
-- Offer `mmentum:read` and `mmentum:write` scopes
-- Issue short-lived access tokens bound to the hosted MCP URL as their audience
-- Issue rotating refresh tokens so approved clients can reconnect without sending the user through browser authorization whenever an access token expires
-- Map each token subject to one Mmentum user
-- Let users review and revoke connected clients
-- Store private signing keys in production secrets and publish public keys through JWKS
+- Reuses existing Phoenix login and user sessions
+- Offers `mmentum:read` and `mmentum:write` scopes
+- Issues five-minute access tokens valid only for this MCP server
+- Rotates refresh tokens so approved clients can renew access without another browser approval
+- Maps each token to one Mmentum user and an active approved connection
+- Lets users review and disconnect clients
+- Reads production signing keys from secrets and publishes only public keys through JWKS
 
 AttestoPhoenix 3.2.1 rejects public clients at its revocation endpoint. Mmentum therefore uses browser-owned Connected apps Disconnect as its supported revocation path.
 
-OAuth is wired into Mmentum with real bearer authentication in every environment. There is no local authentication bypass. Production requires configured issuer and signing key material at startup.
+All OAuth routes, including discovery, require HTTPS. MCP requests require a valid bearer token in every environment. Production requires a configured issuer and signing key at startup.
+
+Register public clients through `OAUTH_PUBLIC_CLIENTS_JSON`. Callback addresses must use HTTPS, except that HTTP is allowed for `localhost`, `127.0.0.1`, and `::1`. Startup rejects callbacks without a host or with userinfo or a fragment. Authorization still requires an exact match to a registered address. Dynamic registration and Client ID Metadata Documents are not implemented.
 
 ## Client compatibility
 
-The first compatibility targets are:
+Local client checks on September 22, 2026:
 
-- Claude Code
-- Claude
-- ChatGPT
-- Codex
-- OpenCode
-- Pi
-- OMP
+- **OpenCode 2.0.12:** login, approval, token exchange, discovery, empty tool listing, refresh after expiry, and Disconnect passed with `protocol: "2026-07-28"`.
+- **Pi 0.85.1 / pi-mcp-adapter 2.34.0:** the same flow passed with `protocolVersion: "2026-07-28"`.
+- **Claude Code 2.1.170:** login, approval, and token exchange succeeded. Token storage failed in the isolated client setup, so automatic refresh was not verified. A separate valid-bearer test reached our request parser but failed because this build uses the older MCP request format. Disconnect invalidated that bearer.
 
-Verify which protocol versions these clients use before implementation. This determines whether Mmentum can ship only the stateless `2026-07-28` transport or must also support the older `2025-11-25` handshake.
+OpenCode and Pi default to the older `initialize` flow; set the version explicitly. Configure a public client ID, requested scopes, and the exact registered callback address. Public clients need no client secret. A URL alone is insufficient because the server does not register clients automatically.
+
+Local OAuth requires HTTPS. Use the existing `OAUTH_DEV_TLS_CERTFILE` and `OAUTH_DEV_TLS_KEYFILE` settings with a locally trusted certificate, and set `OAUTH_ISSUER` to that HTTPS origin. Keep certificate and key files outside the checkout. The ordinary HTTP development server alone is insufficient for this flow.
+
+Current Claude Code, Claude, ChatGPT, Codex, and OMP remain unverified. These results establish the tested flows, not complete protocol conformance. Test a current Claude Code release before deciding whether to add support for older requests.
 
 ## Application shape
 
@@ -95,7 +94,7 @@ The embedded agent includes these tool modules in its agent context in the same 
 ### MCP transport
 
 - `router.ex` mounts `/mcp` with `forward`, following EMCP's router shape. The endpoint skips its normal body parser for this scope but does not bypass the router
-- `Mmentum.MCP.Transport.StreamableHTTP` reads MCP requests from HTTP, checks that they are valid, and writes HTTP replies. It validates messages once before comparing headers and calling the server
+- `Mmentum.MCP.Transport.StreamableHTTP` parses JSON and checks the request envelope, required metadata, known client capability shapes, client details, log level, progress token, and pagination cursor type before comparing routing headers and dispatching. Unknown extension fields remain open; unused tracing fields are not interpreted
 - `Mmentum.MCP.Server` handles MCP operations such as discovering the server and listing tools. It receives validated requests and returns results or named failures, without handling HTTP
 - `Mmentum.MCP.JSONRPC` builds JSON-RPC replies and maps named errors to numeric codes. The transport chooses HTTP status codes
 - OAuth authentication runs in a dedicated MCP router pipeline before the transport. Do not register real tools before scopes and tool validation are ready
@@ -104,23 +103,10 @@ The remote request flow is:
 
 `MCP client -> router MCP scope/authentication -> Streamable HTTP Plug -> MCP server -> Mmentum.Tools -> tool module -> application boundary`
 
-## First implementation slice
-
-The first slice creates only:
-
-- The Phoenix MCP scope and empty Streamable HTTP Plug boundary
-- `Mmentum.Tools`
-- The `Mmentum.Tools.Tool` behaviour
-- Tests proving the empty tool catalog and reserved MCP endpoint behave as expected
-
-Do not add a fake tool solely to test the behaviour. Implement and test the behaviour with the first real habit tool. Add each real tool later as its own vertical slice. James will design and write the application implementation behind each tool when that slice begins.
-
-## Second implementation slice
-
-The smallest useful MCP `2026-07-28` protocol path without adding a product tool is implemented:
+## Implemented behavior
 
 - Route stateless Streamable HTTP POST requests through the Phoenix router, leaving their bodies for the transport to parse
-- Require the protocol, method, name, exact content type, and accepted response headers defined by the MCP specification
+- Require protocol and method headers, the name header for named operations, the `application/json` content type, and acceptance of JSON and SSE responses
 - Allow absent Origin headers for non-browser clients and reject browser origins outside the configured application origin
 - Check that routing headers match the JSON-RPC body
 - Implement `server/discover` with the server identity, supported version, and tools capability
@@ -129,16 +115,15 @@ The smallest useful MCP `2026-07-28` protocol path without adding a product tool
 - Return `resultType`, server metadata, cache hints, and standard JSON-RPC errors
 - Reject legacy GET and DELETE transport requests
 
-Full JSON Schema validation and the seven tools remain later slices. Client compatibility remains unverified.
+There are no habit tools or `tools/call` implementation yet. Tool argument/output validation and per-tool scope enforcement belong with the first real tool. Add each tool as a small complete change; do not introduce fake tools to test the registry. James will design and write the application implementation behind each tool.
 
-The transport returns HTTP 400 for malformed request metadata and header errors, and HTTP 404 for unknown methods. `clientInfo` is optional. Request IDs must be strings or integers; notifications have no ID. Encoded name headers are decoded before comparison.
+The transport returns HTTP 400 for invalid checked fields and header errors, and HTTP 404 for unknown methods. `clientInfo` is optional. Request IDs must be strings or integers; error responses omit the ID when it cannot be read. No notification operation is implemented; unknown notifications receive HTTP 202 with no response body. Encoded name headers are decoded before comparison.
 
 Primary references: [MCP messages and metadata](https://modelcontextprotocol.io/specification/2026-07-28/basic) and [Streamable HTTP](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http). EMCP provides implementation examples, not the authority for this protocol version.
 
 ## Deferred until later slices
 
-- Confirm real client support for MCP `2026-07-28`
-- Exercise OAuth with real browsers and target clients
-- Choose the JSON Schema validation mechanism
+- Confirm protocol and OAuth compatibility with ChatGPT and the remaining target clients
+- Choose JSON Schema validation for tool arguments and results
 - Define client-safe messages for real tool execution errors
 - Define the execution context from the needs of the first real tool
