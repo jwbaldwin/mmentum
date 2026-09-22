@@ -39,6 +39,7 @@ defmodule MmentumWeb.Router do
   end
 
   scope "/", MmentumWeb do
+    pipe_through :oauth
     get "/.well-known/oauth-authorization-server", OAuthController, :discovery
     get "/.well-known/oauth-protected-resource/mcp", OAuthController, :resource_metadata
   end
