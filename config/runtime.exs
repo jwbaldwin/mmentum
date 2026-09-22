@@ -150,6 +150,17 @@ clients =
     json -> Jason.decode!(json)
   end
 
+for client <- clients, redirect <- Map.fetch!(client, "redirect_uris") do
+  uri = URI.new!(redirect)
+  secure? = uri.scheme == "https"
+  local? = uri.scheme == "http" and uri.host in ["localhost", "127.0.0.1", "::1"]
+
+  unless (secure? or local?) and is_binary(uri.host) and uri.host != "" and
+           is_nil(uri.userinfo) and is_nil(uri.fragment) do
+    raise ArgumentError, "OAuth redirect URI must use HTTPS or local HTTP, with a host and no userinfo or fragment"
+  end
+end
+
 config :mmentum, :oauth_clients, clients
 
 config :mmentum, AttestoPhoenix.Config,

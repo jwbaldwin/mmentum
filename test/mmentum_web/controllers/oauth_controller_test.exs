@@ -39,6 +39,13 @@ defmodule MmentumWeb.OAuthControllerTest do
     assert resource["authorization_servers"] == [OAuth.config().issuer]
   end
 
+  test "OAuth metadata requires HTTPS without requiring login" do
+    for path <- ["/.well-known/oauth-authorization-server", "/.well-known/oauth-protected-resource/mcp"] do
+      assert build_conn() |> get("http://localhost:4000" <> path) |> response(400)
+      assert OAuthFixtures.https_conn() |> get(OAuth.config().issuer <> path) |> json_response(200)
+    end
+  end
+
   test "JWKS publishes verification keys without private key material" do
     assert %{"keys" => [_ | _] = keys} =
              OAuthFixtures.https_conn() |> get(OAuth.config().issuer <> "/.well-known/jwks.json") |> json_response(200)
