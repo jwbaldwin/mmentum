@@ -60,6 +60,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTP do
   defp process_request(conn, request) do
     with :ok <- validate_message(request),
          :ok <- validate_metadata(request),
+         :ok <- validate_params(request),
          :ok <- validate_headers(conn, request) do
       if Map.has_key?(request, "id") do
         respond(conn, request, Server.handle(request))
@@ -95,10 +96,25 @@ defmodule Mmentum.MCP.Transport.StreamableHTTP do
         }
       }
       when is_binary(version) and is_map(capabilities) ->
-        case Map.fetch(metadata, "io.modelcontextprotocol/clientInfo") do
-          :error -> :ok
-          {:ok, %{"name" => name, "version" => version}} when is_binary(name) and is_binary(version) -> :ok
-          _invalid -> error(400, request, :invalid_params, "Invalid clientInfo")
+        cond do
+          not valid_capabilities?(capabilities) ->
+            error(400, request, :invalid_params, "Invalid clientCapabilities")
+
+          not optional_field?(metadata, "io.modelcontextprotocol/clientInfo", &valid_client_info?/1) ->
+            error(400, request, :invalid_params, "Invalid clientInfo")
+
+          not optional_field?(
+            metadata,
+            "io.modelcontextprotocol/logLevel",
+            &(&1 in ~w(debug info notice warning error critical alert emergency))
+          ) ->
+            error(400, request, :invalid_params, "Invalid logLevel")
+
+          not optional_field?(metadata, "progressToken", &(is_binary(&1) or is_integer(&1))) ->
+            error(400, request, :invalid_params, "Invalid progressToken")
+
+          true ->
+            :ok
         end
 
       _invalid ->
@@ -107,6 +123,62 @@ defmodule Mmentum.MCP.Transport.StreamableHTTP do
   end
 
   defp validate_metadata(_notification), do: :ok
+
+  defp validate_params(%{"method" => "tools/list", "params" => params} = request) do
+    if optional_field?(params, "cursor", &is_binary/1),
+      do: :ok,
+      else: error(400, request, :invalid_params, "cursor must be a string")
+  end
+
+  defp validate_params(_request), do: :ok
+
+  defp valid_capabilities?(capabilities) do
+    optional_field?(capabilities, "roots", &is_map/1) and
+      optional_field?(capabilities, "sampling", &object_fields?(&1, ~w(context tools))) and
+      optional_field?(capabilities, "elicitation", &object_fields?(&1, ~w(form url))) and
+      Enum.all?(~w(experimental extensions), fn key ->
+        optional_field?(capabilities, key, fn settings ->
+          is_map(settings) and Enum.all?(settings, fn {_name, options} -> is_map(options) end)
+        end)
+      end)
+  end
+
+  defp object_fields?(value, fields) do
+    is_map(value) and Enum.all?(fields, &optional_field?(value, &1, fn field -> is_map(field) end))
+  end
+
+  defp valid_client_info?(%{"name" => name, "version" => version} = info)
+       when is_binary(name) and is_binary(version) do
+    Enum.all?(~w(title description), &optional_field?(info, &1, fn value -> is_binary(value) end)) and
+      optional_field?(info, "websiteUrl", &absolute_uri?/1) and
+      optional_field?(info, "icons", fn icons -> is_list(icons) and Enum.all?(icons, &valid_icon?/1) end)
+  end
+
+  defp valid_client_info?(_info), do: false
+
+  defp valid_icon?(%{"src" => src} = icon) do
+    absolute_uri?(src) and optional_field?(icon, "mimeType", &is_binary/1) and
+      optional_field?(icon, "theme", &(&1 in ["light", "dark"])) and
+      optional_field?(icon, "sizes", fn sizes -> is_list(sizes) and Enum.all?(sizes, &is_binary/1) end)
+  end
+
+  defp valid_icon?(_icon), do: false
+
+  defp absolute_uri?(value) when is_binary(value) do
+    case URI.new(value) do
+      {:ok, %URI{scheme: scheme}} when is_binary(scheme) -> true
+      _invalid -> false
+    end
+  end
+
+  defp absolute_uri?(_value), do: false
+
+  defp optional_field?(object, key, valid?) do
+    case Map.fetch(object, key) do
+      :error -> true
+      {:ok, value} -> valid?.(value)
+    end
+  end
 
   defp validate_headers(conn, request) do
     with {:ok, version} <- header(conn, "mcp-protocol-version", request),

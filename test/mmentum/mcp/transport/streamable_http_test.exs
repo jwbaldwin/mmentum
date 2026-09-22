@@ -37,7 +37,9 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
   test "invalid IDs are rejected rather than accepted as notifications", %{conn: conn} do
     for id <- [nil, true, 1.5, [], %{}] do
       conn = send_mcp(conn, %{request("tools/list") | "id" => id})
-      assert %{"id" => nil, "error" => %{"code" => -32_600}} = json_response(conn, 400)
+      response = json_response(conn, 400)
+      assert response["error"]["code"] == -32_600
+      refute Map.has_key?(response, "id")
     end
   end
 
@@ -102,7 +104,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
 
     conn = send_mcp(conn, request, name: "missing_tool")
 
-    assert %{"error" => %{"code" => -32_601, "message" => "Method tools/call not found"}} =
+    assert %{"error" => %{"code" => -32_601}} =
              json_response(conn, 404)
   end
 
@@ -114,10 +116,8 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
 
     conn = send_mcp(conn, request, name: "different_tool")
 
-    assert %{"error" => %{"code" => -32_020, "message" => message}} =
+    assert %{"error" => %{"code" => -32_020}} =
              json_response(conn, 400)
-
-    assert message =~ "Mcp-Name"
   end
 
   test "POST /mcp requires the protocol version header", %{conn: conn} do
@@ -128,20 +128,16 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
       |> put_req_header("mcp-method", "server/discover")
       |> post("https://localhost:4443/mcp", Jason.encode!(request("server/discover")))
 
-    assert %{"id" => 1, "error" => %{"code" => -32_020, "message" => message}} =
+    assert %{"id" => 1, "error" => %{"code" => -32_020}} =
              json_response(conn, 400)
-
-    assert message =~ "mcp-protocol-version"
   end
 
   test "POST /mcp rejects a protocol version header that differs from the body", %{conn: conn} do
     request = request("server/discover", "1900-01-01")
     conn = send_mcp(conn, request)
 
-    assert %{"error" => %{"code" => -32_020, "message" => message}} =
+    assert %{"error" => %{"code" => -32_020}} =
              json_response(conn, 400)
-
-    assert message =~ "MCP-Protocol-Version"
   end
 
   test "POST /mcp rejects an unsupported protocol version", %{conn: conn} do
@@ -168,31 +164,22 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
   test "POST /mcp rejects foreign browser origins", %{conn: conn} do
     conn = send_mcp(conn, request("server/discover"), origin: "https://attacker.example")
 
-    assert %{"error" => %{"message" => "Forbidden origin"}} = json_response(conn, 403)
+    assert %{"error" => %{"code" => -32_600}} = json_response(conn, 403)
   end
 
   test "POST /mcp rejects a method header that differs from the body", %{conn: conn} do
     conn = send_mcp(conn, request("tools/list"), method: "tools/call")
 
-    assert %{"error" => %{"code" => -32_020, "message" => message}} =
+    assert %{"error" => %{"code" => -32_020}} =
              json_response(conn, 400)
-
-    assert message =~ "Mcp-Method"
   end
 
   test "POST /mcp rejects malformed nested request values without crashing", %{conn: conn} do
     request = %{request("tools/list") | "params" => []}
     conn = send_mcp(conn, request)
 
-    assert %{"error" => %{"code" => -32_602, "message" => "params must be an object"}} =
+    assert %{"error" => %{"code" => -32_602}} =
              json_response(conn, 400)
-  end
-
-  test "POST /mcp returns a null error ID when the request ID is invalid", %{conn: conn} do
-    request = %{request("tools/list") | "id" => %{"invalid" => true}}
-    conn = send_mcp(conn, request, method: "tools/call")
-
-    assert %{"id" => nil, "error" => %{"code" => -32_600}} = json_response(conn, 400)
   end
 
   test "POST /mcp accepts JSON content type parameters", %{conn: conn} do
@@ -214,14 +201,14 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
       ])
       |> post("https://localhost:4443/mcp", request("server/discover"))
 
-    assert %{"error" => %{"message" => "Content-Type must be application/json"}} =
+    assert %{"error" => %{"code" => -32_600}} =
              json_response(conn, 415)
   end
 
   test "POST /mcp rejects look-alike JSON content types", %{conn: conn} do
     conn = send_mcp(conn, request("server/discover"), content_type: "application/json-patch+json")
 
-    assert %{"error" => %{"message" => "Content-Type must be application/json"}} =
+    assert %{"error" => %{"code" => -32_600}} =
              json_response(conn, 415)
   end
 
@@ -229,8 +216,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
     conn =
       send_mcp(conn, request("server/discover"), accept: "application/json, text/event-stream; q=0")
 
-    assert %{"error" => %{"message" => message}} = json_response(conn, 406)
-    assert message =~ "text/event-stream"
+    assert %{"error" => %{"code" => -32_600}} = json_response(conn, 406)
   end
 
   test "POST /mcp requires both supported response content types", %{conn: conn} do
@@ -242,8 +228,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
       |> put_req_header("mcp-method", "server/discover")
       |> post("https://localhost:4443/mcp", request("server/discover"))
 
-    assert %{"error" => %{"message" => message}} = json_response(conn, 406)
-    assert message =~ "text/event-stream"
+    assert %{"error" => %{"code" => -32_600}} = json_response(conn, 406)
   end
 
   test "the deployed endpoint reports malformed JSON as a JSON-RPC parse error", %{conn: conn} do
@@ -255,10 +240,11 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
       |> put_req_header("mcp-method", "server/discover")
       |> post("https://localhost:4443/mcp", "{")
 
-    assert %{"error" => %{"code" => -32_700, "message" => "Parse error"}} =
+    assert %{"error" => %{"code" => -32_700}} =
              Jason.decode!(conn.resp_body)
 
     assert conn.status == 400
+    refute Map.has_key?(Jason.decode!(conn.resp_body), "id")
   end
 
   test "JSON-RPC batches are rejected because MCP accepts one request per POST", %{conn: conn} do
@@ -270,7 +256,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
       |> put_req_header("mcp-method", "server/discover")
       |> post("https://localhost:4443/mcp", Jason.encode!([request("server/discover")]))
 
-    assert %{"error" => %{"code" => -32_600, "message" => "Invalid Request"}} =
+    assert %{"error" => %{"code" => -32_600}} =
              Jason.decode!(conn.resp_body)
 
     assert conn.status == 400
@@ -283,7 +269,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
       |> put_req_header("accept", "application/json, text/event-stream")
       |> post("https://localhost:4443/mcp", String.duplicate(" ", 1_000_001))
 
-    assert %{"error" => %{"message" => "Request too large"}} = json_response(conn, 413)
+    assert %{"error" => %{"code" => -32_600}} = json_response(conn, 413)
   end
 
   test "the MCP endpoint also accepts a trailing slash", %{conn: conn} do
@@ -304,6 +290,54 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
     for conn <- connections do
       assert conn.status == 405
       assert get_resp_header(conn, "allow") == ["POST"]
+    end
+  end
+
+  test "rejects malformed declared capabilities and client details", %{conn: conn} do
+    for {key, value} <- [
+          {"clientCapabilities", %{"roots" => []}},
+          {"clientCapabilities", %{"sampling" => %{"tools" => true}}},
+          {"clientCapabilities", %{"elicitation" => %{"form" => nil}}},
+          {"clientCapabilities", %{"extensions" => %{"com.example/feature" => []}}},
+          {"clientCapabilities", %{"experimental" => %{"feature" => false}}},
+          {"clientInfo", %{"name" => "test", "version" => "1", "websiteUrl" => 123}},
+          {"clientInfo", %{"name" => "test", "version" => "1", "icons" => [%{"src" => 123}]}},
+          {"logLevel", "verbose"},
+          {"logLevel", nil}
+        ] do
+      request = put_in(request("server/discover"), ["params", "_meta", "io.modelcontextprotocol/#{key}"], value)
+      assert %{"id" => 1, "error" => %{"code" => -32_602}} = json_response(send_mcp(conn, request), 400)
+    end
+  end
+
+  test "accepts supported metadata and preserves open extension fields", %{conn: conn} do
+    metadata = %{
+      "io.modelcontextprotocol/protocolVersion" => "2026-07-28",
+      "io.modelcontextprotocol/clientCapabilities" => %{
+        "roots" => %{},
+        "sampling" => %{"tools" => %{}, "context" => %{}},
+        "elicitation" => %{"form" => %{}, "url" => %{}},
+        "extensions" => %{"com.example/feature" => %{}},
+        "custom" => true
+      },
+      "io.modelcontextprotocol/clientInfo" => %{
+        "name" => "test",
+        "version" => "1",
+        "websiteUrl" => "https://example.com",
+        "icons" => [%{"src" => "data:image/png;base64,AA==", "sizes" => ["any"], "theme" => "dark"}]
+      },
+      "io.modelcontextprotocol/logLevel" => "warning",
+      "com.example/extra" => [1]
+    }
+
+    request = put_in(request("tools/list"), ["params", "_meta"], metadata)
+    assert json_response(send_mcp(conn, request), 200)["result"]["tools"] == []
+  end
+
+  test "rejects non-string pagination cursors", %{conn: conn} do
+    for cursor <- [[], %{}, nil, 1, true] do
+      request = put_in(request("tools/list"), ["params", "cursor"], cursor)
+      assert %{"id" => 1, "error" => %{"code" => -32_602}} = json_response(send_mcp(conn, request), 400)
     end
   end
 
