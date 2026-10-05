@@ -1,4 +1,5 @@
 defmodule MmentumWeb.UserRegistrationLive do
+  @moduledoc false
   use MmentumWeb, :live_view
 
   alias Mmentum.Accounts

@@ -1,6 +1,10 @@
 defmodule Mmentum.Habits.Habit do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
+
+  alias Mmentum.Logs.Log
 
   schema "habits" do
     field :min_completions, :integer
@@ -12,7 +16,7 @@ defmodule Mmentum.Habits.Habit do
     field :what_counts, :string
 
     belongs_to :user, Mmentum.Accounts.User
-    has_many :logs, Mmentum.Logs.Log, on_delete: :delete_all
+    has_many :logs, Log, on_delete: :delete_all
 
     timestamps()
   end
@@ -28,7 +32,7 @@ defmodule Mmentum.Habits.Habit do
           min_completions: integer() | nil,
           max_completions: integer() | nil,
           user_id: integer() | nil,
-          logs: [Mmentum.Logs.Log.t()] | Ecto.Association.NotLoaded.t()
+          logs: [Log.t()] | Ecto.Association.NotLoaded.t()
         }
 
   @doc "Returns the most completions displayed for the habit's current period"

@@ -33,7 +33,7 @@ if Mix.env() == :dev do
   changeset
   |> Ecto.Changeset.put_change(
     :confirmed_at,
-    NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
   )
   |> Repo.insert_or_update!()
 

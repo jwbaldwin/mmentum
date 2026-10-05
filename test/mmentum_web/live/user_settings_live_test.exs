@@ -1,9 +1,10 @@
 defmodule MmentumWeb.UserSettingsLiveTest do
   use MmentumWeb.ConnCase
 
-  alias Mmentum.Accounts
-  import Phoenix.LiveViewTest
   import Mmentum.AccountsFixtures
+  import Phoenix.LiveViewTest
+
+  alias Mmentum.Accounts
 
   describe "Settings page" do
     test "renders settings page", %{conn: conn} do
@@ -35,7 +36,7 @@ defmodule MmentumWeb.UserSettingsLiveTest do
       |> form("#time_zone_form", user: %{time_zone: "America/New_York"})
       |> render_submit()
 
-      assert Accounts.get_user!(user.id).time_zone == "America/New_York"
+      assert Mmentum.Repo.reload!(user).time_zone == "America/New_York"
       assert has_element?(lv, ~s|#time_zone_form input[value="America/New_York"]|)
     end
   end

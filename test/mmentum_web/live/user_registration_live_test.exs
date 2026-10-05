@@ -1,8 +1,8 @@
 defmodule MmentumWeb.UserRegistrationLiveTest do
   use MmentumWeb.ConnCase
 
-  import Phoenix.LiveViewTest
   import Mmentum.AccountsFixtures
+  import Phoenix.LiveViewTest
 
   describe "Registration page" do
     test "renders registration page", %{conn: conn} do

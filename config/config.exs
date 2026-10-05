@@ -7,14 +7,26 @@
 # General application configuration
 import Config
 
-config :mmentum,
-  ecto_repos: [Mmentum.Repo]
+config :attesto_phoenix, otp_app: :mmentum
 
 config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
-config :mmentum, :oauth_consent, salt: "oauth-consent-request", max_age: 300
+# Configure esbuild (the version is required)
+config :esbuild,
+  version: "0.28.1",
+  default: [
+    args:
+      ~w(js/app.js js/theme.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
+    cd: Path.expand("../assets", __DIR__),
+    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+  ]
 
-config :attesto_phoenix, otp_app: :mmentum
+config :excellent_migrations, start_after: "20260906023636"
+
+# Configures Elixir's Logger
+config :logger, :console,
+  format: "$time $metadata[$level] $message\n",
+  metadata: [:request_id]
 
 config :mmentum, AttestoPhoenix.Config,
   keystore: Attesto.Keystore.Static,
@@ -44,6 +56,15 @@ config :mmentum, AttestoPhoenix.Config,
   sweep_interval_ms: 60_000,
   dpop_enabled: false
 
+# Configures the mailer
+#
+# By default it uses the "Local" adapter which stores the emails
+# locally. You can see the emails in your browser, at "/dev/mailbox".
+#
+# For production it's recommended to configure a different adapter
+# at the `config/runtime.exs`.
+config :mmentum, Mmentum.Mailer, adapter: Swoosh.Adapters.Local
+
 # Configures the endpoint
 config :mmentum, MmentumWeb.Endpoint,
   adapter: Bandit.PhoenixAdapter,
@@ -55,24 +76,15 @@ config :mmentum, MmentumWeb.Endpoint,
   pubsub_server: Mmentum.PubSub,
   live_view: [signing_salt: "Yi2QGI4t"]
 
-# Configures the mailer
-#
-# By default it uses the "Local" adapter which stores the emails
-# locally. You can see the emails in your browser, at "/dev/mailbox".
-#
-# For production it's recommended to configure a different adapter
-# at the `config/runtime.exs`.
-config :mmentum, Mmentum.Mailer, adapter: Swoosh.Adapters.Local
+config :mmentum, :oauth_consent, salt: "oauth-consent-request", max_age: 300
 
-# Configure esbuild (the version is required)
-config :esbuild,
-  version: "0.28.1",
-  default: [
-    args:
-      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
-    cd: Path.expand("../assets", __DIR__),
-    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
-  ]
+config :mmentum,
+  ecto_repos: [Mmentum.Repo]
+
+config :phoenix, :filter_parameters, ["password", "secret", "token", "code", "request"]
+
+# Use Jason for JSON parsing in Phoenix
+config :phoenix, :json_library, Jason
 
 # Configure tailwind (the version is required)
 config :tailwind,
@@ -84,15 +96,6 @@ config :tailwind,
     ),
     cd: Path.expand("../assets", __DIR__)
   ]
-
-# Configures Elixir's Logger
-config :logger, :console,
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
-
-# Use Jason for JSON parsing in Phoenix
-config :phoenix, :json_library, Jason
-config :phoenix, :filter_parameters, ["password", "secret", "token", "code", "request"]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

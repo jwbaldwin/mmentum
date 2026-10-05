@@ -1,10 +1,11 @@
 defmodule Mmentum.AccountsTest do
   use Mmentum.DataCase
 
-  alias Mmentum.Accounts
-
   import Mmentum.AccountsFixtures
-  alias Mmentum.Accounts.{User, UserToken}
+
+  alias Mmentum.Accounts
+  alias Mmentum.Accounts.User
+  alias Mmentum.Accounts.UserToken
 
   describe "get_user_by_email/1" do
     test "does not return the user if the email does not exist" do
@@ -32,19 +33,6 @@ defmodule Mmentum.AccountsTest do
 
       assert %User{id: ^id} =
                Accounts.get_user_by_email_and_password(user.email, valid_user_password())
-    end
-  end
-
-  describe "get_user!/1" do
-    test "raises if id is invalid" do
-      assert_raise Ecto.NoResultsError, fn ->
-        Accounts.get_user!(-1)
-      end
-    end
-
-    test "returns the user with the given id" do
-      %{id: id} = user = user_fixture()
-      assert %User{id: ^id} = Accounts.get_user!(user.id)
     end
   end
 
@@ -185,7 +173,7 @@ defmodule Mmentum.AccountsTest do
       email = unique_user_email()
       {:ok, user} = Accounts.apply_user_email(user, valid_user_password(), %{email: email})
       assert user.email == email
-      assert Accounts.get_user!(user.id).email != email
+      assert Repo.reload!(user).email != email
     end
   end
 

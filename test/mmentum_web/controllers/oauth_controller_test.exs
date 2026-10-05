@@ -102,7 +102,7 @@ defmodule MmentumWeb.OAuthControllerTest do
     connection = Repo.one!(from connection in Connection, where: connection.user_id == ^user.id)
     assert connection.id == claims["mmentum_grant_id"]
     assert connection.client_id == "oauth-test"
-    assert connection.refresh_family_id != nil
+    assert connection.refresh_family_id
     assert connection.refresh_family_id != connection.id
     assert connection.scopes == ["mmentum:read", "mmentum:write"]
   end
@@ -115,6 +115,29 @@ defmodule MmentumWeb.OAuthControllerTest do
     assert_raise Plug.CSRFProtection.InvalidCSRFTokenError, fn ->
       post(OAuthFixtures.browser_recycle(conn), "https://localhost:4443/oauth/consent", fields)
     end
+  end
+
+  test "consent permits only the validated callback origin for form redirects", %{user: user} do
+    {params, _verifier} = OAuthFixtures.authorization_params()
+    {conn, _fields} = OAuthFixtures.consent_form(log_in_user(OAuthFixtures.https_conn(), user), params)
+    [policy] = get_resp_header(conn, "content-security-policy")
+    assert "form-action 'self' https://client.example" in String.split(policy, "; ")
+  end
+
+  test "GET cannot approve consent using copied fields and decision", %{user: user} do
+    {params, _verifier} = OAuthFixtures.authorization_params()
+    {conn, fields} = OAuthFixtures.consent_form(log_in_user(OAuthFixtures.https_conn(), user), params)
+
+    fields = fields |> Map.delete("request") |> Map.put("decision", "allow")
+
+    conn =
+      conn
+      |> OAuthFixtures.browser_recycle()
+      |> get("https://localhost:4443/oauth/authorize", Map.merge(params, fields))
+
+    assert html_response(conn, 200) =~ "Allow"
+    assert get_resp_header(conn, "location") == []
+    assert Repo.aggregate(Connection, :count) == 0
   end
 
   test "denies consent without minting an authorization code", %{user: user} do

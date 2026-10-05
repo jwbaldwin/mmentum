@@ -1,4 +1,5 @@
 defmodule Mmentum.Accounts.UserNotifier do
+  @moduledoc false
   import Swoosh.Email
 
   alias Mmentum.Mailer

@@ -1,4 +1,5 @@
 defmodule MmentumWeb.Layouts do
+  @moduledoc false
   use MmentumWeb, :html
 
   @tau 2 * :math.pi()
@@ -7,7 +8,7 @@ defmodule MmentumWeb.Layouts do
 
   attr :current_user, :any, required: true
 
-  def account_menu(assigns) do
+  defp account_menu(assigns) do
     ~H"""
     <details
       id="account-menu"
@@ -116,7 +117,7 @@ defmodule MmentumWeb.Layouts do
   attr :seed, :string, required: true
   attr :class, :string, default: nil
 
-  def avatar(assigns) do
+  defp avatar(assigns) do
     assigns = assign(assigns, :model, avatar_model(assigns.seed))
 
     ~H"""

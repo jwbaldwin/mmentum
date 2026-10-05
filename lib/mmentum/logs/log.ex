@@ -1,5 +1,7 @@
 defmodule Mmentum.Logs.Log do
+  @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
 
   schema "logs" do

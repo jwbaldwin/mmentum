@@ -4,7 +4,9 @@ defmodule Mmentum.MCP.Transport.StreamableHTTP do
   @behaviour Plug
 
   import Plug.Conn
+
   alias Mmentum.MCP.Versions
+  alias Plug.Conn.Utils
 
   @impl Plug
   def init(options), do: options
@@ -39,18 +41,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTP do
       {:ok, body, conn} ->
         case Jason.decode(body) do
           {:ok, request} ->
-            {server, _response} = Versions.select(request, conn.req_headers)
-
-            context = %{
-              user: conn.assigns.current_user,
-              scopes: Mmentum.Tools.Scope.from_oauth(conn.assigns.attesto_mcp_scopes),
-              now: DateTime.utc_now()
-            }
-
-            case server.handle(request, conn.req_headers, context) do
-              {202, nil} -> conn |> send_resp(202, "") |> halt()
-              {status, response} -> send_json(conn, status, response)
-            end
+            dispatch_request(conn, request)
 
           {:error, _reason} ->
             send_error(conn, 400, :parse_error, "Parse error")
@@ -61,6 +52,21 @@ defmodule Mmentum.MCP.Transport.StreamableHTTP do
 
       {:error, _reason} ->
         send_error(conn, 400, :invalid_request, "Could not read request body")
+    end
+  end
+
+  defp dispatch_request(conn, request) do
+    {server, _response} = Versions.select(request, conn.req_headers)
+
+    context = %{
+      user: conn.assigns.current_user,
+      scopes: Mmentum.Tools.Scope.from_oauth(conn.assigns.attesto_mcp_scopes),
+      now: DateTime.utc_now()
+    }
+
+    case server.handle(request, conn.req_headers, context) do
+      {202, nil} -> conn |> send_resp(202, "") |> halt()
+      {status, response} -> send_json(conn, status, response)
     end
   end
 
@@ -97,7 +103,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTP do
 
   defp validate_content_type(conn) do
     with [content_type] <- get_req_header(conn, "content-type"),
-         {:ok, "application", "json", _params} <- Plug.Conn.Utils.content_type(content_type) do
+         {:ok, "application", "json", _params} <- Utils.content_type(content_type) do
       :ok
     else
       _invalid -> {:error, 415, :invalid_request, "Content-Type must be application/json"}
@@ -115,7 +121,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTP do
     |> get_req_header("accept")
     |> Enum.flat_map(&String.split(&1, ","))
     |> Enum.any?(fn media_range ->
-      case Plug.Conn.Utils.media_type(media_range) do
+      case Utils.media_type(media_range) do
         {:ok, ^type, ^subtype, params} -> positive_quality?(params["q"])
         _other -> false
       end

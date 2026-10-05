@@ -1,8 +1,8 @@
 defmodule MmentumWeb.UserLoginLiveTest do
   use MmentumWeb.ConnCase
 
-  import Phoenix.LiveViewTest
   import Mmentum.AccountsFixtures
+  import Phoenix.LiveViewTest
 
   describe "Log in page" do
     test "renders log in page", %{conn: conn} do

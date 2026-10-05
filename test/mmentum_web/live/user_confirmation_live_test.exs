@@ -1,8 +1,8 @@
 defmodule MmentumWeb.UserConfirmationLiveTest do
   use MmentumWeb.ConnCase
 
-  import Phoenix.LiveViewTest
   import Mmentum.AccountsFixtures
+  import Phoenix.LiveViewTest
 
   alias Mmentum.Accounts
   alias Mmentum.Repo
@@ -36,7 +36,7 @@ defmodule MmentumWeb.UserConfirmationLiveTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "Account confirmed."
 
-      assert Accounts.get_user!(user.id).confirmed_at
+      assert Repo.reload!(user).confirmed_at
       refute get_session(conn, :user_token)
       assert Repo.all(Accounts.UserToken) == []
 
@@ -55,9 +55,7 @@ defmodule MmentumWeb.UserConfirmationLiveTest do
                "This confirmation link is invalid or has expired."
 
       # when logged in
-      conn =
-        build_conn()
-        |> log_in_user(user)
+      conn = log_in_user(build_conn(), user)
 
       {:ok, lv, _html} = live(conn, ~p"/users/confirm/#{token}")
 
@@ -83,7 +81,7 @@ defmodule MmentumWeb.UserConfirmationLiveTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
                "This confirmation link is invalid or has expired."
 
-      refute Accounts.get_user!(user.id).confirmed_at
+      refute Repo.reload!(user).confirmed_at
     end
   end
 end

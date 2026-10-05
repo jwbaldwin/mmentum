@@ -27,8 +27,7 @@ defmodule Mmentum.MCP.Versions.V2025_11_25.Response do
      })}
   end
 
-  def tool_call(id, {:error, :tool_not_found}),
-    do: {200, error(id, :invalid_params, "Unknown tool")}
+  def tool_call(id, {:error, :tool_not_found}), do: {200, error(id, :invalid_params, "Unknown tool")}
 
   def tool_call(id, {:error, _reason, message}) do
     {200, result(id, %{"isError" => true, "content" => [%{"type" => "text", "text" => message}]})}

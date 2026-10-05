@@ -1,7 +1,9 @@
 defmodule Mmentum.ToolsTest do
   use Mmentum.DataCase, async: true
 
+  alias Mmentum.Logs.Log
   alias Mmentum.Tools
+  alias Mmentum.Tools.Scope
 
   test "scope checks run before a tool executes" do
     assert {:error, :insufficient_scope, _} = Tools.execute("list_habits", %{scopes: []}, %{})
@@ -14,7 +16,7 @@ defmodule Mmentum.ToolsTest do
     habit = Mmentum.HabitsFixtures.habit_fixture(%{user: user, periodicity: :day, min_completions: 1})
 
     for time <- [~N[2026-10-04 03:59:59], ~N[2026-10-04 04:00:00], ~N[2026-10-05 03:59:59], ~N[2026-10-05 04:00:00]] do
-      Mmentum.Repo.insert!(%Mmentum.Logs.Log{user_id: user.id, habit_id: habit.id, inserted_at: time, updated_at: time})
+      Mmentum.Repo.insert!(%Log{user_id: user.id, habit_id: habit.id, inserted_at: time, updated_at: time})
     end
 
     context = %{user: user, scopes: [:read], now: ~U[2026-10-05 02:00:00Z]}
@@ -37,7 +39,7 @@ defmodule Mmentum.ToolsTest do
     habit = Mmentum.HabitsFixtures.habit_fixture(%{user: user, periodicity: :day})
 
     for time <- [~N[2026-10-04 23:59:59], ~N[2026-10-05 00:00:00]] do
-      Mmentum.Repo.insert!(%Mmentum.Logs.Log{user_id: user.id, habit_id: habit.id, inserted_at: time, updated_at: time})
+      Mmentum.Repo.insert!(%Log{user_id: user.id, habit_id: habit.id, inserted_at: time, updated_at: time})
     end
 
     context = %{user: %{user | time_zone: nil}, scopes: [:read], now: ~U[2026-10-05 02:00:00Z]}
@@ -47,8 +49,8 @@ defmodule Mmentum.ToolsTest do
   end
 
   test "OAuth scope conversion only grants recognized permissions" do
-    assert Mmentum.Tools.Scope.from_oauth(["mmentum:read", "mmentum:write", "openid"]) == [:read, :write]
-    assert Mmentum.Tools.Scope.from_oauth(["mmentum:admin"]) == []
+    assert Scope.from_oauth(["mmentum:read", "mmentum:write", "openid"]) == [:read, :write]
+    assert Scope.from_oauth(["mmentum:admin"]) == []
     assert {:error, :insufficient_scope, _} = Tools.execute("list_habits", %{scopes: [:write]}, %{})
   end
 end
