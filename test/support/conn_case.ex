@@ -16,18 +16,20 @@ defmodule MmentumWeb.ConnCase do
   """
 
   use ExUnit.CaseTemplate
+  use Boundary, top_level?: true, check: [in: false, out: false]
 
   using do
     quote do
-      # The default endpoint for testing
-      @endpoint MmentumWeb.Endpoint
-
       use MmentumWeb, :verified_routes
+
+      import MmentumWeb.ConnCase
+      import Phoenix.ConnTest
 
       # Import conveniences for testing with connections
       import Plug.Conn
-      import Phoenix.ConnTest
-      import MmentumWeb.ConnCase
+
+      # The default endpoint for testing
+      @endpoint MmentumWeb.Endpoint
     end
   end
 

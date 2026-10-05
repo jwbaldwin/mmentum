@@ -17,16 +17,19 @@ defmodule MmentumWeb do
   those modules here
   """
 
+  use Boundary, deps: [Mmentum], exports: [Endpoint, Telemetry]
+
   def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
 
   def router do
     quote do
       use Phoenix.Router, helpers: false
 
-      # Import common connection and controller functions to use in pipelines
-      import Plug.Conn
       import Phoenix.Controller
       import Phoenix.LiveView.Router
+
+      # Import common connection and controller functions to use in pipelines
+      import Plug.Conn
     end
   end
 
@@ -42,8 +45,9 @@ defmodule MmentumWeb do
         formats: [:html, :json],
         layouts: [html: MmentumWeb.Layouts]
 
-      import Plug.Conn
       use Gettext, backend: MmentumWeb.Gettext
+
+      import Plug.Conn
 
       unquote(verified_routes())
     end
@@ -81,12 +85,13 @@ defmodule MmentumWeb do
 
   defp html_helpers do
     quote do
-      # HTML escaping functionality
-      import Phoenix.HTML
+      use Gettext, backend: MmentumWeb.Gettext
+
       # Core UI components and translation
       import MmentumWeb.CoreComponents
-      use Gettext, backend: MmentumWeb.Gettext
       import MmentumWeb.LiveHelpers
+      # HTML escaping functionality
+      import Phoenix.HTML
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
