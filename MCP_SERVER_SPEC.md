@@ -2,11 +2,13 @@
 
 ## Protocol implementation
 
-Mmentum implements MCP `2026-07-28` with a stateless Phoenix HTTP transport. It currently supports server discovery and an empty tool catalog. Habit tools are planned in [`mcp-tools.md`](mcp-tools.md).
+Mmentum supports MCP `2026-07-28` and `2025-11-25` at the same `/mcp` endpoint. It currently supports connection setup and an empty tool catalog. Habit tools are planned in [`mcp-tools.md`](mcp-tools.md).
 
-In this protocol version, each request carries its protocol version and client capabilities in `params._meta`. There is no `initialize` exchange or MCP session to remember them. `server/discover` reports what the server supports; clients can also send an operation directly. OAuth grants and browser login sessions still exist independently of MCP requests.
+In `2026-07-28`, each request carries its protocol version and client capabilities in `params._meta`. `server/discover` reports supported versions and features; clients can also send an operation directly.
 
-The official specification defines the contract. [`EMCP`](https://github.com/PJUllrich/emcp) supplied implementation examples, but its older initialization and session handling do not apply here.
+In `2025-11-25`, clients send `initialize`, receive the supported version and server capabilities, then send `notifications/initialized`. Later requests carry `MCP-Protocol-Version: 2025-11-25`. The server also answers `ping`. It does not issue session IDs or use client capabilities to initiate requests back to the client, so no MCP session store is needed. OAuth grants and browser login sessions remain separate.
+
+The official specification defines each version's contract. [`EMCP`](https://github.com/PJUllrich/emcp) supplied implementation examples.
 
 Design decisions:
 
@@ -14,7 +16,7 @@ Design decisions:
 - Implement protocol features when they improve or enable the user experience
 - Keep tool definitions and executors independent from the HTTP transport
 - Validate the implementation with MCP Inspector and supported clients
-- Add `2025-11-25` compatibility only if an important client requires it
+- Keep `2025-11-25` compatibility isolated so it can be removed without changing the newer implementation
 - Implement OAuth with maintained libraries rather than writing OAuth itself
 
 ## Authorization
@@ -47,11 +49,13 @@ Local client checks on September 22, 2026:
 - **Pi 0.85.1 / pi-mcp-adapter 2.34.0:** the same flow passed with `protocolVersion: "2026-07-28"`.
 - **Claude Code 2.1.170:** login, approval, and token exchange succeeded. Token storage failed in the isolated client setup, so automatic refresh was not verified. A separate valid-bearer test reached our request parser but failed because this build uses the older MCP request format. Disconnect invalidated that bearer.
 
-OpenCode and Pi default to the older `initialize` flow; set the version explicitly. Configure a public client ID, requested scopes, and the exact registered callback address. Public clients need no client secret. A URL alone is insufficient because the server does not register clients automatically.
+After adding older-protocol support on October 4, Claude Code 2.1.170 connected over local HTTPS with a supplied OAuth access token: initialization, readiness notification, and empty tool listing succeeded. The installed Pi MCP SDK also connected and listed tools in both protocol modes, including an older-protocol ping. These checks cover message compatibility; they do not resolve Claude's earlier token-storage failure or repeat its browser OAuth flow.
+
+OpenCode and Pi can use the older initialization flow or explicitly select `2026-07-28`. Configure a public client ID, requested scopes, and the exact registered callback address. Public clients need no client secret. A URL alone is insufficient because the server does not register clients automatically.
 
 Local OAuth requires HTTPS. Use the existing `OAUTH_DEV_TLS_CERTFILE` and `OAUTH_DEV_TLS_KEYFILE` settings with a locally trusted certificate, and set `OAUTH_ISSUER` to that HTTPS origin. Keep certificate and key files outside the checkout. The ordinary HTTP development server alone is insufficient for this flow.
 
-Current Claude Code, Claude, ChatGPT, Codex, and OMP remain unverified. These results establish the tested flows, not complete protocol conformance. Test a current Claude Code release before deciding whether to add support for older requests.
+Current Claude Code, Claude, ChatGPT, Codex, and OMP remain unverified. These results establish the tested flows, not complete protocol conformance.
 
 ## Application shape
 
@@ -77,7 +81,7 @@ The behaviour will define callbacks for:
 
 A tool execution receives server-built context containing the authenticated user rather than accepting `user_id` from its arguments. We will finalize the rest of that context with the first real tool instead of creating a speculative context module now.
 
-Tool execution returns ordinary Elixir results such as `{:ok, habit_map}` or `{:error, :not_found}`. It does not return JSON-RPC or MCP response structures. This keeps each tool usable by both the embedded agent and MCP. The MCP transport alone converts those results into MCP structured content and protocol errors.
+Tool execution returns ordinary Elixir results such as `{:ok, habit_map}` or `{:error, :not_found}`. It does not return JSON-RPC or MCP response structures. This keeps each tool usable by both the embedded agent and MCP. Each MCP version formats those results for its client.
 
 The planned tool modules are:
 
@@ -94,32 +98,38 @@ The embedded agent includes these tool modules in its agent context in the same 
 ### MCP transport
 
 - `router.ex` mounts `/mcp` with `forward`, following EMCP's router shape. The endpoint skips its normal body parser for this scope but does not bypass the router
-- `Mmentum.MCP.Transport.StreamableHTTP` parses JSON and checks the request envelope, required metadata, known client capability shapes, client details, log level, progress token, and pagination cursor type before comparing routing headers and dispatching. Unknown extension fields remain open; unused tracing fields are not interpreted
-- `Mmentum.MCP.Server` handles MCP operations such as discovering the server and listing tools. It receives validated requests and returns results or named failures, without handling HTTP
-- `Mmentum.MCP.JSONRPC` builds JSON-RPC replies and maps named errors to numeric codes. The transport chooses HTTP status codes
+- `Mmentum.MCP.Transport.StreamableHTTP` checks HTTP content types and Origin, bounds and decodes the body, and sends the selected implementation's response
+- `Mmentum.MCP.Versions` owns the version registry and selection. `initialize` selects the older implementation; explicit per-request protocol metadata selects the newer rules, even if a conflicting header claims the older version. Otherwise the HTTP version header selects the implementation. Missing, repeated, and unknown versions are rejected rather than retried as older requests
+- Each namespace under `Mmentum.MCP.Versions.V2025_11_25` and `V2026_07_28` contains `Request`, `Server`, and `Response`: validation, operation dispatch, and message formatting respectively. They do not depend on each other or receive `Plug.Conn`
+- Both servers call `Mmentum.Tools` directly. There is no shared server that branches on protocol version
 - OAuth authentication runs in a dedicated MCP router pipeline before the transport. Do not register real tools before scopes and tool validation are ready
 
 The remote request flow is:
 
-`MCP client -> router MCP scope/authentication -> Streamable HTTP Plug -> MCP server -> Mmentum.Tools -> tool module -> application boundary`
+`MCP client -> router authentication -> HTTP transport -> version selection -> version server -> Mmentum.Tools -> application boundary`
+
+To retire the older version, delete its namespace and tests, remove its registry entry and `initialize` selection clause, and update client setup guidance. The modern server derives advertised versions from the registry; its implementation and the application tools need no changes.
 
 ## Implemented behavior
 
 - Route stateless Streamable HTTP POST requests through the Phoenix router, leaving their bodies for the transport to parse
-- Require protocol and method headers, the name header for named operations, the `application/json` content type, and acceptance of JSON and SSE responses
+- Require `application/json` requests and acceptance of JSON and SSE responses for both versions
 - Allow absent Origin headers for non-browser clients and reject browser origins outside the configured application origin
-- Check that routing headers match the JSON-RPC body
+- For `2026-07-28`, require per-request metadata and matching version, method, and applicable name headers
+- For `2025-11-25`, validate initialization and require the agreed version header on later requests; modern metadata and routing headers are not required
 - Implement `server/discover` with the server identity, supported version, and tools capability
 - Implement `tools/list` against the real, currently empty `Mmentum.Tools` catalog
 - Leave `tools/call` unavailable until the first real tool; do not invent execution or tool-error handling ahead of that work
-- Return `resultType`, server metadata, cache hints, and standard JSON-RPC errors
-- Reject legacy GET and DELETE transport requests
+- Return modern result metadata and cache hints only for `2026-07-28`; use the older initialization and result shapes for `2025-11-25`
+- Return HTTP 405 for GET and DELETE; neither implementation opens a server-to-client stream or issues session IDs
 
 There are no habit tools or `tools/call` implementation yet. Tool argument/output validation and per-tool scope enforcement belong with the first real tool. Add each tool as a small complete change; do not introduce fake tools to test the registry. James will design and write the application implementation behind each tool.
 
-The transport returns HTTP 400 for invalid checked fields and header errors, and HTTP 404 for unknown methods. `clientInfo` is optional. Request IDs must be strings or integers; error responses omit the ID when it cannot be read. No notification operation is implemented; unknown notifications receive HTTP 202 with no response body. Encoded name headers are decoded before comparison.
+Invalid checked fields return HTTP 400. Unknown methods return a JSON-RPC method-not-found error, with HTTP 404 in the modern version and HTTP 200 in the older version. `clientInfo` is required during older initialization and optional on modern requests. Request IDs must be strings or integers; unreadable IDs are omitted from errors. Accepted notifications return HTTP 202 without a body. Unknown extension fields remain open; unused tracing fields are not interpreted.
 
-Primary references: [MCP messages and metadata](https://modelcontextprotocol.io/specification/2026-07-28/basic) and [Streamable HTTP](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http). EMCP provides implementation examples, not the authority for this protocol version.
+Only these two protocol versions are supported. A missing version header after initialization is rejected; the older spec's suggested `2025-03-26` default is not implemented. The separate `2024-11-05` HTTP+SSE transport is also not implemented.
+
+Primary references: [modern messages](https://modelcontextprotocol.io/specification/2026-07-28/basic), [modern HTTP](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http), [older lifecycle](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle), and [older HTTP](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports).
 
 ## Deferred until later slices
 
