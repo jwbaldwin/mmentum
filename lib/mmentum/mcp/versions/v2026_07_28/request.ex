@@ -1,15 +1,30 @@
 defmodule Mmentum.MCP.Versions.V2026_07_28.Request do
-  @moduledoc "Validates MCP 2026-07-28 messages and their mirrored HTTP headers"
+  @moduledoc """
+  Parses MCP 2026-07-28 messages and checks their mirrored HTTP headers
+
+  Supplies omitted tool arguments as an empty object before Server dispatches
+  Response formats validation failures
+  """
 
   alias Mmentum.MCP.Versions
-  alias Mmentum.MCP.Versions.V2026_07_28.{Response, Server}
+  alias Mmentum.MCP.Versions.V2026_07_28.Response
+  alias Mmentum.MCP.Versions.V2026_07_28.Server
 
-  def validate(request, headers) do
+  def parse(request, headers) do
     with :ok <- validate_message(request),
          :ok <- validate_metadata(request),
          :ok <- validate_params(request),
          :ok <- validate_headers(headers, request) do
-      :ok
+      request =
+        case request do
+          %{"method" => "tools/call", "params" => params} ->
+            Map.put(request, "params", Map.put_new(params, "arguments", %{}))
+
+          _request ->
+            request
+        end
+
+      {:ok, request}
     end
   end
 
@@ -71,6 +86,18 @@ defmodule Mmentum.MCP.Versions.V2026_07_28.Request do
       else: error(400, request, :invalid_params, "cursor must be a string")
   end
 
+  defp validate_params(%{"method" => "tools/call"} = request) do
+    case request do
+      %{"params" => %{"name" => name} = params} when is_binary(name) ->
+        if optional_field?(params, "arguments", &is_map/1),
+          do: :ok,
+          else: error(400, request, :invalid_params, "arguments must be an object")
+
+      _invalid ->
+        error(400, request, :invalid_params, "Tool name must be a string")
+    end
+  end
+
   defp validate_params(_request), do: :ok
 
   defp valid_capabilities?(capabilities) do
@@ -88,8 +115,7 @@ defmodule Mmentum.MCP.Versions.V2026_07_28.Request do
     is_map(value) and Enum.all?(fields, &optional_field?(value, &1, fn field -> is_map(field) end))
   end
 
-  defp valid_client_info?(%{"name" => name, "version" => version} = info)
-       when is_binary(name) and is_binary(version) do
+  defp valid_client_info?(%{"name" => name, "version" => version} = info) when is_binary(name) and is_binary(version) do
     Enum.all?(~w(title description), &optional_field?(info, &1, fn value -> is_binary(value) end)) and
       optional_field?(info, "websiteUrl", &absolute_uri?/1) and
       optional_field?(info, "icons", fn icons -> is_list(icons) and Enum.all?(icons, &valid_icon?/1) end)

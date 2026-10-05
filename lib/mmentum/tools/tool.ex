@@ -6,9 +6,9 @@ defmodule Mmentum.Tools.Tool do
   and executions.
   """
 
-  @type context :: map()
+  @type context :: %{user: %Mmentum.Accounts.User{}, scopes: [String.t()], now: DateTime.t()}
   @type arguments :: map()
-  @type result :: {:ok, map()} | {:error, term()}
+  @type result :: {:ok, map()} | {:error, atom(), String.t()}
 
   @callback name() :: String.t()
   @callback description() :: String.t()

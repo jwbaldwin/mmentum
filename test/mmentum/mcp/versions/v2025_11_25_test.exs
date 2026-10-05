@@ -63,7 +63,7 @@ defmodule Mmentum.MCP.Versions.V2025_11_25Test do
 
   test "legacy operations do not require modern method or name headers", %{conn: conn} do
     request = Map.put(request("tools/call", 2), "params", %{"name" => "missing_tool", "arguments" => %{}})
-    assert %{"id" => 2, "error" => %{"code" => -32_601}} = json_response(send_legacy(conn, request), 200)
+    assert %{"id" => 2, "error" => %{"code" => -32_602}} = json_response(send_legacy(conn, request), 200)
   end
 
   test "rejects malformed initialization instead of returning a negotiated version", %{conn: conn} do

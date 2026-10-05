@@ -70,7 +70,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
   test "encoded names are decoded before comparing headers", %{conn: conn} do
     request = put_in(request("tools/call"), ["params", "name"], "hello 世界")
     conn = send_mcp(conn, request, name: "=?base64?" <> Base.encode64("hello 世界") <> "?=")
-    assert %{"error" => %{"code" => -32_601}} = json_response(conn, 404)
+    assert %{"error" => %{"code" => -32_602}} = json_response(conn, 400)
   end
 
   test "malformed name encodings return a header error", %{conn: conn} do
@@ -97,7 +97,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
              json_response(conn, 200)
   end
 
-  test "POST /mcp leaves tool execution unavailable", %{conn: conn} do
+  test "POST /mcp rejects unknown tools", %{conn: conn} do
     request =
       "tools/call"
       |> request()
@@ -106,8 +106,8 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
 
     conn = send_mcp(conn, request, name: "missing_tool")
 
-    assert %{"error" => %{"code" => -32_601}} =
-             json_response(conn, 404)
+    assert %{"error" => %{"code" => -32_602}} =
+             json_response(conn, 400)
   end
 
   test "POST /mcp rejects a tool name header that differs from the body", %{conn: conn} do
