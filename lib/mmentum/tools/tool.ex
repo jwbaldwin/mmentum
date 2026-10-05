@@ -6,7 +6,9 @@ defmodule Mmentum.Tools.Tool do
   and executions.
   """
 
-  @type context :: %{user: %Mmentum.Accounts.User{}, scopes: [String.t()], now: DateTime.t()}
+  alias Mmentum.Tools.Context
+  alias Mmentum.Tools.Scope
+
   @type arguments :: map()
   @type result :: {:ok, map()} | {:error, atom(), String.t()}
 
@@ -15,12 +17,13 @@ defmodule Mmentum.Tools.Tool do
   @callback input_schema() :: map()
   @callback output_schema() :: map()
   @callback annotations() :: map()
-  @callback required_scope() :: String.t()
-  @callback execute(context(), arguments()) :: result()
+  @callback required_scope() :: Scope.t()
+  @callback execute(Context.t(), arguments()) :: result()
 
   @optional_callbacks annotations: 0
 
   @doc "Returns the MCP definition exposed for a tool module"
+  @spec definition(module()) :: map()
   def definition(tool_module) do
     definition = %{
       "name" => tool_module.name(),

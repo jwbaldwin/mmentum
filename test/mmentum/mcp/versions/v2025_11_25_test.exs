@@ -29,11 +29,12 @@ defmodule Mmentum.MCP.Versions.V2025_11_25Test do
 
     assert %{"id" => "ping", "result" => %{}} = json_response(send_legacy(conn, request("ping", "ping")), 200)
     assert %{"id" => 2, "result" => result} = json_response(send_legacy(conn, request("tools/list", 2)), 200)
-    assert result == %{"tools" => []}
+    assert %{"tools" => [%{"name" => "list_habits"}]} = result
   end
 
   test "advertises both versions and keeps their results separate for the same caller", %{conn: conn} do
-    assert json_response(send_legacy(conn, request("tools/list", 1)), 200)["result"] == %{"tools" => []}
+    assert %{"tools" => [%{"name" => "list_habits"}]} =
+             json_response(send_legacy(conn, request("tools/list", 1)), 200)["result"]
 
     modern =
       Map.put(request("server/discover", 2), "params", %{
@@ -53,7 +54,9 @@ defmodule Mmentum.MCP.Versions.V2025_11_25Test do
     assert "2025-11-25" in result["supportedVersions"]
     assert "2026-07-28" in result["supportedVersions"]
     assert result["resultType"] == "complete"
-    assert json_response(send_legacy(conn, request("tools/list", 3)), 200)["result"] == %{"tools" => []}
+
+    assert %{"tools" => [%{"name" => "list_habits"}]} =
+             json_response(send_legacy(conn, request("tools/list", 3)), 200)["result"]
   end
 
   test "offers the supported legacy version when initialization requests another version", %{conn: conn} do

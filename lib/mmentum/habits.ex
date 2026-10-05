@@ -13,6 +13,7 @@ defmodule Mmentum.Habits do
   alias Mmentum.Time
 
   @doc "Lists the user's habits with completion activity from each habit's current period"
+  @spec list_habits_with_current_progress(User.t(), DateTime.t()) :: [Habit.t()]
   def list_habits_with_current_progress(%User{id: user_id} = user, %DateTime{} = current_time) do
     periodicities = Ecto.Enum.values(Habit, :periodicity)
     starts = Enum.map(periodicities, &Time.start_of_range(current_time, &1))

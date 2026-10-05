@@ -7,7 +7,7 @@
       {if scope == "mmentum:read", do: "Read your habits and history", else: "Change your habits and record progress"}
     </li>
   </ul>
-  <p>You can disconnect this app at any time from Connected apps. No habit tools are available yet.</p>
+  <p>You can disconnect this app at any time from Connected apps.</p>
   <.form for={@form} id="oauth-consent" action={~p"/oauth/consent"} class="flex gap-4">
     <.input field={@form[:request]} type="hidden" />
     <.button id="oauth-allow" name="decision" value="allow">Allow</.button>

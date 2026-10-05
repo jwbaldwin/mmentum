@@ -9,6 +9,14 @@ defmodule Mmentum.Logs.Log do
     timestamps()
   end
 
+  @type t :: %__MODULE__{
+          id: integer() | nil,
+          user_id: integer() | nil,
+          habit_id: integer() | nil,
+          inserted_at: NaiveDateTime.t() | nil,
+          updated_at: NaiveDateTime.t() | nil
+        }
+
   @doc false
   def completion_changeset(log) do
     log

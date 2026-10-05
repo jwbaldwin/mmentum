@@ -1,6 +1,6 @@
 # MCP Tools
 
-- `list_habits`: List every habit owned by the authenticated user with current progress.
+- `list_habits` (implemented): List every habit owned by the authenticated user with current progress. No arguments; requires `mmentum:read`.
 - `get_habit`: Get one owned habit with its full definition and current state.
 - `create_habit`: Create a new habit for the authenticated user from validated fields.
 - `update_habit`: Update supplied fields on one habit owned by the authenticated user.

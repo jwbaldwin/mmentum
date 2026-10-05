@@ -90,10 +90,10 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
     assert conn.status == 403
   end
 
-  test "POST /mcp lists the empty tool catalog", %{conn: conn} do
+  test "POST /mcp lists the tool catalog", %{conn: conn} do
     conn = send_mcp(conn, request("tools/list"), method: "tools/list")
 
-    assert %{"result" => %{"resultType" => "complete", "tools" => []}} =
+    assert %{"result" => %{"resultType" => "complete", "tools" => [%{"name" => "list_habits"}]}} =
              json_response(conn, 200)
   end
 
@@ -285,7 +285,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
       |> put_req_header("mcp-method", "tools/list")
       |> post("https://localhost:4443/mcp/", Jason.encode!(request("tools/list")))
 
-    assert json_response(conn, 200)["result"]["tools"] == []
+    assert [%{"name" => "list_habits"}] = json_response(conn, 200)["result"]["tools"]
   end
 
   test "non-POST methods are rejected", %{conn: conn} do
@@ -335,7 +335,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
     }
 
     request = put_in(request("tools/list"), ["params", "_meta"], metadata)
-    assert json_response(send_mcp(conn, request), 200)["result"]["tools"] == []
+    assert [%{"name" => "list_habits"}] = json_response(send_mcp(conn, request), 200)["result"]["tools"]
   end
 
   test "rejects non-string pagination cursors", %{conn: conn} do
