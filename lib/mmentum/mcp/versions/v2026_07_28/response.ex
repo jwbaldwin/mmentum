@@ -26,6 +26,22 @@ defmodule Mmentum.MCP.Versions.V2026_07_28.Response do
     %{"jsonrpc" => "2.0", "id" => id, "result" => result}
   end
 
+  def tool_call(id, {:ok, tool_result}) do
+    {200,
+     result(id, %{
+       "structuredContent" => tool_result,
+       "content" => [%{"type" => "text", "text" => Jason.encode!(tool_result)}],
+       "isError" => false
+     })}
+  end
+
+  def tool_call(id, {:error, :tool_not_found}),
+    do: {400, error(id, :invalid_params, "Unknown tool")}
+
+  def tool_call(id, {:error, _reason, message}) do
+    {200, result(id, %{"isError" => true, "content" => [%{"type" => "text", "text" => message}]})}
+  end
+
   def error(id, reason, message, data \\ nil) do
     error = %{"code" => Map.fetch!(@error_codes, reason), "message" => message}
     error = if is_nil(data), do: error, else: Map.put(error, "data", data)

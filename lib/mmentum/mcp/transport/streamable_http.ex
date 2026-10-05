@@ -41,7 +41,13 @@ defmodule Mmentum.MCP.Transport.StreamableHTTP do
           {:ok, request} ->
             {server, _response} = Versions.select(request, conn.req_headers)
 
-            case server.handle(request, conn.req_headers) do
+            context = %{
+              user: conn.assigns.current_user,
+              scopes: conn.assigns.attesto_mcp_scopes,
+              now: DateTime.utc_now()
+            }
+
+            case server.handle(request, conn.req_headers, context) do
               {202, nil} -> conn |> send_resp(202, "") |> halt()
               {status, response} -> send_json(conn, status, response)
             end

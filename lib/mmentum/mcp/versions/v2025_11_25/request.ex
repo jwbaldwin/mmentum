@@ -1,13 +1,29 @@
 defmodule Mmentum.MCP.Versions.V2025_11_25.Request do
-  @moduledoc "Validates initialization-era requests and their protocol version header"
+  @moduledoc """
+  Parses MCP 2025-11-25 messages and checks their protocol version header
 
-  alias Mmentum.MCP.Versions.V2025_11_25.{Response, Server}
+  Supplies omitted tool arguments as an empty object before Server dispatches
+  Response formats validation failures
+  """
 
-  def validate(request, headers) do
+  alias Mmentum.MCP.Versions.V2025_11_25.Response
+  alias Mmentum.MCP.Versions.V2025_11_25.Server
+
+  def parse(request, headers) do
     with :ok <- validate_message(request),
+         :ok <- validate_metadata(request),
          :ok <- validate_params(request),
          :ok <- validate_version(request, headers) do
-      :ok
+      request =
+        case request do
+          %{"method" => "tools/call", "params" => params} ->
+            Map.put(request, "params", Map.put_new(params, "arguments", %{}))
+
+          _request ->
+            request
+        end
+
+      {:ok, request}
     end
   end
 
@@ -26,36 +42,55 @@ defmodule Mmentum.MCP.Versions.V2025_11_25.Request do
 
   defp validate_message(request), do: error(request, :invalid_request, "Invalid Request")
 
-  defp validate_params(%{"method" => "initialize"} = request) do
+  defp validate_params(%{"method" => method} = request) do
+    case method do
+      "initialize" -> validate_initialize(request)
+      "tools/call" -> validate_tool_call(request)
+      "tools/list" -> validate_tools_list(request)
+      _ -> :ok
+    end
+  end
+
+  defp validate_initialize(request) do
     case request do
       %{
         "id" => _id,
-        "params" => %{"protocolVersion" => version, "capabilities" => capabilities, "clientInfo" => info} = params
+        "params" => %{"protocolVersion" => version, "capabilities" => capabilities, "clientInfo" => info}
       }
       when is_binary(version) and is_map(capabilities) ->
-        if valid_client_info?(info) and valid_capabilities?(capabilities) and
-             optional_field?(params, "_meta", &is_map/1),
-           do: :ok,
-           else: error(request, :invalid_params, "Invalid initialization parameters")
+        if valid_client_info?(info) and valid_capabilities?(capabilities),
+          do: :ok,
+          else: error(request, :invalid_params, "Invalid initialization parameters")
 
       _invalid ->
         error(request, :invalid_params, "Missing initialization parameters")
     end
   end
 
-  defp validate_params(request) do
+  defp validate_tool_call(request) do
+    case request do
+      %{"params" => %{"name" => name} = params} when is_binary(name) ->
+        if optional_field?(params, "arguments", &is_map/1),
+          do: :ok,
+          else: error(request, :invalid_params, "arguments must be an object")
+
+      _invalid ->
+        error(request, :invalid_params, "Tool name must be a string")
+    end
+  end
+
+  defp validate_tools_list(request) do
     params = Map.get(request, "params", %{})
 
-    cond do
-      not optional_field?(params, "_meta", &is_map/1) ->
-        error(request, :invalid_params, "_meta must be an object")
+    if optional_field?(params, "cursor", &is_binary/1),
+      do: :ok,
+      else: error(request, :invalid_params, "cursor must be a string")
+  end
 
-      request["method"] == "tools/list" and not optional_field?(params, "cursor", &is_binary/1) ->
-        error(request, :invalid_params, "cursor must be a string")
-
-      true ->
-        :ok
-    end
+  defp validate_metadata(request) do
+    if optional_field?(Map.get(request, "params", %{}), "_meta", &is_map/1),
+      do: :ok,
+      else: error(request, :invalid_params, "_meta must be an object")
   end
 
   defp validate_version(request, headers) do
@@ -137,6 +172,5 @@ defmodule Mmentum.MCP.Versions.V2025_11_25.Request do
     end
   end
 
-  defp error(request, reason, message),
-    do: {:error, 400, Response.error(Response.request_id(request), reason, message)}
+  defp error(request, reason, message), do: {:error, 400, Response.error(Response.request_id(request), reason, message)}
 end
