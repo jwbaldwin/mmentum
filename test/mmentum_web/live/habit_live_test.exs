@@ -56,12 +56,12 @@ defmodule MmentumWeb.HabitLiveTest do
       {:ok, first_tab, _html} = live(conn, ~p"/habits")
       {:ok, stale_tab, _html} = live(conn, ~p"/habits")
 
-      first_tab |> element("#habit-#{habit.id}-remove-completion-tooltip button") |> render_click()
-      stale_tab |> element("#habit-#{habit.id}-remove-completion-tooltip button") |> render_click()
+      first_tab |> element("#habit-#{habit.id} button[phx-click=remove_log]") |> render_click()
+      stale_tab |> element("#habit-#{habit.id} button[phx-click=remove_log]") |> render_click()
 
       assert Logs.list_logs_by_habit(user, habit) == [historical_log]
-      assert has_element?(stale_tab, "#habit-#{habit.id}-remove-completion-tooltip button[disabled]")
-      refute has_element?(stale_tab, "#habit-#{habit.id}-record-completion-tooltip button[disabled]")
+      assert has_element?(stale_tab, "#habit-#{habit.id} button[phx-click=remove_log][disabled]")
+      refute has_element?(stale_tab, "#habit-#{habit.id} button[phx-click=add_log][disabled]")
     end
 
     test "period boundary refreshes stale progress, greeting and day text without navigation", %{conn: conn, user: user} do
@@ -86,8 +86,8 @@ defmodule MmentumWeb.HabitLiveTest do
       for {habit, log} <- Enum.zip(habits, logs) do
         previous_time = current_time |> Mmentum.Time.start_of_range(habit.periodicity) |> NaiveDateTime.add(-1)
         log |> Ecto.Changeset.change(inserted_at: previous_time) |> Repo.update!()
-        assert has_element?(dashboard, "#habit-#{habit.id}-record-completion-tooltip button[disabled]")
-        stale_dashboard |> element("#habit-#{habit.id}-remove-completion-tooltip button") |> render_click()
+        assert has_element?(dashboard, "#habit-#{habit.id} button[phx-click=add_log][disabled]")
+        stale_dashboard |> element("#habit-#{habit.id} button[phx-click=remove_log]") |> render_click()
         assert Repo.get!(Log, log.id).inserted_at == previous_time
       end
 
@@ -110,8 +110,8 @@ defmodule MmentumWeb.HabitLiveTest do
       assert is_integer(Process.read_timer(assigns.period_timer))
 
       for habit <- habits do
-        refute has_element?(dashboard, "#habit-#{habit.id}-record-completion-tooltip button[disabled]")
-        assert has_element?(dashboard, "#habit-#{habit.id}-remove-completion-tooltip button[disabled]")
+        refute has_element?(dashboard, "#habit-#{habit.id} button[phx-click=add_log][disabled]")
+        assert has_element?(dashboard, "#habit-#{habit.id} button[phx-click=remove_log][disabled]")
         assert length(Logs.list_logs_by_habit(user, habit)) == 1
       end
     end
@@ -122,21 +122,20 @@ defmodule MmentumWeb.HabitLiveTest do
       assert html =~ habit.name
     end
 
-    test "renders completion tooltips", %{conn: conn, habit: habit} do
+    test "renders named completion buttons without tooltips", %{conn: conn, habit: habit} do
       {:ok, index_live, _html} = live(conn, ~p"/habits")
-
-      remove_tooltip =
-        index_live
-        |> element("#habit-#{habit.id}-remove-completion-tooltip[phx-hook=Tooltip]")
-        |> render()
-
-      assert remove_tooltip =~ ~s(data-tooltip-disabled="true")
 
       assert has_element?(
                index_live,
-               "#habit-#{habit.id}-record-completion-tooltip[phx-hook=Tooltip][data-tooltip-content='Record completion']"
+               "#habit-#{habit.id} button[phx-click=remove_log][disabled][aria-label='Remove completion for #{habit.name}']"
              )
 
+      assert has_element?(
+               index_live,
+               "#habit-#{habit.id} button[phx-click=add_log][aria-label='Record completion for #{habit.name}']"
+             )
+
+      refute has_element?(index_live, "#habit-#{habit.id} [phx-hook=Tooltip]")
       refute has_element?(index_live, "#habit-#{habit.id} button[title]")
     end
 
