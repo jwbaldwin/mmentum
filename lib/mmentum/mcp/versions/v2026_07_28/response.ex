@@ -1,7 +1,5 @@
-defmodule Mmentum.MCP.JSONRPC do
-  @moduledoc """
-  Responsible for building JSON-RPC replies and owning all the named MCP error codes
-  """
+defmodule Mmentum.MCP.Versions.V2026_07_28.Response do
+  @moduledoc "Builds MCP 2026-07-28 results and errors"
 
   @error_codes %{
     parse_error: -32_700,
@@ -13,7 +11,20 @@ defmodule Mmentum.MCP.JSONRPC do
     unsupported_protocol_version: -32_022
   }
 
-  def result(id, result), do: %{"jsonrpc" => "2.0", "id" => id, "result" => result}
+  def result(id, result) do
+    result =
+      Map.merge(result, %{
+        "resultType" => "complete",
+        "_meta" => %{
+          "io.modelcontextprotocol/serverInfo" => %{
+            "name" => "mmentum",
+            "version" => to_string(Application.spec(:mmentum, :vsn))
+          }
+        }
+      })
+
+    %{"jsonrpc" => "2.0", "id" => id, "result" => result}
+  end
 
   def error(id, reason, message, data \\ nil) do
     error = %{"code" => Map.fetch!(@error_codes, reason), "message" => message}
@@ -24,6 +35,6 @@ defmodule Mmentum.MCP.JSONRPC do
   end
 
   @doc "Returns a valid request id, or nil when an invalid request cannot be identified"
-  def response_id(%{"id" => id}) when is_binary(id) or is_integer(id), do: id
-  def response_id(_request), do: nil
+  def request_id(%{"id" => id}) when is_binary(id) or is_integer(id), do: id
+  def request_id(_request), do: nil
 end

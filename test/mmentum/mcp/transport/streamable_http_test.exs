@@ -14,12 +14,14 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
              "id" => 1,
              "result" => %{
                "resultType" => "complete",
-               "supportedVersions" => ["2026-07-28"],
+               "supportedVersions" => versions,
                "capabilities" => %{"tools" => %{}},
                "cacheScope" => "public",
                "_meta" => %{"io.modelcontextprotocol/serverInfo" => %{"name" => "mmentum"}}
              }
            } = json_response(conn, 200)
+
+    assert "2026-07-28" in versions
   end
 
   test "requests can omit optional clientInfo", %{conn: conn} do
@@ -148,17 +150,19 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
              "error" => %{
                "code" => -32_022,
                "data" => %{
-                 "supported" => ["2026-07-28"],
+                 "supported" => versions,
                  "requested" => "1900-01-01"
                }
              }
            } = json_response(conn, 400)
+
+    assert "2026-07-28" in versions
   end
 
   test "POST /mcp allows the configured browser origin", %{conn: conn} do
     conn = send_mcp(conn, request("server/discover"), origin: MmentumWeb.Endpoint.url())
 
-    assert json_response(conn, 200)["result"]["supportedVersions"] == ["2026-07-28"]
+    assert "2026-07-28" in json_response(conn, 200)["result"]["supportedVersions"]
   end
 
   test "POST /mcp rejects foreign browser origins", %{conn: conn} do
@@ -186,7 +190,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTPTest do
     conn =
       send_mcp(conn, request("server/discover"), content_type: "application/json; charset=utf-8")
 
-    assert json_response(conn, 200)["result"]["supportedVersions"] == ["2026-07-28"]
+    assert "2026-07-28" in json_response(conn, 200)["result"]["supportedVersions"]
   end
 
   test "POST /mcp rejects repeated content types", %{conn: conn} do
