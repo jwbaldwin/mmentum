@@ -36,6 +36,7 @@ Read `docs/DESIGN_PRINCIPLES.md` and `docs/CODE_STYLE_GUIDANCE.md` before implem
 - Run focused tests with `mix test test/path/to_test.exs`, then the complete `mix test` suite
 - The test alias creates and migrates the local test database. `config/test.exs` uses PostgreSQL on localhost and database `mmentum_test#{MIX_TEST_PARTITION}`; use a distinct partition when another checkout may be testing
 - For backend changes, run `mix format --check-formatted` and `mix compile --warnings-as-errors` as well as tests; fix failures before completion
+- Run `mix check` for the combined code-quality and test suite; see `docs/CODE_CHECKS.md` for tool ownership and existing findings. Format selected files with Styler and inspect its rewrites before accepting them
 - Use `mix test --failed` to rerun previous failures
 - Asset tasks are `mix assets.setup`, `mix assets.build` and `mix assets.deploy`; inspect their aliases before running installs or builds
 - Avoid cleaning all dependencies unless there is concrete evidence of corruption
