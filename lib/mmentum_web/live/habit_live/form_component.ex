@@ -1,4 +1,5 @@
 defmodule MmentumWeb.HabitLive.FormComponent do
+  @moduledoc false
   use MmentumWeb, :live_component
 
   alias Mmentum.Habits
@@ -157,10 +158,7 @@ defmodule MmentumWeb.HabitLive.FormComponent do
         "save",
         %{
           "habit" =>
-            %{
-              "has_flexible_target" => has_flexible_target,
-              "max_completions" => max_completions
-            } = habit_params
+            %{"has_flexible_target" => has_flexible_target, "max_completions" => max_completions} = habit_params
         },
         socket
       ) do

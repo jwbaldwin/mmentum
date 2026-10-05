@@ -1,19 +1,13 @@
 defmodule Mmentum.HabitsFixtures do
-  @moduledoc """
-  This module defines test helpers for creating
-  entities via the `Mmentum.Habits` context.
-  """
+  @moduledoc false
 
-  @doc """
-  Generate a habit.
-  """
   def habit_fixture(attrs \\ %{}) do
-    attrs = Enum.into(attrs, %{})
+    attrs = Map.new(attrs)
     user = attrs[:user] || Mmentum.AccountsFixtures.user_fixture()
 
     {:ok, habit} =
       attrs
-      |> Map.drop([:user])
+      |> Map.delete(:user)
       |> Enum.into(%{
         min_completions: 3,
         name: "some name",

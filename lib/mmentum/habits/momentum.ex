@@ -36,11 +36,9 @@ defmodule Mmentum.Habits.Momentum do
 
   defp completion_counts(logs, periodicity, current_time) do
     recent_periods =
-      0..(@period_count - 1)
-      |> Enum.map(fn periods_ago ->
+      MapSet.new(0..(@period_count - 1), fn periods_ago ->
         Time.start_of_range(current_time, periodicity, -periods_ago)
       end)
-      |> MapSet.new()
 
     current_time_utc =
       current_time

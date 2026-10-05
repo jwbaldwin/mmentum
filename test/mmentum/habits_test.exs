@@ -1,14 +1,14 @@
 defmodule Mmentum.HabitsTest do
   use Mmentum.DataCase
 
+  import Mmentum.AccountsFixtures
+  import Mmentum.HabitsFixtures
+
   alias Mmentum.Habits
   alias Mmentum.Habits.Habit
   alias Mmentum.Logs
   alias Mmentum.Logs.Log
   alias Mmentum.Repo
-
-  import Mmentum.AccountsFixtures
-  import Mmentum.HabitsFixtures
 
   @invalid_attrs %{min_completions: nil, name: nil, periodicity: nil}
 
@@ -26,21 +26,6 @@ defmodule Mmentum.HabitsTest do
 
       assert_raise Ecto.NoResultsError, fn -> Habits.get_habit!(attacker, habit.id) end
       assert_raise Ecto.NoResultsError, fn -> Habits.get_habit!(attacker, -1) end
-    end
-
-    test "get_habit_with_current_progress!/3 preloads current completion activity" do
-      user = user_fixture()
-      habit = habit_fixture(user: user)
-      {:ok, log} = Habits.record_completion(user, habit.id)
-
-      habit =
-        Habits.get_habit_with_current_progress!(
-          user,
-          habit.id,
-          Mmentum.Time.current_time(user.time_zone)
-        )
-
-      assert habit.logs == [log]
     end
 
     test "list_habits_with_current_progress/2 keeps only today's activity for daily habits" do
@@ -85,10 +70,8 @@ defmodule Mmentum.HabitsTest do
         insert_log(user, habit, next_start)
         current_time = DateTime.new!(date, ~T[12:00:00], zone)
 
-        loaded = Habits.get_habit_with_current_progress!(user, habit.id, current_time)
-        assert Enum.map(loaded.logs, & &1.id) == [first.id, last.id]
         listed = Enum.find(Habits.list_habits_with_current_progress(user, current_time), &(&1.id == habit.id))
-        assert listed.logs == loaded.logs
+        assert Enum.map(listed.logs, & &1.id) == [first.id, last.id]
       end
     end
 

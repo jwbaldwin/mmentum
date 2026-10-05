@@ -6,11 +6,14 @@ defmodule Mmentum.OAuth do
   """
 
   import Ecto.Query
-  alias Mmentum.{Repo, OAuth.Connection}
-  alias Mmentum.Accounts.User
+
   alias AttestoPhoenix.Config
-  alias AttestoPhoenix.Store.{EctoCodeStore, EctoRefreshStore}
   alias AttestoPhoenix.Schema.RefreshFamilyRevocation
+  alias AttestoPhoenix.Store.EctoCodeStore
+  alias AttestoPhoenix.Store.EctoRefreshStore
+  alias Mmentum.Accounts.User
+  alias Mmentum.OAuth.Connection
+  alias Mmentum.Repo
 
   def config, do: Config.from_otp_app(:mmentum)
   def token_config, do: Config.to_attesto_config(config())
@@ -69,24 +72,28 @@ defmodule Mmentum.OAuth do
 
       case connection do
         %Connection{revoked_at: nil} ->
-          case continuation.() do
-            {:ok, response, _events} = result ->
-              {:ok, refresh} = EctoRefreshStore.get(Attesto.Secret.hash(response.refresh_token))
-
-              connection
-              |> Ecto.Changeset.change(refresh_family_id: refresh.family_id, scopes: refresh.data.scope)
-              |> Repo.update!()
-
-              result
-
-            {:error, error} ->
-              Repo.rollback(error)
-          end
+          issue_connection_tokens(connection, continuation)
 
         _ ->
           Repo.rollback(:revoked_connection)
       end
     end)
+  end
+
+  defp issue_connection_tokens(connection, continuation) do
+    case continuation.() do
+      {:ok, response, _events} = result ->
+        {:ok, refresh} = EctoRefreshStore.get(Attesto.Secret.hash(response.refresh_token))
+
+        connection
+        |> Ecto.Changeset.change(refresh_family_id: refresh.family_id, scopes: refresh.data.scope)
+        |> Repo.update!()
+
+        result
+
+      {:error, error} ->
+        Repo.rollback(error)
+    end
   end
 
   def list_connections(user) do
@@ -108,16 +115,20 @@ defmodule Mmentum.OAuth do
           Repo.rollback(:not_found)
 
         connection ->
-          connection |> Ecto.Changeset.change(revoked_at: DateTime.utc_now()) |> Repo.update!()
-
-          if connection.refresh_family_id do
-            :ok = EctoRefreshStore.revoke_family(connection.refresh_family_id)
-            :ok = EctoCodeStore.revoke_family_access_tokens(connection.refresh_family_id)
-          end
-
-          :ok
+          revoke_connection(connection)
       end
     end)
+  end
+
+  defp revoke_connection(connection) do
+    connection |> Ecto.Changeset.change(revoked_at: DateTime.utc_now()) |> Repo.update!()
+
+    if connection.refresh_family_id do
+      :ok = EctoRefreshStore.revoke_family(connection.refresh_family_id)
+      :ok = EctoCodeStore.revoke_family_access_tokens(connection.refresh_family_id)
+    end
+
+    :ok
   end
 
   def authenticate_token(%{"sub" => subject, "mmentum_grant_id" => grant_id, "jti" => jti}, _sender) do

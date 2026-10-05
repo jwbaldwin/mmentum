@@ -17,18 +17,21 @@ defmodule MmentumWeb.CoreComponents do
   use Phoenix.Component
   use Gettext, backend: MmentumWeb.Gettext
 
+  alias Phoenix.HTML.FormField
   alias Phoenix.LiveView.JS
 
   @heroicons_path Path.expand("../../../assets/vendor/heroicons/optimized", __DIR__)
-  @heroicons for {directory, suffix} <- [
-                   {"24/outline", ""},
-                   {"24/solid", "-solid"},
-                   {"20/solid", "-mini"}
-                 ],
-                 file_path <- Path.wildcard(Path.join(@heroicons_path, "#{directory}/*.svg")),
-                 icon_name = Path.basename(file_path, ".svg"),
-                 into: %{},
-                 do: {"hero-#{icon_name}#{suffix}", File.read!(file_path)}
+  @heroicons (for {directory, suffix} <- [
+                    {"24/outline", ""},
+                    {"24/solid", "-solid"},
+                    {"20/solid", "-mini"}
+                  ],
+                  file_path <- Path.wildcard(Path.join(@heroicons_path, "#{directory}/*.svg")),
+                  icon_name = Path.basename(file_path, ".svg"),
+                  into: %{} do
+                @external_resource file_path
+                {"hero-#{icon_name}#{suffix}", File.read!(file_path)}
+              end)
 
   @doc """
   Renders a modal.
@@ -340,7 +343,7 @@ defmodule MmentumWeb.CoreComponents do
     values: ~w(checkbox color date datetime-local email file hidden month number password
                range radio search select tel text textarea time url week)
 
-  attr :field, Phoenix.HTML.FormField, doc: "a form field struct retrieved from the form, for example: @form[:email]"
+  attr :field, FormField, doc: "a form field struct retrieved from the form, for example: @form[:email]"
 
   attr :errors, :list, default: []
   attr :checked, :boolean, doc: "the checked flag for checkbox inputs"
@@ -353,7 +356,7 @@ defmodule MmentumWeb.CoreComponents do
 
   slot :inner_block
 
-  def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
+  def input(%{field: %FormField{} = field} = assigns) do
     assigns
     |> assign(field: nil, id: assigns.id || field.id)
     |> assign(:errors, Enum.map(field.errors, &translate_error(&1)))
@@ -455,13 +458,10 @@ defmodule MmentumWeb.CoreComponents do
     ]
   end
 
-  @doc """
-  Renders a label
-  """
   attr :for, :string, default: nil
   slot :inner_block, required: true
 
-  def label(assigns) do
+  defp label(assigns) do
     ~H"""
     <label for={@for} class="block text-sm font-medium leading-5 text-zinc-800 dark:text-zinc-200">
       {render_slot(@inner_block)}
@@ -531,109 +531,6 @@ defmodule MmentumWeb.CoreComponents do
     <h2 id={@id} class={["text-base font-semibold leading-6 text-zinc-900 dark:text-zinc-100", @class]}>
       {render_slot(@inner_block)}
     </h2>
-    """
-  end
-
-  @doc ~S"""
-  Renders a table with generic styling.
-
-  ## Examples
-
-      <.table id="users" rows={@users}>
-        <:col :let={user} label="id"><%= user.id %></:col>
-        <:col :let={user} label="username"><%= user.username %></:col>
-      </.table>
-  """
-  attr :id, :string, required: true
-  attr :rows, :list, required: true
-  attr :row_id, :any, default: nil, doc: "the function for generating the row id"
-  attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
-
-  attr :row_item, :any,
-    default: &Function.identity/1,
-    doc: "the function for mapping each row before calling the :col and :action slots"
-
-  slot :col, required: true do
-    attr :label, :string
-  end
-
-  slot :action, doc: "the slot for showing user actions in the last table column"
-
-  def table(assigns) do
-    assigns =
-      with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
-        assign(assigns, row_id: assigns.row_id || fn {id, _item} -> id end)
-      end
-
-    ~H"""
-    <div class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
-      <table class="w-[40rem] mt-11 sm:w-full">
-        <thead class="text-sm text-left leading-6 text-zinc-500 dark:text-zinc-400">
-          <tr>
-            <th :for={col <- @col} class="p-0 pr-6 pb-4 font-normal">{col[:label]}</th>
-            <th class="relative p-0 pb-4"><span class="sr-only">{gettext("Actions")}</span></th>
-          </tr>
-        </thead>
-        <tbody
-          id={@id}
-          phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
-          class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700 dark:divide-zinc-900 dark:border-zinc-800 dark:text-zinc-300"
-        >
-          <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="group hover:bg-zinc-50 dark:hover:bg-zinc-950">
-            <td
-              :for={{col, i} <- Enum.with_index(@col)}
-              phx-click={@row_click && @row_click.(row)}
-              class={["relative p-0", @row_click && "hover:cursor-pointer"]}
-            >
-              <div class="block py-4 pr-6">
-                <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-950 sm:rounded-l-xl" />
-                <span class={["relative", i == 0 && "font-semibold text-zinc-900 dark:text-zinc-100"]}>
-                  {render_slot(col, @row_item.(row))}
-                </span>
-              </div>
-            </td>
-            <td :if={@action != []} class="relative w-14 p-0">
-              <div class="relative whitespace-nowrap py-4 text-right text-sm font-medium">
-                <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-950 sm:rounded-r-xl" />
-                <span
-                  :for={action <- @action}
-                  class="relative ml-4 font-semibold leading-6 text-zinc-900 hover:text-zinc-700 dark:text-zinc-100 dark:hover:text-zinc-300"
-                >
-                  {render_slot(action, @row_item.(row))}
-                </span>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    """
-  end
-
-  @doc """
-  Renders a data list.
-
-  ## Examples
-
-      <.list>
-        <:item title="Title"><%= @post.title %></:item>
-        <:item title="Views"><%= @post.views %></:item>
-      </.list>
-  """
-  slot :item, required: true do
-    attr :title, :string, required: true
-  end
-
-  def list(assigns) do
-    ~H"""
-    <div class="mt-10">
-      <dl class="-my-4 divide-y divide-zinc-100 dark:divide-zinc-900">
-        <div :for={item <- @item} class="flex gap-4 py-4 text-sm font-normal leading-6 sm:gap-8">
-          <dt class="w-1/3 flex-none text-muted dark:text-zinc-400 sm:w-1/4">{item.title}</dt>
-          <dd class="text-zinc-800 dark:text-zinc-200">{render_slot(item)}</dd>
-        </div>
-      </dl>
-    </div>
     """
   end
 
@@ -713,6 +610,7 @@ defmodule MmentumWeb.CoreComponents do
   attr :name, :string, required: true
   attr :class, :string, default: nil
 
+  # sobelow_skip ["XSS.Raw"]
   def icon(%{name: "hero-" <> _} = assigns) do
     assigns = assign(assigns, :svg, hero_icon(assigns.name))
 
@@ -727,9 +625,7 @@ defmodule MmentumWeb.CoreComponents do
     Map.fetch!(@heroicons, "hero-#{icon_name}")
   end
 
-  ## JS Commands
-
-  def show(js \\ %JS{}, selector) do
+  defp show(js, selector) do
     JS.show(js,
       to: selector,
       time: 200,
@@ -739,7 +635,7 @@ defmodule MmentumWeb.CoreComponents do
     )
   end
 
-  def hide(js \\ %JS{}, selector) do
+  defp hide(js, selector) do
     JS.hide(js,
       to: selector,
       time: 140,
@@ -749,8 +645,8 @@ defmodule MmentumWeb.CoreComponents do
     )
   end
 
-  def show_modal(js \\ %JS{}, id) when is_binary(id) do
-    js
+  defp show_modal(id) when is_binary(id) do
+    %JS{}
     |> JS.show(to: "##{id}")
     |> JS.show(
       to: "##{id}-bg",
@@ -764,8 +660,8 @@ defmodule MmentumWeb.CoreComponents do
     |> JS.focus_first(to: "##{id}-content")
   end
 
-  def hide_modal(js \\ %JS{}, id) do
-    js
+  defp hide_modal(id) do
+    %JS{}
     |> JS.hide(
       to: "##{id}-bg",
       time: 140,
@@ -779,10 +675,7 @@ defmodule MmentumWeb.CoreComponents do
     |> JS.pop_focus()
   end
 
-  @doc """
-  Translates an error message using gettext
-  """
-  def translate_error({msg, opts}) do
+  defp translate_error({msg, opts}) do
     # When using gettext, we typically pass the strings we want
     # to translate as a static argument:
     #
@@ -798,12 +691,5 @@ defmodule MmentumWeb.CoreComponents do
     else
       Gettext.dgettext(MmentumWeb.Gettext, "errors", msg, opts)
     end
-  end
-
-  @doc """
-  Translates the errors for a field from a keyword list of errors
-  """
-  def translate_errors(errors, field) when is_list(errors) do
-    for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
   end
 end

@@ -1,5 +1,7 @@
 import Config
 
+alias Attesto.Keystore.Static
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration
@@ -23,12 +25,6 @@ end
 if config_env() == :prod do
   oauth_issuer = System.fetch_env!("OAUTH_ISSUER")
 
-  config :mmentum, AttestoPhoenix.Config,
-    issuer: oauth_issuer,
-    audience: oauth_issuer <> "/mcp"
-
-  config :attesto, Attesto.Keystore.Static, signing_pem: System.fetch_env!("OAUTH_SIGNING_PRIVATE_KEY_PEM")
-
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
@@ -37,12 +33,6 @@ if config_env() == :prod do
       """
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
-
-  config :mmentum, Mmentum.Repo,
-    # ssl: true,
-    url: database_url,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-    socket_options: maybe_ipv6
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
@@ -58,6 +48,18 @@ if config_env() == :prod do
 
   host = System.get_env("PHX_HOST") || "app.mmentum.io"
   port = String.to_integer(System.get_env("PORT") || "4000")
+
+  config :attesto, Static, signing_pem: System.fetch_env!("OAUTH_SIGNING_PRIVATE_KEY_PEM")
+
+  config :mmentum, AttestoPhoenix.Config,
+    issuer: oauth_issuer,
+    audience: oauth_issuer <> "/mcp"
+
+  config :mmentum, Mmentum.Repo,
+    # ssl: true,
+    url: database_url,
+    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+    socket_options: maybe_ipv6
 
   config :mmentum, MmentumWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
@@ -100,6 +102,16 @@ if config_env() == :prod do
   #       force_ssl: [hsts: true]
   #
   # Check `Plug.SSL` for all available options in `force_ssl`.
+else
+  oauth_issuer = System.get_env("OAUTH_ISSUER", "https://localhost:4443")
+
+  signing_pem =
+    System.get_env("OAUTH_SIGNING_PRIVATE_KEY_PEM") ||
+      :public_key.pem_encode([
+        :public_key.pem_entry_encode(:ECPrivateKey, :public_key.generate_key({:namedCurve, :secp256r1}))
+      ])
+
+  config :attesto, Static, signing_pem: signing_pem
 
   # ## Configuring the mailer
   #
@@ -115,20 +127,9 @@ if config_env() == :prod do
   # For this example you need include a HTTP client required by Swoosh API client.
   # This app uses Finch, configured in config/prod.exs.
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
-else
-  oauth_issuer = System.get_env("OAUTH_ISSUER", "https://localhost:4443")
-
   config :mmentum, AttestoPhoenix.Config,
     issuer: oauth_issuer,
     audience: oauth_issuer <> "/mcp"
-
-  signing_pem =
-    System.get_env("OAUTH_SIGNING_PRIVATE_KEY_PEM") ||
-      :public_key.pem_encode([
-        :public_key.pem_entry_encode(:ECPrivateKey, :public_key.generate_key({:namedCurve, :secp256r1}))
-      ])
-
-  config :attesto, Attesto.Keystore.Static, signing_pem: signing_pem
 
   if config_env() == :dev and System.get_env("OAUTH_DEV_TLS_CERTFILE") do
     oauth_issuer_uri = URI.new!(oauth_issuer)
@@ -155,14 +156,14 @@ for client <- clients, redirect <- Map.fetch!(client, "redirect_uris") do
   secure? = uri.scheme == "https"
   local? = uri.scheme == "http" and uri.host in ["localhost", "127.0.0.1", "::1"]
 
-  unless (secure? or local?) and is_binary(uri.host) and uri.host != "" and
-           is_nil(uri.userinfo) and is_nil(uri.fragment) do
+  if !((secure? or local?) and is_binary(uri.host) and uri.host != "" and
+         is_nil(uri.userinfo) and is_nil(uri.fragment)) do
     raise ArgumentError, "OAuth redirect URI must use HTTPS or local HTTP, with a host and no userinfo or fragment"
   end
 end
 
-config :mmentum, :oauth_clients, clients
-
 config :mmentum, AttestoPhoenix.Config,
   principal_kinds: [Attesto.PrincipalKind.new("user", "user:")],
   trusted_proxies: Jason.decode!(System.get_env("OAUTH_TRUSTED_PROXIES_JSON", "[]"))
+
+config :mmentum, :oauth_clients, clients

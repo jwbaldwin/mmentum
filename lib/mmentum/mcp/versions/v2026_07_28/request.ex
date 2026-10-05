@@ -40,43 +40,43 @@ defmodule Mmentum.MCP.Versions.V2026_07_28.Request do
 
   defp validate_message(request), do: error(400, request, :invalid_request, "Invalid Request")
 
-  defp validate_metadata(%{"id" => _id} = request) do
-    case request do
-      %{
-        "params" => %{
-          "_meta" =>
-            %{
-              "io.modelcontextprotocol/protocolVersion" => version,
-              "io.modelcontextprotocol/clientCapabilities" => capabilities
-            } = metadata
-        }
-      }
-      when is_binary(version) and is_map(capabilities) ->
-        cond do
-          not valid_capabilities?(capabilities) ->
-            error(400, request, :invalid_params, "Invalid clientCapabilities")
+  defp validate_metadata(
+         %{
+           "id" => _id,
+           "params" => %{
+             "_meta" =>
+               %{
+                 "io.modelcontextprotocol/protocolVersion" => version,
+                 "io.modelcontextprotocol/clientCapabilities" => capabilities
+               } = metadata
+           }
+         } = request
+       )
+       when is_binary(version) and is_map(capabilities) do
+    cond do
+      not valid_capabilities?(capabilities) ->
+        error(400, request, :invalid_params, "Invalid clientCapabilities")
 
-          not optional_field?(metadata, "io.modelcontextprotocol/clientInfo", &valid_client_info?/1) ->
-            error(400, request, :invalid_params, "Invalid clientInfo")
+      not optional_field?(metadata, "io.modelcontextprotocol/clientInfo", &valid_client_info?/1) ->
+        error(400, request, :invalid_params, "Invalid clientInfo")
 
-          not optional_field?(
-            metadata,
-            "io.modelcontextprotocol/logLevel",
-            &(&1 in ~w(debug info notice warning error critical alert emergency))
-          ) ->
-            error(400, request, :invalid_params, "Invalid logLevel")
+      not optional_field?(
+        metadata,
+        "io.modelcontextprotocol/logLevel",
+        &(&1 in ~w(debug info notice warning error critical alert emergency))
+      ) ->
+        error(400, request, :invalid_params, "Invalid logLevel")
 
-          not optional_field?(metadata, "progressToken", &(is_binary(&1) or is_integer(&1))) ->
-            error(400, request, :invalid_params, "Invalid progressToken")
+      not optional_field?(metadata, "progressToken", &(is_binary(&1) or is_integer(&1))) ->
+        error(400, request, :invalid_params, "Invalid progressToken")
 
-          true ->
-            :ok
-        end
-
-      _invalid ->
-        error(400, request, :invalid_params, "Invalid or missing request metadata")
+      true ->
+        :ok
     end
   end
+
+  defp validate_metadata(%{"id" => _id} = request),
+    do: error(400, request, :invalid_params, "Invalid or missing request metadata")
 
   defp validate_metadata(_notification), do: :ok
 
@@ -104,12 +104,15 @@ defmodule Mmentum.MCP.Versions.V2026_07_28.Request do
     optional_field?(capabilities, "roots", &is_map/1) and
       optional_field?(capabilities, "sampling", &object_fields?(&1, ~w(context tools))) and
       optional_field?(capabilities, "elicitation", &object_fields?(&1, ~w(form url))) and
-      Enum.all?(~w(experimental extensions), fn key ->
-        optional_field?(capabilities, key, fn settings ->
-          is_map(settings) and Enum.all?(settings, fn {_name, options} -> is_map(options) end)
-        end)
-      end)
+      optional_field?(capabilities, "experimental", &object_values?/1) and
+      optional_field?(capabilities, "extensions", &object_values?/1)
   end
+
+  defp object_values?(settings) when is_map(settings) do
+    Enum.all?(settings, fn {_name, options} -> is_map(options) end)
+  end
+
+  defp object_values?(_settings), do: false
 
   defp object_fields?(value, fields) do
     is_map(value) and Enum.all?(fields, &optional_field?(value, &1, fn field -> is_map(field) end))

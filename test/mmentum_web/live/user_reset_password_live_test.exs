@@ -1,8 +1,8 @@
 defmodule MmentumWeb.UserResetPasswordLiveTest do
   use MmentumWeb.ConnCase
 
-  import Phoenix.LiveViewTest
   import Mmentum.AccountsFixtures
+  import Phoenix.LiveViewTest
 
   alias Mmentum.Accounts
 

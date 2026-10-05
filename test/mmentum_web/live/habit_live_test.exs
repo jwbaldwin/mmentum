@@ -1,13 +1,14 @@
 defmodule MmentumWeb.HabitLiveTest do
   use MmentumWeb.ConnCase
 
+  import Mmentum.HabitsFixtures
+  import Phoenix.LiveViewTest
+
   alias Mmentum.Habits
+  alias Mmentum.Habits.Habit
   alias Mmentum.Logs
   alias Mmentum.Logs.Log
   alias Mmentum.Repo
-
-  import Phoenix.LiveViewTest
-  import Mmentum.HabitsFixtures
 
   @create_attrs %{min_completions: 3, name: "some name"}
   @update_attrs %{
@@ -35,13 +36,13 @@ defmodule MmentumWeb.HabitLiveTest do
       |> put_connect_params(%{"time_zone" => "America/New_York"})
       |> live(~p"/habits")
 
-      assert Mmentum.Accounts.get_user!(user.id).time_zone == "America/New_York"
+      assert Repo.reload!(user).time_zone == "America/New_York"
 
       conn
       |> put_connect_params(%{"time_zone" => "America/Chicago"})
       |> live(~p"/habits")
 
-      assert Mmentum.Accounts.get_user!(user.id).time_zone == "America/New_York"
+      assert Repo.reload!(user).time_zone == "America/New_York"
     end
 
     test "undo from a stale second tab preserves older history and refreshes its controls", %{conn: conn, user: user} do
@@ -79,7 +80,7 @@ defmodule MmentumWeb.HabitLiveTest do
       {:ok, stale_dashboard, _html} = live(conn, ~p"/habits")
       timer = :sys.get_state(dashboard.pid).socket.assigns.period_timer
       current_time = Mmentum.Time.current_time(user.time_zone)
-      next_day = Mmentum.Time.next_start_of_range(current_time, :day) |> DateTime.from_naive!("Etc/UTC")
+      next_day = current_time |> Mmentum.Time.next_start_of_range(:day) |> DateTime.from_naive!("Etc/UTC")
       assert_in_delta Process.read_timer(timer), DateTime.diff(next_day, current_time, :millisecond), 1000
 
       # Keep the rendered previous-period completions while the database represents the new period
@@ -182,7 +183,7 @@ defmodule MmentumWeb.HabitLiveTest do
 
     test "renders safely for a legacy blank name" do
       user = Mmentum.AccountsFixtures.user_fixture()
-      user = user |> Ecto.Changeset.change(full_name: "") |> Mmentum.Repo.update!()
+      user = user |> Ecto.Changeset.change(full_name: "") |> Repo.update!()
 
       {:ok, _index_live, html} =
         build_conn()
@@ -261,7 +262,7 @@ defmodule MmentumWeb.HabitLiveTest do
       html = render(index_live)
       assert html =~ "2–3 per week"
 
-      habit = Repo.get_by!(Mmentum.Habits.Habit, name: "Go to the gym")
+      habit = Repo.get_by!(Habit, name: "Go to the gym")
       progress = "#habit-#{habit.id}-progress"
       optional_step = "#habit-#{habit.id}-progress-step-3"
       add_button = ~s|#habit-#{habit.id} button[phx-click="add_log"]|
@@ -349,7 +350,7 @@ defmodule MmentumWeb.HabitLiveTest do
       )
       |> render_submit()
 
-      assert Repo.get!(Mmentum.Habits.Habit, habit.id).max_completions == nil
+      assert Repo.get!(Habit, habit.id).max_completions == nil
       assert render(show_live) =~ "2 per week"
     end
 
@@ -402,7 +403,7 @@ defmodule MmentumWeb.HabitLiveTest do
       |> element(~s|#habit-#{habit.id} button[phx-click="remove_log"]|)
       |> render_click()
 
-      refute Repo.get(Mmentum.Logs.Log, log.id)
+      refute Repo.get(Log, log.id)
       assert has_element?(index_live, ~s|#habit-#{habit.id}-progress[data-completed="0"]|)
     end
 
@@ -439,7 +440,7 @@ defmodule MmentumWeb.HabitLiveTest do
         {:ok, detail, _html} = live(conn, ~p"/habits/#{habit}")
         timer = :sys.get_state(detail.pid).socket.assigns.period_timer
         current_time = Mmentum.Time.current_time(user.time_zone)
-        next_period = Mmentum.Time.next_start_of_range(current_time, period) |> DateTime.from_naive!("Etc/UTC")
+        next_period = current_time |> Mmentum.Time.next_start_of_range(period) |> DateTime.from_naive!("Etc/UTC")
         expected_delay = DateTime.diff(next_period, current_time, :millisecond)
         assert_in_delta Process.read_timer(timer), expected_delay, 1000
 
@@ -521,7 +522,7 @@ defmodule MmentumWeb.HabitLiveTest do
       habit: habit,
       user: user
     } do
-      now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+      now = NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
       older_time = NaiveDateTime.add(now, -2, :day)
       newer_time = NaiveDateTime.add(now, -1, :day)
 
@@ -586,7 +587,7 @@ defmodule MmentumWeb.HabitLiveTest do
       |> render_click()
 
       assert_redirect(show_live, ~p"/habits")
-      refute Repo.get(Mmentum.Habits.Habit, habit.id)
+      refute Repo.get(Habit, habit.id)
     end
 
     test "does not show or edit another user's habit", %{conn: conn} do

@@ -3,12 +3,10 @@ defmodule Mmentum.Tools do
   Handles listing and invoking the tools available to Mmentum agents
   """
 
-  alias Mmentum.Tools.Tool
   alias Mmentum.Tools.Context
+  alias Mmentum.Tools.Tool
 
   @tool_modules [Mmentum.Tools.ListHabits]
-
-  def tool_modules, do: @tool_modules
 
   @spec definitions() :: [map()]
   def definitions do

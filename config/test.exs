@@ -3,6 +3,12 @@ import Config
 # Only in tests, remove the complexity from the password hashing algorithm
 config :bcrypt_elixir, :log_rounds, 1
 
+# Print only warnings and errors during test
+config :logger, level: :warning
+
+# In test we don't send emails.
+config :mmentum, Mmentum.Mailer, adapter: Swoosh.Adapters.Test
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used
@@ -23,18 +29,12 @@ config :mmentum, MmentumWeb.Endpoint,
   secret_key_base: "IrERlTcw3Fy9SDIj3OLuRwglAg6ccBJ8jS/X5L1NaH2RoR7ApB9YcNF8QEf+fOQd",
   server: false
 
-# In test we don't send emails.
-config :mmentum, Mmentum.Mailer, adapter: Swoosh.Adapters.Test
-
-# Disable swoosh api client as it is only required for production adapters.
-config :swoosh, :api_client, false
-
-# Print only warnings and errors during test
-config :logger, level: :warning
+config :mmentum, :oauth_clients, [
+  %{"id" => "oauth-test", "name" => "OAuth test client", "redirect_uris" => ["https://client.example/callback"]}
+]
 
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime
 
-config :mmentum, :oauth_clients, [
-  %{"id" => "oauth-test", "name" => "OAuth test client", "redirect_uris" => ["https://client.example/callback"]}
-]
+# Disable swoosh api client as it is only required for production adapters.
+config :swoosh, :api_client, false

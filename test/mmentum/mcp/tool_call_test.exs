@@ -15,7 +15,7 @@ defmodule Mmentum.MCP.ToolCallTest do
     test "#{version} executes the owned habit query and returns structured and text results", %{conn: conn, user: user} do
       habit = Mmentum.HabitsFixtures.habit_fixture(%{user: user})
       Mmentum.HabitsFixtures.habit_fixture()
-      result = call_tool(conn, @version, %{"name" => "list_habits"}) |> json_response(200) |> Map.fetch!("result")
+      result = conn |> call_tool(@version, %{"name" => "list_habits"}) |> json_response(200) |> Map.fetch!("result")
       assert result["isError"] == false
       assert %{"habits" => [%{"id" => id, "current_completions" => 0}]} = result["structuredContent"]
       assert id == habit.id
@@ -30,11 +30,11 @@ defmodule Mmentum.MCP.ToolCallTest do
 
     test "#{version} distinguishes malformed calls from tool input errors", %{conn: conn} do
       for params <- [%{}, %{"name" => 1}, %{"name" => "list_habits", "arguments" => []}] do
-        assert %{"error" => %{"code" => -32_602}} = call_tool(conn, @version, params) |> json_response(400)
+        assert %{"error" => %{"code" => -32_602}} = conn |> call_tool(@version, params) |> json_response(400)
       end
 
       result =
-        call_tool(conn, @version, %{"name" => "list_habits", "arguments" => %{"user_id" => 1}}) |> json_response(200)
+        conn |> call_tool(@version, %{"name" => "list_habits", "arguments" => %{"user_id" => 1}}) |> json_response(200)
 
       assert result["result"]["isError"]
       refute Map.has_key?(result["result"], "structuredContent")

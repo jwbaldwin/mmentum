@@ -1,8 +1,9 @@
 defmodule MmentumWeb.UserAuth do
+  @moduledoc false
   use MmentumWeb, :verified_routes
 
-  import Plug.Conn
   import Phoenix.Controller
+  import Plug.Conn
 
   alias Mmentum.Accounts
 

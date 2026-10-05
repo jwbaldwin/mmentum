@@ -3,6 +3,9 @@ defmodule MmentumWeb.Router do
 
   import MmentumWeb.UserAuth
 
+  alias AttestoPhoenix.Controller.AuthorizeController
+
+  # sobelow_skip ["Config.CSP"]
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -10,11 +13,23 @@ defmodule MmentumWeb.Router do
     plug :put_root_layout, html: {MmentumWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :put_content_security_policy
     plug :fetch_current_user
   end
 
-  pipeline :api do
-    plug :accepts, ["json"]
+  defp put_content_security_policy(conn, _options) do
+    endpoint = MmentumWeb.Endpoint.struct_url()
+    websocket_scheme = if endpoint.scheme == "https", do: "wss", else: "ws"
+    websocket_origin = URI.to_string(%{endpoint | scheme: websocket_scheme, path: nil})
+
+    policy =
+      "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; " <>
+        "frame-src 'self'; form-action 'self'; script-src 'self' https://cdn.splitbee.io; " <>
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " <>
+        "font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; " <>
+        "connect-src 'self' #{websocket_origin} https://hive.splitbee.io"
+
+    put_resp_header(conn, "content-security-policy", policy)
   end
 
   pipeline :oauth do
@@ -56,12 +71,12 @@ defmodule MmentumWeb.Router do
 
   scope "/" do
     pipe_through [:oauth, :browser, :require_authenticated_user]
-    get "/oauth/authorize", AttestoPhoenix.Controller.AuthorizeController, :authorize
+    get "/oauth/authorize", AuthorizeController, :authorize
   end
 
   scope "/" do
     pipe_through [:oauth, :browser, :require_authenticated_user, :oauth_consent]
-    post "/oauth/consent", AttestoPhoenix.Controller.AuthorizeController, :authorize
+    post "/oauth/consent", AuthorizeController, :authorize
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

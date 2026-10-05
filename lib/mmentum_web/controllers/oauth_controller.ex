@@ -1,9 +1,10 @@
 defmodule MmentumWeb.OAuthController do
   use MmentumWeb, :controller
 
-  alias Mmentum.OAuth
-  alias AttestoPhoenix.{ConsentGrant, Config}
+  alias AttestoPhoenix.Config
+  alias AttestoPhoenix.ConsentGrant
   alias AttestoPhoenix.Store.EctoConsentGrantStore
+  alias Mmentum.OAuth
 
   def authenticate_resource_owner(conn, _request, _options) do
     {:authenticated, %{subject: "user:#{conn.assigns.current_user.id}"}}
@@ -16,10 +17,7 @@ defmodule MmentumWeb.OAuthController do
 
       case conn.private[:oauth_consent_decision] do
         {decision, nonce} ->
-          case EctoConsentGrantStore.consume(nonce, binding) do
-            :ok when decision == "allow" -> {:consented, subject}
-            _ -> {:denied, :access_denied}
-          end
+          confirm_consent(decision, nonce, binding, subject)
 
         nil ->
           consent = Application.fetch_env!(:mmentum, :oauth_consent)
@@ -36,6 +34,7 @@ defmodule MmentumWeb.OAuthController do
 
           {:halt,
            conn
+           |> allow_consent_redirect(request.redirect_uri)
            |> put_resp_header("cache-control", "no-store")
            |> put_resp_header("referrer-policy", "no-referrer")
            |> put_view(html: MmentumWeb.OAuthHTML)
@@ -49,6 +48,21 @@ defmodule MmentumWeb.OAuthController do
     else
       _ -> {:denied, :invalid_scope_or_resource}
     end
+  end
+
+  defp confirm_consent(decision, nonce, binding, subject) do
+    case EctoConsentGrantStore.consume(nonce, binding) do
+      :ok when decision == "allow" -> {:consented, subject}
+      _ -> {:denied, :access_denied}
+    end
+  end
+
+  defp allow_consent_redirect(conn, redirect_uri) do
+    callback = URI.parse(redirect_uri)
+    origin = URI.to_string(%{callback | path: nil, query: nil, fragment: nil, userinfo: nil})
+    [policy] = get_resp_header(conn, "content-security-policy")
+    policy = String.replace(policy, "form-action 'self';", "form-action 'self' #{origin};")
+    put_resp_header(conn, "content-security-policy", policy)
   end
 
   def connections(conn, _params) do
@@ -68,7 +82,9 @@ defmodule MmentumWeb.OAuthController do
     config = OAuth.config()
 
     metadata =
-      Attesto.Discovery.metadata(Config.to_attesto_config(config),
+      config
+      |> Config.to_attesto_config()
+      |> Attesto.Discovery.metadata(
         authorization_endpoint: Config.authorize_endpoint_url(config),
         scopes_supported: config.scopes_supported,
         response_types_supported: ["code"],
@@ -86,11 +102,8 @@ defmodule MmentumWeb.OAuthController do
     config = OAuth.config()
 
     metadata =
-      AttestoMCP.Metadata.protected_resource(
-        resource: config.audience,
-        authorization_servers: [config.issuer],
-        scopes_supported: config.scopes_supported
-      )
+      [resource: config.audience, authorization_servers: [config.issuer], scopes_supported: config.scopes_supported]
+      |> AttestoMCP.Metadata.protected_resource()
       |> Map.delete("dpop_signing_alg_values_supported")
 
     conn |> put_resp_header("cache-control", "public, max-age=300") |> json(metadata)

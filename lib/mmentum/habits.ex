@@ -4,12 +4,12 @@ defmodule Mmentum.Habits do
   """
 
   import Ecto.Query, warn: false
-  alias Mmentum.Repo
 
   alias Mmentum.Accounts.User
   alias Mmentum.Habits.Habit
   alias Mmentum.Logs
   alias Mmentum.Logs.Log
+  alias Mmentum.Repo
   alias Mmentum.Time
 
   @doc "Lists the user's habits with completion activity from each habit's current period"
@@ -33,7 +33,7 @@ defmodule Mmentum.Habits do
       current_logs =
         Enum.filter(habit.logs, fn log ->
           NaiveDateTime.compare(log.inserted_at, start_of_period) != :lt and
-            NaiveDateTime.compare(log.inserted_at, end_of_period) == :lt
+            NaiveDateTime.before?(log.inserted_at, end_of_period)
         end)
 
       %{habit | logs: current_logs}
@@ -47,24 +47,12 @@ defmodule Mmentum.Habits do
     Repo.get_by!(Habit, id: id, user_id: user_id)
   end
 
-  @doc "Gets one of the user's habits with completion activity from its current period"
-  def get_habit_with_current_progress!(%User{} = user, id, %DateTime{} = current_time) do
-    habit = get_habit!(user, id)
-    start_of_range = Time.start_of_range(current_time, habit.periodicity)
-    end_of_range = Time.next_start_of_range(current_time, habit.periodicity)
-
-    Repo.preload(
-      habit,
-      [logs: Logs.in_range_query(user, start_of_range, end_of_range)],
-      force: true
-    )
-  end
-
   @doc """
   Creates a habit for the user
   """
   def create_habit(%User{} = user, attrs \\ %{}) do
-    Ecto.build_assoc(user, :habits)
+    user
+    |> Ecto.build_assoc(:habits)
     |> Habit.changeset(attrs)
     |> Repo.insert()
   end

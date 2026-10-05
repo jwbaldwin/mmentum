@@ -1,4 +1,5 @@
 defmodule MmentumWeb.UserConfirmationInstructionsLive do
+  @moduledoc false
   use MmentumWeb, :live_view
 
   alias Mmentum.Accounts

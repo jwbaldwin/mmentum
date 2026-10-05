@@ -65,18 +65,20 @@ defmodule Mmentum.Tools.ListHabits do
   @impl true
   @spec execute(Context.t(), Tool.arguments()) :: {:ok, result()} | {:error, :invalid_arguments, String.t()}
   def execute(%{user: user, now: now}, arguments) do
-    with {:ok, _arguments} <- Zoi.parse(@arguments_schema, arguments) do
-      time_zone = user.time_zone || "Etc/UTC"
-      current_time = DateTime.shift_zone!(now, time_zone)
+    case Zoi.parse(@arguments_schema, arguments) do
+      {:ok, _arguments} ->
+        time_zone = user.time_zone || "Etc/UTC"
+        current_time = DateTime.shift_zone!(now, time_zone)
 
-      habits =
-        user
-        |> Habits.list_habits_with_current_progress(current_time)
-        |> Habit.build()
+        habits =
+          user
+          |> Habits.list_habits_with_current_progress(current_time)
+          |> Habit.build()
 
-      {:ok, %{time_zone: time_zone, habits: habits}}
-    else
-      {:error, _errors} -> {:error, :invalid_arguments, "This tool takes no arguments."}
+        {:ok, %{time_zone: time_zone, habits: habits}}
+
+      {:error, _errors} ->
+        {:error, :invalid_arguments, "This tool takes no arguments."}
     end
   end
 end

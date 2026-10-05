@@ -7,8 +7,10 @@ defmodule MmentumWeb.LayoutsTest do
 
   test "account menu renders the animated appearance cycle button" do
     html =
-      render_component(&Layouts.account_menu/1,
-        current_user: %{email: "james@example.com", full_name: "James Baldwin"}
+      render_component(&Layouts.app/1,
+        current_user: %{email: "james@example.com", full_name: "James Baldwin"},
+        flash: %{},
+        inner_content: ""
       )
 
     assert html =~ ~s(id="account-appearance")

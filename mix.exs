@@ -11,6 +11,7 @@ defmodule Mmentum.MixProject do
       unused: [
         severity: :hint,
         ignore: [
+          {Mmentum.Habits.Values.Habit, :schema, 0},
           {:_, ~r/^__.*__\??$/, :_},
           {:_, :child_spec, 1},
           {Mmentum.Mailer, :deliver, 2},

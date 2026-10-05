@@ -1,4 +1,5 @@
 defmodule MmentumWeb.HabitComponents do
+  @moduledoc false
   use MmentumWeb, :html
 
   alias Mmentum.Habits.Habit
@@ -189,10 +190,7 @@ defmodule MmentumWeb.HabitComponents do
     "#{completed} of #{target} completed"
   end
 
-  defp completion_summary(
-         %Habit{min_completions: minimum, max_completions: maximum},
-         completed
-       ) do
+  defp completion_summary(%Habit{min_completions: minimum, max_completions: maximum}, completed) do
     required_completed = min(completed, minimum)
     optional_completed = max(completed - minimum, 0)
     optional_total = maximum - minimum
@@ -217,12 +215,14 @@ defmodule MmentumWeb.HabitComponents do
     remaining = if completed == 0, do: 1.0, else: 1 - completed_connections / total_connections
     fill_offset = if completed == 0, do: 0.0, else: remaining
 
-    [
-      "--progress-fill-right-percent: #{Float.round(remaining * 100, 4)}%",
-      "--progress-fill-offset-narrow: #{Float.round(fill_offset * 28, 4)}px",
-      "--progress-fill-offset-mobile: #{Float.round(fill_offset * 32, 4)}px",
-      "--progress-fill-offset-desktop: #{Float.round(fill_offset * 44, 4)}px"
-    ]
-    |> Enum.join("; ")
+    Enum.join(
+      [
+        "--progress-fill-right-percent: #{Float.round(remaining * 100, 4)}%",
+        "--progress-fill-offset-narrow: #{Float.round(fill_offset * 28, 4)}px",
+        "--progress-fill-offset-mobile: #{Float.round(fill_offset * 32, 4)}px",
+        "--progress-fill-offset-desktop: #{Float.round(fill_offset * 44, 4)}px"
+      ],
+      "; "
+    )
   end
 end

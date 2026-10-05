@@ -46,7 +46,7 @@ defmodule Mmentum.Habits.Values.MomentumSeries do
     sample_time = sample_time |> DateTime.shift_zone!(@utc_timezone) |> DateTime.to_naive()
 
     Enum.any?(logs, fn log ->
-      NaiveDateTime.compare(log.inserted_at, previous_sample) == :gt &&
+      NaiveDateTime.after?(log.inserted_at, previous_sample) &&
         NaiveDateTime.compare(log.inserted_at, sample_time) != :gt
     end)
   end
@@ -55,8 +55,7 @@ defmodule Mmentum.Habits.Values.MomentumSeries do
     habit_started_at = DateTime.from_naive!(habit.inserted_at, @utc_timezone)
 
     completed_periods =
-      (@history_periods - 1)..1//-1
-      |> Enum.map(fn periods_ago ->
+      Enum.map((@history_periods - 1)..1//-1, fn periods_ago ->
         current_time
         |> Time.next_start_of_range(habit.periodicity, -periods_ago)
         |> NaiveDateTime.add(-1, :microsecond)
@@ -64,7 +63,7 @@ defmodule Mmentum.Habits.Values.MomentumSeries do
         |> DateTime.shift_zone!(current_time.time_zone)
       end)
 
-    ([habit_started_at] ++ completed_periods ++ [current_time])
+    [habit_started_at, current_time | completed_periods]
     |> Enum.filter(&(DateTime.compare(&1, habit_started_at) != :lt))
     |> Enum.uniq_by(&DateTime.to_unix(&1, :microsecond))
     |> Enum.sort(DateTime)

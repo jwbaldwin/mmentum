@@ -31,11 +31,7 @@ defmodule Mmentum.Time do
   @spec current_time(String.t()) :: DateTime.t()
   def current_time(time_zone), do: DateTime.now!(time_zone)
 
-  @doc """
-  Returns the current timezone information
-  >> "
-  """
-  def current_timezone do
+  defp current_timezone do
     System.get_env("TZ") || @utc_timezone
   end
 
@@ -151,7 +147,8 @@ defmodule Mmentum.Time do
   end
 
   defp to_current_timezone(%DateTime{} = time) do
-    DateTime.shift_zone(time, current_timezone())
+    time
+    |> DateTime.shift_zone(current_timezone())
     |> case do
       {:ok, local_time} -> local_time
       {:error, _reason} -> time

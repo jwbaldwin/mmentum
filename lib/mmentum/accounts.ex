@@ -4,11 +4,12 @@ defmodule Mmentum.Accounts do
   """
 
   import Ecto.Query, warn: false
-  alias Mmentum.Repo
-
-  alias Mmentum.Accounts.{User, UserToken, UserNotifier}
 
   ## Database getters
+  alias Mmentum.Accounts.User
+  alias Mmentum.Accounts.UserNotifier
+  alias Mmentum.Accounts.UserToken
+  alias Mmentum.Repo
 
   @doc """
   Gets a user by email.
@@ -38,29 +39,10 @@ defmodule Mmentum.Accounts do
       nil
 
   """
-  def get_user_by_email_and_password(email, password)
-      when is_binary(email) and is_binary(password) do
+  def get_user_by_email_and_password(email, password) when is_binary(email) and is_binary(password) do
     user = Repo.get_by(User, email: email)
     if User.valid_password?(user, password), do: user
   end
-
-  @doc """
-  Gets a single user.
-
-  Raises `Ecto.NoResultsError` if the User does not exist.
-
-  ## Examples
-
-      iex> get_user!(123)
-      %User{}
-
-      iex> get_user!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_user!(id), do: Repo.get!(User, id)
-
-  ## User registration
 
   @doc """
   Registers a user.
@@ -80,6 +62,7 @@ defmodule Mmentum.Accounts do
     |> Repo.insert()
   end
 
+  ## Settings
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking user changes.
 
@@ -92,8 +75,6 @@ defmodule Mmentum.Accounts do
   def change_user_registration(%User{} = user, attrs \\ %{}) do
     User.registration_changeset(user, attrs, hash_password: false, validate_email: false)
   end
-
-  ## Settings
 
   @doc """
   Returns an `%Ecto.Changeset{}` for changing the user email.
@@ -205,6 +186,9 @@ defmodule Mmentum.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
+
+  ## Session
+
   def update_user_password(user, password, attrs) do
     changeset =
       user
@@ -221,8 +205,7 @@ defmodule Mmentum.Accounts do
     end
   end
 
-  ## Session
-
+  ## Confirmation
   @doc """
   Generates a session token
   """
@@ -248,8 +231,6 @@ defmodule Mmentum.Accounts do
     :ok
   end
 
-  ## Confirmation
-
   @doc ~S"""
   Delivers the confirmation email instructions to the given user.
 
@@ -265,6 +246,7 @@ defmodule Mmentum.Accounts do
   def deliver_user_confirmation_instructions(%User{} = user, confirmation_url_fun)
       when is_function(confirmation_url_fun, 1) do
     if user.confirmed_at do
+      ## Reset password
       {:error, :already_confirmed}
     else
       {encoded_token, user_token} = UserToken.build_email_token(user, "confirm")
@@ -294,8 +276,6 @@ defmodule Mmentum.Accounts do
     |> Ecto.Multi.update(:user, User.confirm_changeset(user))
     |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, ["confirm"]))
   end
-
-  ## Reset password
 
   @doc ~S"""
   Delivers the reset password email to the given user.

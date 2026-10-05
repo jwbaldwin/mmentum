@@ -1,4 +1,5 @@
 defmodule MmentumWeb.HabitLive.Show do
+  @moduledoc false
   use MmentumWeb, :live_view
 
   import MmentumWeb.HabitComponents
@@ -61,7 +62,7 @@ defmodule MmentumWeb.HabitLive.Show do
     period_timer =
       if connected?(socket) do
         if socket.assigns.period_timer, do: Process.cancel_timer(socket.assigns.period_timer)
-        next_period = Time.next_start_of_range(current_time, habit.periodicity) |> DateTime.from_naive!("Etc/UTC")
+        next_period = current_time |> Time.next_start_of_range(habit.periodicity) |> DateTime.from_naive!("Etc/UTC")
         Process.send_after(self(), :period_boundary, DateTime.diff(next_period, current_time, :millisecond) + 1)
       end
 

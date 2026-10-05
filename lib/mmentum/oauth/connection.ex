@@ -1,4 +1,5 @@
 defmodule Mmentum.OAuth.Connection do
+  @moduledoc false
   use Ecto.Schema
 
   @primary_key {:id, :string, autogenerate: false}

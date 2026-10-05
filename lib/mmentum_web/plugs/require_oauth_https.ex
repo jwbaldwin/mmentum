@@ -1,4 +1,5 @@
 defmodule MmentumWeb.Plugs.RequireOAuthHTTPS do
+  @moduledoc false
   import Plug.Conn
 
   def init(options), do: options

@@ -1,4 +1,5 @@
 defmodule MmentumWeb.UserLoginLive do
+  @moduledoc false
   use MmentumWeb, :live_view
 
   def render(assigns) do

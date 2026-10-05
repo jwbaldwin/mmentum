@@ -1,13 +1,13 @@
 defmodule Mmentum.LogsTest do
   use Mmentum.DataCase
 
-  alias Mmentum.Logs
-  alias Mmentum.Logs.Log
-  alias Mmentum.Repo
-
   import Mmentum.AccountsFixtures
   import Mmentum.HabitsFixtures
   import Mmentum.LogsFixtures
+
+  alias Mmentum.Logs
+  alias Mmentum.Logs.Log
+  alias Mmentum.Repo
 
   describe "completion activity" do
     test "list_logs_by_habit/2 returns an owned habit's activity" do

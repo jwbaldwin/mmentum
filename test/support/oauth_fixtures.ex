@@ -1,8 +1,11 @@
 defmodule Mmentum.OAuthFixtures do
+  @moduledoc false
+  import ExUnit.Assertions
   import Phoenix.ConnTest
   import Plug.Conn
-  import ExUnit.Assertions
+
   alias MmentumWeb.Endpoint
+
   @endpoint Endpoint
 
   def https_conn do
@@ -81,7 +84,7 @@ defmodule Mmentum.OAuthFixtures do
 
   def tokens(user, overrides \\ %{}) do
     {code, verifier} = authorize(user, overrides)
-    exchange(code, verifier) |> json_response(200)
+    code |> exchange(verifier) |> json_response(200)
   end
 
   def refresh(token) do
@@ -89,6 +92,6 @@ defmodule Mmentum.OAuthFixtures do
   end
 
   def bearer_conn(token) do
-    https_conn() |> put_req_header("authorization", "Bearer " <> token)
+    put_req_header(https_conn(), "authorization", "Bearer " <> token)
   end
 end
