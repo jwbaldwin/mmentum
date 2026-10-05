@@ -34,6 +34,7 @@ defmodule Mmentum.MixProject do
   defp deps do
     [
       {:attesto_phoenix, "~> 3.2"},
+      {:zoi, "~> 0.18.11"},
       {:attesto_mcp, "~> 1.3"},
       {:bcrypt_elixir, "~> 3.2"},
       {:phoenix, "~> 1.8"},

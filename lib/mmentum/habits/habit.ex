@@ -17,6 +17,20 @@ defmodule Mmentum.Habits.Habit do
     timestamps()
   end
 
+  @typedoc "Stored habit fields; associations may be unloaded until the owning query preloads them"
+  @type t :: %__MODULE__{
+          id: integer() | nil,
+          name: String.t() | nil,
+          identity: String.t() | nil,
+          why_it_matters: String.t() | nil,
+          what_counts: String.t() | nil,
+          periodicity: :day | :week | :month,
+          min_completions: integer() | nil,
+          max_completions: integer() | nil,
+          user_id: integer() | nil,
+          logs: [Mmentum.Logs.Log.t()] | Ecto.Association.NotLoaded.t()
+        }
+
   @doc "Returns the most completions displayed for the habit's current period"
   def completion_cap(%__MODULE__{max_completions: nil, min_completions: minimum}), do: minimum
   def completion_cap(%__MODULE__{max_completions: maximum}), do: maximum

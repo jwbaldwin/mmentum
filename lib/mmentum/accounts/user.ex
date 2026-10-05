@@ -16,6 +16,11 @@ defmodule Mmentum.Accounts.User do
     timestamps()
   end
 
+  @type t :: %__MODULE__{
+          id: integer() | nil,
+          time_zone: String.t() | nil
+        }
+
   @doc """
   A user changeset for registration.
 

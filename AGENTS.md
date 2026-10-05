@@ -100,6 +100,10 @@ The following taxonomy is the default for new application modules, not an instru
 - Keep reused or noisy representation logic here instead of scattering it across callers
 - No policy or side effects; names should match the schema or presentation concept
 - Existing example: `Mmentum.Habits.Values.MomentumSeries`
+- Place Values under their owning domain in `lib/mmentum/<domain>/values/`. Name an entity value for the entity, such as `Mmentum.Habits.Values.Habit`, rather than adding `Summary` or `Response` merely to distinguish it from the Ecto schema
+- Keep the entity's Zoi schema, generated `t()` type, and `build/1` field mapping together in its Value module. Expose `schema/0` so callers compose response schemas from it rather than repeat the fields
+- When both single and collection forms are needed, overload `build/1` for the Ecto struct and a list of those structs. The list clause maps the singular builder, preserving order
+- Builders receive already-loaded records. Document required preloads; leave queries, authorization, time-zone defaults, and period selection with callers. Tools own their response wrappers and compose the shared Values
 
 **Contexts**
 
@@ -175,6 +179,9 @@ The following taxonomy is the default for new application modules, not an instru
 
 ## Elixir And Ecto Guidelines
 
+- Define `t()` on Ecto schemas for stored records and a separate `t()` on Value modules for public output. Alias the Ecto module as `HabitSchema` (or the matching entity name) when both representations share a name
+- Add meaningful `@spec`, `@doc`, and `@typedoc` contracts to public domain and tool APIs. Use named types such as `User.t()`, `Context.t()`, and `Scope.t()`, and standard types such as `DateTime.t()`, rather than broad maps or strings where the domain is known
+- Generate Value output types and JSON Schema from the same Zoi definition. Spec `build/1` from the Ecto schema's `t()` to the Value's `t()`, with corresponding list signatures. Schema generation does not replace boundary validation or testing the returned values
 - Keep one module per file; do not nest modules
 - Bind the result of `if`, `case` and `cond` rather than rebinding inside their branches
 - Lists do not support index access syntax; use pattern matching, `Enum.at/2` or `List`

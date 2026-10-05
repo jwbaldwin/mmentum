@@ -6,6 +6,7 @@ Prefer code whose purpose and flow are clear on the first read. Fewer lines are 
 
 - Separate choosing an operation from performing it. When dispatching by operation name, prefer one entry function with a short `case` that calls named operation functions
 - Use separate function clauses when different data shapes make the implementation clearer, not automatically because this is Elixir
+- Prefer `with` for validation flows. When an `if` has an `else`, use the block `if ... do ... else ... end` form, not keyword syntax
 - Extract business logic into a named function when it represents a distinct operation, even if the function is short or used only once
 - Do not extract a function merely to give a name to a guard, pattern match, trivial return tuple, config lookup, or standard-library call. Keep these expressions where the reader needs them
 - Keep shared work, such as request logging when needed, at the entry point rather than repeating it across operations

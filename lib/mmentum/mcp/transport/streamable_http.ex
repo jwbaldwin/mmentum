@@ -43,7 +43,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTP do
 
             context = %{
               user: conn.assigns.current_user,
-              scopes: conn.assigns.attesto_mcp_scopes,
+              scopes: Mmentum.Tools.Scope.from_oauth(conn.assigns.attesto_mcp_scopes),
               now: DateTime.utc_now()
             }
 
