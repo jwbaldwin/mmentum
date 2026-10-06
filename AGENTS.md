@@ -181,6 +181,7 @@ The following taxonomy is the default for new application modules, not an instru
 ## Elixir And Ecto Guidelines
 
 - Define `t()` on Ecto schemas for stored records and a separate `t()` on Value modules for public output. Alias the Ecto module as `HabitSchema` (or the matching entity name) when both representations share a name
+- When aliasing an entity Value, use its entity name with a `Value` suffix, such as `alias Mmentum.Habits.Values.Habit, as: HabitValue`. Do not introduce generic `Result`, `Response`, or `Summary` modules merely to wrap a Value; tools own their small response wrappers
 - Add meaningful `@spec`, `@doc`, and `@typedoc` contracts to public domain and tool APIs. Use named types such as `User.t()`, `Context.t()`, and `Scope.t()`, and standard types such as `DateTime.t()`, rather than broad maps or strings where the domain is known
 - Generate Value output types and JSON Schema from the same Zoi definition. Spec `build/1` from the Ecto schema's `t()` to the Value's `t()`, with corresponding list signatures. Schema generation does not replace boundary validation or testing the returned values
 - Keep one module per file; do not nest modules

@@ -47,9 +47,27 @@ defmodule Mmentum.Habits do
     Repo.get_by!(Habit, id: id, user_id: user_id)
   end
 
+  @doc "Gets an owned habit with its current-period logs, or returns :not_found"
+  @spec get_habit_with_current_progress(User.t(), integer(), DateTime.t()) :: {:ok, Habit.t()} | {:error, :not_found}
+  def get_habit_with_current_progress(%User{id: user_id} = user, id, %DateTime{} = current_time) do
+    case Repo.get_by(Habit, id: id, user_id: user_id) do
+      nil -> {:error, :not_found}
+      habit -> {:ok, load_current_progress(user, habit, current_time)}
+    end
+  end
+
+  @doc "Loads current-period logs onto an already-owned habit, including after a target or period update"
+  @spec load_current_progress(User.t(), Habit.t(), DateTime.t()) :: Habit.t()
+  def load_current_progress(%User{} = user, %Habit{} = habit, %DateTime{} = current_time) do
+    start_of_period = Time.start_of_range(current_time, habit.periodicity)
+    end_of_period = Time.next_start_of_range(current_time, habit.periodicity)
+    Repo.preload(habit, [logs: Logs.in_range_query(user, start_of_period, end_of_period)], force: true)
+  end
+
   @doc """
   Creates a habit for the user
   """
+  @spec create_habit(User.t(), map()) :: {:ok, Habit.t()} | {:error, Ecto.Changeset.t()}
   def create_habit(%User{} = user, attrs \\ %{}) do
     user
     |> Ecto.build_assoc(:habits)
@@ -60,6 +78,7 @@ defmodule Mmentum.Habits do
   @doc """
   Updates one of the user's habits
   """
+  @spec update_habit(User.t(), integer(), map()) :: {:ok, Habit.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_habit(%User{} = user, id, attrs) do
     Repo.transact(fn repo ->
       with {:ok, habit} <- fetch_locked_habit(repo, user, id) do

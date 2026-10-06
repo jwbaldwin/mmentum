@@ -10,4 +10,10 @@ defmodule Mmentum.Tools.Context do
   alias Mmentum.Tools.Scope
 
   @type t :: %{user: User.t(), scopes: [Scope.t()], now: DateTime.t()}
+
+  @doc "Resolves the invocation's instant in the user's time zone, defaulting to UTC"
+  @spec current_time(t()) :: DateTime.t()
+  def current_time(%{user: user, now: now}) do
+    DateTime.shift_zone!(now, user.time_zone || "Etc/UTC")
+  end
 end

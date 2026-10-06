@@ -2,7 +2,7 @@
 
 ## Protocol implementation
 
-Mmentum supports MCP `2026-07-28` and `2025-11-25` at the same `/mcp` endpoint, including discovery and execution of `list_habits`. Further habit tools are planned in [`mcp-tools.md`](mcp-tools.md).
+Mmentum supports MCP `2026-07-28` and `2025-11-25` at the same `/mcp` endpoint, including discovery and execution of `list_habits`, `get_habit`, `create_habit`, and `update_habit`. Further habit tools are planned in [`mcp-tools.md`](mcp-tools.md).
 
 In `2026-07-28`, each request carries its protocol version and client capabilities in `params._meta`. `server/discover` reports supported versions and features; clients can also send an operation directly.
 
@@ -126,7 +126,15 @@ To retire the older version, delete its namespace and tests, remove its registry
 - Return modern result metadata and cache hints only for `2026-07-28`; use the older initialization and result shapes for `2025-11-25`
 - Return HTTP 405 for GET and DELETE; neither implementation opens a server-to-client stream or issues session IDs
 
-`list_habits` accepts an empty argument object and requires `mmentum:read`. It calls the existing `Habits.list_habits_with_current_progress/2` using the user's local time, selects habit fields, and counts the returned logs without capping them. It returns `{time_zone: "...", habits: [...]}` with `id`, `name`, `identity`, `what_counts`, `periodicity`, `min_completions`, `max_completions`, and `current_completions` per habit. No habits is a successful empty list. A missing user time zone uses `Etc/UTC`, explicitly named in the result. Zoi generates the result type and JSON Schema from one definition and validates empty tool arguments. Schemas include field descriptions and the tool advertises read-only annotations.
+`list_habits` accepts an empty argument object and requires `mmentum:read`. It calls `Habits.list_habits_with_current_progress/2` using the user's local time and passes the loaded habits to `HabitValue.build/1`. It returns `{time_zone: "...", habits: [...]}` with `id`, `name`, `identity`, `why_it_matters`, `what_counts`, `periodicity`, `min_completions`, `max_completions`, and uncapped `current_completions` per habit. No habits is a successful empty list.
+
+`get_habit` accepts `{habit_id: integer}` and requires `mmentum:read`. It loads only that owned habit and its current-period logs. Missing and foreign IDs return the same not-found tool error.
+
+`create_habit` requires `mmentum:write` and accepts writable fields directly: `name` and `min_completions` are required; `periodicity` defaults to `week`. Optional fields are `identity`, `why_it_matters`, `what_counts`, and `max_completions`. It calls `Habits.create_habit/2`; the authenticated user supplies ownership. Repeating a successful call creates another habit; the tool advertises that it is not idempotent.
+
+`update_habit` requires `mmentum:write` and accepts `{habit_id: integer, fields: {...}}`. It calls the existing ownership-scoped, row-locked `Habits.update_habit/3`. Omitted fields retain stored values; explicit null clears optional fields. An empty fields object is a no-op. Current progress uses the updated periodicity. Invalid target combinations fail against stored state without writing.
+
+The three single-habit tools return `{time_zone: "...", habit: {...}}`, composing the same Habit Value schema as the list tool. Each tool owns its wrapper and explicit execution flow. `HabitFields` shares the writable-field schemas; `Tool` formats Zoi and Ecto validation errors; `Context.current_time/1` resolves local time with an explicit `Etc/UTC` fallback. Zoi generates output types and JSON Schema from the same definitions. Tools reject unknown arguments, and domain changesets retain business validation. Invalid arguments and domain failures return MCP tool errors rather than JSON-RPC transport errors.
 
 Invalid checked fields return HTTP 400. Unknown methods return a JSON-RPC method-not-found error, with HTTP 404 in the modern version and HTTP 200 in the older version. `clientInfo` is required during older initialization and optional on modern requests. Request IDs must be strings or integers; unreadable IDs are omitted from errors. Accepted notifications return HTTP 202 without a body. Unknown extension fields remain open; unused tracing fields are not interpreted.
 

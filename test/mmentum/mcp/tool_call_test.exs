@@ -4,6 +4,9 @@ defmodule Mmentum.MCP.ToolCallTest do
   import ExUnit.CaptureLog
 
   alias Mmentum.OAuthFixtures
+  alias Mmentum.Tools.CreateHabit
+  alias Mmentum.Tools.GetHabit
+  alias Mmentum.Tools.UpdateHabit
 
   setup do
     user = Mmentum.AccountsFixtures.user_fixture()
@@ -13,6 +16,64 @@ defmodule Mmentum.MCP.ToolCallTest do
 
   for version <- ["2025-11-25", "2026-07-28"] do
     @version version
+
+    test "#{version} creates, updates and gets a habit through authenticated tool calls", %{conn: conn, user: user} do
+      created =
+        conn
+        |> call_tool(@version, %{"name" => "create_habit", "arguments" => %{"name" => "Read", "min_completions" => 1}})
+        |> assert_habit_output(CreateHabit)
+
+      id = created["habit"]["id"]
+      assert Mmentum.Habits.get_habit!(user, id).name == "Read"
+      assert created["habit"]["current_completions"] == 0
+      assert created["time_zone"] == "Etc/UTC"
+
+      updated =
+        conn
+        |> call_tool(@version, %{
+          "name" => "update_habit",
+          "arguments" => %{"habit_id" => id, "fields" => %{"why_it_matters" => "Learn", "periodicity" => "day"}}
+        })
+        |> assert_habit_output(UpdateHabit)
+
+      assert updated["habit"]["why_it_matters"] == "Learn"
+      assert updated["habit"]["periodicity"] == "day"
+
+      fetched =
+        conn
+        |> call_tool(@version, %{"name" => "get_habit", "arguments" => %{"habit_id" => id}})
+        |> assert_habit_output(GetHabit)
+
+      assert fetched == updated
+    end
+
+    test "#{version} reports write validation and ownership failures as tool errors", %{conn: conn} do
+      foreign = Mmentum.HabitsFixtures.habit_fixture()
+
+      for params <- [
+            %{
+              "name" => "create_habit",
+              "arguments" => %{"name" => "Read", "min_completions" => 3, "max_completions" => 2}
+            },
+            %{"name" => "get_habit", "arguments" => %{"habit_id" => foreign.id}},
+            %{"name" => "update_habit", "arguments" => %{"habit_id" => foreign.id, "fields" => %{"name" => "Changed"}}}
+          ] do
+        response = conn |> call_tool(@version, params) |> json_response(200)
+        assert response["result"]["isError"]
+        refute Map.has_key?(response["result"], "structuredContent")
+      end
+    end
+
+    test "#{version} read-only OAuth grants cannot create or update habits", %{user: user} do
+      tokens = OAuthFixtures.tokens(user, %{"scope" => "mmentum:read"})
+      conn = OAuthFixtures.bearer_conn(tokens["access_token"])
+
+      for name <- ["create_habit", "update_habit"] do
+        response = conn |> call_tool(@version, %{"name" => name, "arguments" => %{}}) |> json_response(200)
+        assert response["result"]["isError"]
+        assert hd(response["result"]["content"])["text"] =~ "permission"
+      end
+    end
 
     test "#{version} executes the owned habit query and returns structured and text results", %{conn: conn, user: user} do
       habit = Mmentum.HabitsFixtures.habit_fixture(%{user: user})
@@ -63,7 +124,23 @@ defmodule Mmentum.MCP.ToolCallTest do
     end
   end
 
+  defp assert_habit_output(conn, tool) do
+    response = conn |> json_response(200) |> Map.fetch!("result")
+    refute response["isError"]
+    assert [%{"type" => "text", "text" => text}] = response["content"]
+    assert Jason.decode!(text) == response["structuredContent"]
+    schema = tool.output_schema() |> Jason.encode!() |> Jason.decode!() |> Zoi.from_json_schema()
+    assert {:ok, _habit} = Zoi.parse(schema, response["structuredContent"])
+    response["structuredContent"]
+  end
+
   defp call_tool(conn, version, params) do
+    tool_name =
+      case params["name"] do
+        name when is_binary(name) -> name
+        _ -> "list_habits"
+      end
+
     params =
       if version == "2026-07-28" do
         Map.put(params, "_meta", %{
@@ -79,7 +156,7 @@ defmodule Mmentum.MCP.ToolCallTest do
     |> put_req_header("accept", "application/json, text/event-stream")
     |> put_req_header("mcp-protocol-version", version)
     |> put_req_header("mcp-method", "tools/call")
-    |> put_req_header("mcp-name", "list_habits")
+    |> put_req_header("mcp-name", tool_name)
     |> post(
       "https://localhost:4443/mcp",
       Jason.encode!(%{"jsonrpc" => "2.0", "id" => 1, "method" => "tools/call", "params" => params})
