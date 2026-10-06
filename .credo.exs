@@ -3,11 +3,14 @@
     %{
       name: "default",
       strict: true,
+      requires: ["lib/mmentum/checks/**/*.exs"],
       files: %{
         included: ["lib/", "test/", "config/", "priv/repo/migrations/", "mix.exs"]
       },
       checks: %{
         extra: [
+          {Mmentum.Checks.EntityValue, []},
+          {Mmentum.Checks.ModuleLocation, []},
           {Credo.Check.Readability.MaxLineLength, max_length: 120},
           {Credo.Check.Readability.ModuleNames,
            ignore: [~r/^Mmentum\.MCP\.Versions\.V\d{4}_\d{2}_\d{2}(\.(Request|Response|Server)|Test)$/]},
