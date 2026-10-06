@@ -31,6 +31,21 @@ The runner uses the test build for compilation, formatting, source analysis, and
 
 No additional Credo rule packages are needed for this setup. The chosen checks use Credo itself, ExSlop, and Jump
 
+## Entity Value contracts
+
+Custom checks live under `lib/mmentum/checks/` with matching `Mmentum.Checks.*` module names. They use `.exs` so Credo can require them directly without compiling them into the application or production release. `ModuleLocation` checks namespace/path matching for every module under `lib/`, including the checks themselves
+
+The path check recognizes Phoenix's namespace-free `mmentum_web/{live,controllers,components}` directories and the project's `OAuth` → `oauth` spelling. Test and migration paths follow their own conventions and are outside this check
+
+`lib/mmentum/checks/entity_value.exs` runs through Credo and `mix check`. It matches a `Values` module to an Ecto schema by removing the `Values` namespace segment: `Mmentum.Habits.Values.Habit` matches `Mmentum.Habits.Habit`. Run Credo over the whole project so both source files are available
+
+- Entity Values must define a Zoi schema attribute, generate `t()` with `Zoi.type_spec/1` from that attribute, and return the same attribute from public `schema/0`
+- Entity Values must expose public `build/1` and spec it from the matching Ecto schema's `t()` to local `t()`
+- A list builder using an `is_list/1` guard or list pattern also needs the corresponding list spec
+- The matching Ecto schema must define its stored-record `t()`
+
+Presentation Values without a matching Ecto schema, such as `MomentumSeries`, receive only the placement check. This source check follows the direct definitions used in this project; it does not expand macros or prove builder behavior. Naming intent, field mapping, correct preloads, list order, and domain ownership still need review and behavioral tests. Reach separately checks known side effects
+
 ## Working with findings
 
 Run `mix format path/to/file.ex` to apply formatting to selected files. A bare `mix format` may rewrite much of the existing codebase through Styler
