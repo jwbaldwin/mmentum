@@ -8,7 +8,7 @@ defmodule Mmentum.Tools.GetHabit do
   alias Mmentum.Tools.Scope
   alias Mmentum.Tools.Tool
 
-  @input_schema Zoi.map(%{"habit_id" => Zoi.integer(gte: 1, lte: 9_223_372_036_854_775_807)},
+  @input_schema Zoi.map(%{"habit_id" => Tool.id_schema()},
                   unrecognized_keys: :error
                 )
   @output_schema Zoi.map(

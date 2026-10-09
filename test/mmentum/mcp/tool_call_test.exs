@@ -3,9 +3,11 @@ defmodule Mmentum.MCP.ToolCallTest do
 
   import ExUnit.CaptureLog
 
+  alias Mmentum.Logs.Log
   alias Mmentum.OAuthFixtures
   alias Mmentum.Tools.CreateHabit
   alias Mmentum.Tools.GetHabit
+  alias Mmentum.Tools.ManageHabitCompletions
   alias Mmentum.Tools.UpdateHabit
 
   setup do
@@ -16,6 +18,44 @@ defmodule Mmentum.MCP.ToolCallTest do
 
   for version <- ["2025-11-25", "2026-07-28"] do
     @version version
+
+    test "#{version} adds and removes completions with schema-valid structured output", %{conn: conn, user: user} do
+      habit = Mmentum.HabitsFixtures.habit_fixture(%{user: user})
+      {:ok, previous} = Mmentum.Habits.record_completion(user, habit.id)
+
+      output =
+        conn
+        |> call_tool(@version, %{
+          "name" => "manage_habit_completions",
+          "arguments" => %{
+            "add" => [%{"habit_id" => habit.id, "completed_at" => "2026-10-08T18:30:00-04:00"}],
+            "remove" => [previous.id]
+          }
+        })
+        |> assert_habit_output(ManageHabitCompletions)
+
+      assert [%{"habit_id" => id, "completed_at" => "2026-10-08T22:30:00Z"}] = output["added"]
+      assert id == habit.id
+      assert [%{"id" => removed_id}] = output["removed"]
+      assert removed_id == previous.id
+      refute Mmentum.Repo.get(Log, removed_id)
+    end
+
+    test "#{version} invalid completion batches are tool errors without writes", %{conn: conn, user: user} do
+      habit = Mmentum.HabitsFixtures.habit_fixture(%{user: user})
+
+      for arguments <- [%{}, %{"add" => [%{"habit_id" => habit.id}], "remove" => [9_223_372_036_854_775_807]}] do
+        response =
+          conn
+          |> call_tool(@version, %{"name" => "manage_habit_completions", "arguments" => arguments})
+          |> json_response(200)
+
+        assert response["result"]["isError"]
+        refute Map.has_key?(response["result"], "structuredContent")
+      end
+
+      assert Mmentum.Repo.aggregate(Log, :count) == 0
+    end
 
     test "#{version} creates, updates and gets a habit through authenticated tool calls", %{conn: conn, user: user} do
       created =
@@ -68,7 +108,7 @@ defmodule Mmentum.MCP.ToolCallTest do
       tokens = OAuthFixtures.tokens(user, %{"scope" => "mmentum:read"})
       conn = OAuthFixtures.bearer_conn(tokens["access_token"])
 
-      for name <- ["create_habit", "update_habit"] do
+      for name <- ["create_habit", "update_habit", "manage_habit_completions"] do
         response = conn |> call_tool(@version, %{"name" => name, "arguments" => %{}}) |> json_response(200)
         assert response["result"]["isError"]
         assert hd(response["result"]["content"])["text"] =~ "permission"

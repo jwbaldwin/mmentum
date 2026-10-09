@@ -2,7 +2,7 @@
 
 ## Protocol implementation
 
-Mmentum supports MCP `2026-07-28` and `2025-11-25` at the same `/mcp` endpoint, including discovery and execution of `list_habits`, `get_habit`, `create_habit`, and `update_habit`. Further habit tools are planned in [`mcp-tools.md`](mcp-tools.md).
+Mmentum supports MCP `2026-07-28` and `2025-11-25` at the same `/mcp` endpoint, including discovery and execution of `list_habits`, `get_habit`, `create_habit`, `update_habit`, and `manage_habit_completions`. Further habit tools are planned in [`mcp-tools.md`](mcp-tools.md).
 
 In `2026-07-28`, each request carries its protocol version and client capabilities in `params._meta`. `server/discover` reports supported versions and features; clients can also send an operation directly.
 
@@ -141,6 +141,16 @@ Invalid checked fields return HTTP 400. Unknown methods return a JSON-RPC method
 Only these two protocol versions are supported. A missing version header after initialization is rejected; the older spec's suggested `2025-03-26` default is not implemented. The separate `2024-11-05` HTTP+SSE transport is also not implemented.
 
 Primary references: [modern messages](https://modelcontextprotocol.io/specification/2026-07-28/basic), [modern HTTP](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http), [older lifecycle](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle), and [older HTTP](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports).
+
+## Completion batches
+
+`manage_habit_completions` requires `mmentum:write`. Supply `add`, `remove`, or both; each supplied list must contain at least one entry. Each addition has a `habit_id` and an optional `completed_at` with a date, time, and UTC offset, such as `2026-10-08T18:30:00-04:00`. If the time is omitted, the tool uses the request's `now` for that entry. The removal list contains completion IDs, which must not repeat.
+
+The tool checks the input and calls `Habits.Services.ManageHabitCompletions` to save the changes. `Logs.Finders.CompletionsById` finds the user's completion entries once, so the Service knows which habits to lock. The Service locks those habits in ID order and indexes the returned records by ID. Every addition must find its habit in that map before it can write. Removals use one database call that returns the deleted entries; the Service looks up every requested ID in those entries. If any entry disappeared while the call waited, its lookup fails and the whole transaction rolls back, including any entries it just removed. A missing habit, missing completion, or entry belonging to another user leaves every completion unchanged. These checks use the actual records, not row counts.
+
+The tool returns `{added: [...], removed: [...]}`. `Logs.Values.Log` builds each entry with `id`, `habit_id`, and `completed_at` in UTC. Both lists keep their request order. Completion time uses the existing `logs.inserted_at` field, which stores whole seconds; `updated_at` records when the database write happened. No migration is needed.
+
+The tool can remove historical completions; dashboard undo still removes only the latest entry in the current period. Future completion times are accepted. Retrying additions creates more completions, and retrying an already-removed ID fails. The tool's annotations tell clients that it can delete entries and that repeating a call may change the result.
 
 ## Deferred until later slices
 

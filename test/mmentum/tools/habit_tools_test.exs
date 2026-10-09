@@ -17,7 +17,10 @@ defmodule Mmentum.Tools.HabitToolsTest do
 
   test "catalog publishes the four tools with distinct read and write permissions" do
     definitions = Map.new(Tools.definitions(), &{&1["name"], &1})
-    assert Enum.sort(Map.keys(definitions)) == ~w(create_habit get_habit list_habits update_habit)
+
+    assert Enum.sort(Map.keys(definitions)) ==
+             ~w(create_habit get_habit list_habits manage_habit_completions update_habit)
+
     assert definitions["get_habit"]["annotations"]["readOnlyHint"]
     refute definitions["create_habit"]["annotations"]["idempotentHint"]
     assert definitions["update_habit"]["annotations"]["idempotentHint"]

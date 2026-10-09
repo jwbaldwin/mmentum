@@ -56,6 +56,8 @@ The initial findings were resolved by formatting, simplifying nested flows, remo
 ### Reviewed exceptions
 
 - `Mmentum.Habits.Values.Habit.schema/0` is called at compile time by `ListHabits` to compose its Zoi result schema. The unused-code tracer misses that call, so it has a single-function exception
+- The completion tool calls `Mmentum.Logs.Values.Log.schema/0` while compiling its output schema. The unused-code check misses that call, so we ignore that function only
+- Get, update, and manage completions call `Mmentum.Tools.Tool.id_schema/0` while compiling their input schemas. The unused-code check misses these calls, so we ignore that function only
 - `Mmentum.Tools.HabitFields.create_schema/0` and `update_schema/0` compose the write tools' argument schemas at compile time; the tracer likewise misses these calls
 
 - The migration cutoff accepts 55 historical warnings without rewriting schema history: new-table indexes and foreign keys, extension SQL, constant defaults, column removals, constraint validation, and rollback table drops. Removals and validation remain real rollout hazards; the cutoff does not establish that historical migrations are safe to run against a populated database

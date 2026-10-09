@@ -14,6 +14,8 @@ defmodule Mmentum.MixProject do
         severity: :hint,
         ignore: [
           {Mmentum.Habits.Values.Habit, :schema, 0},
+          {Mmentum.Logs.Values.Log, :schema, 0},
+          {Mmentum.Tools.Tool, :id_schema, 0},
           {HabitFields, :create_schema, 0},
           {HabitFields, :update_schema, 0},
           {:_, ~r/^__.*__\??$/, :_},

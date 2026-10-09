@@ -11,7 +11,7 @@ defmodule Mmentum.Tools.UpdateHabit do
 
   @input_schema Zoi.map(
                   %{
-                    "habit_id" => Zoi.integer(gte: 1, lte: 9_223_372_036_854_775_807),
+                    "habit_id" => Tool.id_schema(),
                     "fields" => HabitFields.update_schema()
                   },
                   unrecognized_keys: :error

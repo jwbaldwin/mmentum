@@ -22,6 +22,10 @@ defmodule Mmentum.Tools.Tool do
 
   @optional_callbacks annotations: 0
 
+  @doc "Accepts positive IDs within the database's integer range"
+  @spec id_schema() :: Zoi.schema()
+  def id_schema, do: Zoi.integer(gte: 1, lte: 9_223_372_036_854_775_807)
+
   @doc "Validates tool arguments and returns field-specific, client-safe errors"
   @spec parse_arguments(Zoi.schema(), arguments()) :: {:ok, map()} | {:error, :invalid_arguments, String.t()}
   def parse_arguments(schema, arguments) do
