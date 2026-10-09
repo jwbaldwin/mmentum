@@ -47,15 +47,6 @@ defmodule Mmentum.Habits do
     Repo.get_by!(Habit, id: id, user_id: user_id)
   end
 
-  @doc "Gets a user's habit with its current-period logs, or returns :not_found"
-  @spec get_habit_with_current_progress(User.t(), integer(), DateTime.t()) :: {:ok, Habit.t()} | {:error, :not_found}
-  def get_habit_with_current_progress(%User{id: user_id} = user, id, %DateTime{} = current_time) do
-    case Repo.get_by(Habit, id: id, user_id: user_id) do
-      nil -> {:error, :not_found}
-      habit -> {:ok, load_current_progress(user, habit, current_time)}
-    end
-  end
-
   @doc "Loads current-period logs for a habit returned by this context, using its current periodicity"
   @spec load_current_progress(User.t(), Habit.t(), DateTime.t()) :: Habit.t()
   def load_current_progress(%User{} = user, %Habit{} = habit, %DateTime{} = current_time) do

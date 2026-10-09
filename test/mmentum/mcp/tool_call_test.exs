@@ -19,6 +19,54 @@ defmodule Mmentum.MCP.ToolCallTest do
   for version <- ["2025-11-25", "2026-07-28"] do
     @version version
 
+    test "#{version} returns recent periods and pages through history with read permission", %{user: user} do
+      tokens = OAuthFixtures.tokens(user, %{"scope" => "mmentum:read"})
+      conn = OAuthFixtures.bearer_conn(tokens["access_token"])
+      habit = Mmentum.HabitsFixtures.habit_fixture(%{user: user, periodicity: :day})
+      {:ok, current} = Mmentum.Habits.record_completion(user, habit.id)
+
+      older =
+        Mmentum.Repo.insert!(%Log{
+          user_id: user.id,
+          habit_id: habit.id,
+          inserted_at: ~N[2000-01-01 10:00:00],
+          updated_at: ~N[2000-01-01 10:00:00]
+        })
+
+      recent =
+        conn
+        |> call_tool(@version, %{"name" => "get_habit", "arguments" => %{"habit_id" => habit.id}})
+        |> assert_habit_output(GetHabit)
+
+      assert recent["habit"]["current_completions"] == 1
+      assert Enum.map(recent["current_period"]["completions"], & &1["id"]) == [current.id]
+      assert recent["previous_period"]["completions"] == []
+      assert recent["history"] == nil
+
+      arguments = %{"habit_id" => habit.id, "history" => "all", "limit" => 1}
+
+      first =
+        conn
+        |> call_tool(@version, %{"name" => "get_habit", "arguments" => arguments})
+        |> assert_habit_output(GetHabit)
+
+      assert Enum.map(first["history"]["completions"], & &1["id"]) == [current.id]
+      cursor = first["history"]["next_cursor"]
+      schema = GetHabit.input_schema() |> Jason.encode!() |> Jason.decode!() |> Zoi.from_json_schema()
+      assert {:ok, _arguments} = Zoi.parse(schema, Map.put(arguments, "cursor", cursor))
+
+      last =
+        conn
+        |> call_tool(@version, %{"name" => "get_habit", "arguments" => Map.put(arguments, "cursor", cursor)})
+        |> assert_habit_output(GetHabit)
+
+      assert Enum.map(last["history"]["completions"], & &1["id"]) == [older.id]
+      assert last["history"]["next_cursor"] == nil
+      assert last["current_period"] == recent["current_period"]
+      assert last["previous_period"] == recent["previous_period"]
+      assert last["habit"] == recent["habit"]
+    end
+
     test "#{version} adds and removes completions with schema-valid structured output", %{conn: conn, user: user} do
       habit = Mmentum.HabitsFixtures.habit_fixture(%{user: user})
       {:ok, previous} = Mmentum.Habits.record_completion(user, habit.id)
@@ -84,7 +132,11 @@ defmodule Mmentum.MCP.ToolCallTest do
         |> call_tool(@version, %{"name" => "get_habit", "arguments" => %{"habit_id" => id}})
         |> assert_habit_output(GetHabit)
 
-      assert fetched == updated
+      assert fetched["habit"] == updated["habit"]
+      assert fetched["time_zone"] == updated["time_zone"]
+      assert fetched["current_period"]["completions"] == []
+      assert fetched["previous_period"]["completions"] == []
+      assert fetched["history"] == nil
     end
 
     test "#{version} reports write validation and ownership failures as tool errors", %{conn: conn} do

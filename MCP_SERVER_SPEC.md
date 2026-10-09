@@ -2,7 +2,7 @@
 
 ## Protocol implementation
 
-Mmentum supports MCP `2026-07-28` and `2025-11-25` at the same `/mcp` endpoint, including discovery and execution of `list_habits`, `get_habit`, `create_habit`, `update_habit`, and `manage_habit_completions`. Further habit tools are planned in [`mcp-tools.md`](mcp-tools.md).
+Mmentum supports MCP `2026-07-28` and `2025-11-25` at the same `/mcp` endpoint, including discovery and execution of `list_habits`, `get_habit`, `create_habit`, `update_habit`, and `manage_habit_completions`. Their arguments and behavior are listed in [`mcp-tools.md`](mcp-tools.md).
 
 In `2026-07-28`, each request carries its protocol version and client capabilities in `params._meta`. `server/discover` reports supported versions and features; clients can also send an operation directly.
 
@@ -87,15 +87,13 @@ A tool execution receives `Context.t()` containing `User.t()`, verified `Scope.t
 
 Tool execution returns `{:ok, result}` or `{:error, reason, client_safe_message}`. Unknown tool names return `{:error, :tool_not_found}` from the registry. Each MCP version formats successful results as structured content plus JSON text and execution failures as `isError` tool results.
 
-The planned tool modules are:
+The implemented tool modules are:
 
 - `Mmentum.Tools.ListHabits`
 - `Mmentum.Tools.GetHabit`
 - `Mmentum.Tools.CreateHabit`
 - `Mmentum.Tools.UpdateHabit`
-- `Mmentum.Tools.RecordHabitCompletions`
-- `Mmentum.Tools.ListHabitHistory`
-- `Mmentum.Tools.RemoveHabitCompletion`
+- `Mmentum.Tools.ManageHabitCompletions`
 
 The embedded agent includes these tool modules in its agent context in the same way as any other agent tool. It does not need a separate embedded-agent registry or an HTTP call back into Phoenix.
 
@@ -128,19 +126,31 @@ To retire the older version, delete its namespace and tests, remove its registry
 
 `list_habits` accepts an empty argument object and requires `mmentum:read`. It calls `Habits.list_habits_with_current_progress/2` using the user's local time and passes the loaded habits to `HabitValue.build/1`. It returns `{time_zone: "...", habits: [...]}` with `id`, `name`, `identity`, `why_it_matters`, `what_counts`, `periodicity`, `min_completions`, `max_completions`, and uncapped `current_completions` per habit. No habits is a successful empty list.
 
-`get_habit` accepts `{habit_id: integer}` and requires `mmentum:read`. It loads only that owned habit and its current-period logs. Missing and foreign IDs return the same not-found tool error.
+`get_habit` requires `habit_id` and `mmentum:read`. By default it returns the habit's definition, current progress, and completion entries from the current and previous habit periods. `history` defaults to `"recent_periods"`; use `"all"` to also get a page of complete history. Missing habits and habits belonging to another user return the same not-found error.
 
 `create_habit` requires `mmentum:write` and accepts writable fields directly: `name` and `min_completions` are required; `periodicity` defaults to `week`. Optional fields are `identity`, `why_it_matters`, `what_counts`, and `max_completions`. It calls `Habits.create_habit/2`; the authenticated user supplies ownership. Repeating a successful call creates another habit; the tool advertises that it is not idempotent.
 
 `update_habit` requires `mmentum:write` and accepts `{habit_id: integer, fields: {...}}`. It calls the existing ownership-scoped, row-locked `Habits.update_habit/3`. Omitted fields retain stored values; explicit null clears optional fields. An empty fields object is a no-op. Current progress uses the updated periodicity. Invalid target combinations fail against stored state without writing.
 
-The three single-habit tools return `{time_zone: "...", habit: {...}}`, composing the same Habit Value schema as the list tool. Each tool owns its wrapper and explicit execution flow. `HabitFields` shares the writable-field schemas; `Tool` formats Zoi and Ecto validation errors; `Context.current_time/1` resolves local time with an explicit `Etc/UTC` fallback. Zoi generates output types and JSON Schema from the same definitions. Tools reject unknown arguments, and domain changesets retain business validation. Invalid arguments and domain failures return MCP tool errors rather than JSON-RPC transport errors.
+The three single-habit tools include `time_zone` and `habit`, using the same Habit Value schema as the list tool. `get_habit` also returns `current_period`, `previous_period`, and `history`, described below. Each tool builds its own response. `HabitFields` shares writable-field schemas; `Tool` formats Zoi and Ecto validation errors; `Context.current_time/1` uses the user's local time with an `Etc/UTC` fallback. Zoi generates output types and JSON Schema from the same definitions. Tools reject unknown arguments, and domain changesets check business rules. Invalid arguments and failed operations return MCP tool errors rather than JSON-RPC transport errors.
 
 Invalid checked fields return HTTP 400. Unknown methods return a JSON-RPC method-not-found error, with HTTP 404 in the modern version and HTTP 200 in the older version. `clientInfo` is required during older initialization and optional on modern requests. Request IDs must be strings or integers; unreadable IDs are omitted from errors. Accepted notifications return HTTP 202 without a body. Unknown extension fields remain open; unused tracing fields are not interpreted.
 
 Only these two protocol versions are supported. A missing version header after initialization is rejected; the older spec's suggested `2025-03-26` default is not implemented. The separate `2024-11-05` HTTP+SSE transport is also not implemented.
 
 Primary references: [modern messages](https://modelcontextprotocol.io/specification/2026-07-28/basic), [modern HTTP](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http), [older lifecycle](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle), and [older HTTP](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports).
+
+## Habit history
+
+`get_habit` returns both recent periods even when they have no completions. Daily habits cover today and yesterday, weekly habits cover this week and last week, and monthly habits cover this month and last month. Weeks begin on Monday. `Habits.Finders.HabitWithHistory` finds the user's habit and reads the two periods together. It uses `Time` for local calendar boundaries, including daylight-saving changes, and gives `HabitValue` only the current period's entries to calculate progress.
+
+Each period contains `starts_at`, `ends_before`, and `completions`, newest first. The start is included; the next period's start is not. All timestamps are UTC strings, and the outer `time_zone` identifies the user's calendar. The habit's `periodicity` says whether these are days, weeks, or months. Recent periods are returned in full; `list_habits`, create, and update keep their existing response shapes.
+
+For complete history, call `get_habit` with `history: "all"`. The response still includes both recent periods and adds `history: {completions: [...], next_cursor: ...}`. Without this option, `history` is null. `limit` defaults to 50 and must be between 1 and 100. Supply `limit` or `cursor` only with `history: "all"`.
+
+`Logs.list_history_page/4` reads one page using the completion time and ID, both descending. The ID breaks ties when several entries share a timestamp. It reads one extra entry to check whether another page exists. `LogValue` builds completion entries, and the tool builds a cursor with the last returned entry's `completed_at` and `id`. Pass that object unchanged as `cursor` on the next call; a null `next_cursor` means the history is exhausted. The next call does not need to look up the cursor's record, so deleting that entry does not break paging.
+
+Both recent and complete history check the user on the habit and completion records. Cursor fields are checked before database access and never change which habit or user the query reads. Paging reads live records, not a saved snapshot: newly backdated completions can appear on later pages. Complete history includes all stored entries, including future completion times. Current progress always counts only the current local period, even when browsing older entries.
 
 ## Completion batches
 
