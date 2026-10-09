@@ -2,22 +2,17 @@ defmodule MmentumWeb.MCPClientGuides do
   @moduledoc "Owns client-specific MCP setup instructions and public configuration examples"
 
   @clients [
-    %{key: "cursor", name: "Cursor", description: "Editor and agents", icon: "hero-code-bracket"},
-    %{key: "vscode", name: "VS Code", description: "Editor", icon: "hero-code-bracket-square"},
-    %{key: "claude-code", name: "Claude Code", description: "Terminal", icon: "hero-command-line"},
-    %{key: "opencode", name: "OpenCode", description: "Terminal", icon: "hero-command-line"},
-    %{key: "codex", name: "Codex CLI", description: "Terminal", icon: "hero-command-line"},
-    %{key: "claude", name: "Claude", description: "Web and desktop", icon: "hero-chat-bubble-left-right"},
-    %{key: "gemini", name: "Gemini CLI", description: "Terminal", icon: "hero-command-line"},
-    %{key: "amp", name: "Amp CLI", description: "Terminal", icon: "hero-command-line"},
-    %{key: "notion", name: "Notion", description: "Custom Agents", icon: "hero-document-text"},
-    %{
-      key: "claude-managed-agents",
-      name: "Claude Managed Agents",
-      description: "Credential vaults",
-      icon: "hero-cloud"
-    },
-    %{key: "other", name: "Other clients", description: "Manual setup", icon: "hero-link"}
+    %{key: "cursor", name: "Cursor"},
+    %{key: "vscode", name: "VS Code"},
+    %{key: "claude-code", name: "Claude Code"},
+    %{key: "opencode", name: "OpenCode"},
+    %{key: "codex", name: "Codex CLI"},
+    %{key: "claude", name: "Claude"},
+    %{key: "gemini", name: "Gemini CLI"},
+    %{key: "amp", name: "Amp CLI"},
+    %{key: "notion", name: "Notion"},
+    %{key: "claude-managed-agents", name: "Claude Managed Agents"},
+    %{key: "other", name: "Other clients"}
   ]
 
   def list, do: @clients
@@ -27,6 +22,7 @@ defmodule MmentumWeb.MCPClientGuides do
 
     Map.merge(guide, %{
       registration: registration,
+      agent_prompt: agent_prompt(client, guide),
       callback_missing?:
         not is_nil(registration) and client.key in ["claude-code", "opencode", "gemini"] and
           is_nil(hd(guide.steps).code)
@@ -50,13 +46,13 @@ defmodule MmentumWeb.MCPClientGuides do
       steps: [
         step(
           "Add Mmentum to Cursor",
-          "Open Cursor Settings → Tools & MCP → New MCP Server. Add this configuration, or use the install button.",
+          "Use the install button, or merge this configuration.",
           configuration,
           ".cursor/mcp.json"
         ),
         step(
           "Authenticate",
-          "Select the authentication prompt and sign in to Mmentum. Review access, then return to Cursor. Restart Cursor if the server doesn't appear."
+          "Sign in to Mmentum when Cursor asks."
         )
       ],
       install_url: install_url("cursor", configuration),
@@ -85,18 +81,17 @@ defmodule MmentumWeb.MCPClientGuides do
       steps: [
         step(
           "Add the server",
-          "Open your workspace MCP configuration and add Mmentum. The install button can create the server entry for you.",
+          "Use the install button, or merge this configuration.",
           configuration,
           ".vscode/mcp.json"
         ),
         step(
           "Start and authenticate",
-          "Open the Command Palette → MCP: List Servers → mmentum → Start Server. Allow authentication, sign in to Mmentum, then return to VS Code."
+          "MCP: List Servers → mmentum → Start Server. Sign in when prompted."
         )
       ],
       install_url: install_url("vscode", configuration),
-      note:
-        "Review the permissions VS Code requests during approval; its configuration doesn't provide a documented scope override.",
+      note: "Review the requested permissions before approving.",
       requirements:
         "Register the exact callback used by your VS Code installation. Its callback can differ between desktop and hosted surfaces.",
       docs_url: "https://code.visualstudio.com/docs/agents/reference/mcp-configuration"
@@ -122,18 +117,17 @@ defmodule MmentumWeb.MCPClientGuides do
       steps: [
         step(
           "Add the server",
-          "Run this in your terminal. The configuration uses the approved public client and requests read access.",
+          "Run this command.",
           command,
           "Terminal"
         ),
         step(
           "Authenticate",
-          "Start Claude Code, enter /mcp, select mmentum, and follow the browser sign-in. Review access and return to your terminal."
+          "/mcp → mmentum → Authenticate. Finish sign-in in your browser."
         )
       ],
       install_url: nil,
-      note:
-        "Current-client OAuth still needs verification. Earlier local checks reached token exchange but encountered a client-side token-storage issue.",
+      note: "Claude Code sign-in still needs verification with this server.",
       requirements:
         "Register a fixed http://localhost:PORT/callback. Current Claude Code uses localhost; some earlier releases used 127.0.0.1.",
       docs_url: "https://code.claude.com/docs/en/mcp"
@@ -168,13 +162,13 @@ defmodule MmentumWeb.MCPClientGuides do
       steps: [
         step(
           "Add the server",
-          "Add this entry to your OpenCode V2 configuration. Merge it with existing servers rather than replacing your file.",
+          "Merge this into your OpenCode V2 config.",
           configuration,
           "~/.config/opencode/opencode.jsonc"
         ),
         step(
           "Authenticate",
-          "Start OpenCode, open /mcps, select mmentum, and authenticate. Sign in to Mmentum in your browser, review access, then return to OpenCode."
+          "/mcps → mmentum → Authenticate. Finish sign-in in your browser."
         )
       ],
       install_url: nil,
@@ -198,20 +192,19 @@ defmodule MmentumWeb.MCPClientGuides do
       steps: [
         step(
           "Add the server",
-          "Merge this into your Codex configuration. Your administrator must register the exact callback generated by Codex before login.",
+          "Merge this into your Codex config.",
           configuration,
           "~/.codex/config.toml"
         ),
         step(
           "Authenticate",
-          "Run the login command, sign in to Mmentum, review access, and return to Codex. Restart an existing Codex session to load the server.",
+          "Run this command and finish sign-in in your browser.",
           "codex mcp login mmentum",
           "Terminal"
         )
       ],
       install_url: nil,
-      note:
-        "Codex may request all scopes advertised by the server, even when read access is configured. Review the actual permissions during approval.",
+      note: "Codex may request write access too. Review permissions before approving.",
       requirements:
         "Use codex mcp add mmentum --url SERVER_URL --oauth-client-id CLIENT_ID to obtain the callback. Register the exact printed URL; do not substitute a generic /callback.",
       docs_url: "https://developers.openai.com/codex/extend/mcp"
@@ -223,22 +216,21 @@ defmodule MmentumWeb.MCPClientGuides do
       steps: [
         step(
           "Add a custom connector",
-          "In Claude web or desktop, open Customize → Connectors → Add custom connector. Name it Mmentum and paste the server URL above. Custom connectors may depend on your plan."
+          "Customize → Connectors → Add custom connector. Name it Mmentum and paste the server URL."
         ),
         step(
           "Use the approved OAuth client",
-          "Choose Sign in now → Use your own OAuth client. In older dialogs, open Advanced settings. Enter the public client ID and leave the client secret blank.",
+          "Sign in now → Use your own OAuth client. Enter this client ID; leave the secret blank.",
           client_id(registration),
           "Public client ID"
         ),
         step(
           "Approve and enable",
-          "Sign in to Mmentum and review access. Back in Claude, enable Mmentum from the conversation's + menu → Connectors."
+          "Sign in, then enable Mmentum from + → Connectors."
         )
       ],
       install_url: nil,
-      note:
-        "Claude remote connectors run in Anthropic's cloud, including when you use the desktop app. They cannot reach a server available only on your computer.",
+      note: "Requires a plan with custom connectors and a publicly reachable server.",
       requirements:
         "Register https://claude.ai/api/mcp/auth_callback. Use the remote custom connector, not claude_desktop_config.json.",
       docs_url: "https://claude.com/docs/connectors/custom/add-unlisted"
@@ -269,13 +261,13 @@ defmodule MmentumWeb.MCPClientGuides do
       steps: [
         step(
           "Add the server",
-          "Merge this entry into your Gemini CLI settings. No client secret is needed for the approved public client.",
+          "Merge this into your Gemini CLI settings.",
           configuration,
           "~/.gemini/settings.json"
         ),
         step(
           "Authenticate",
-          "Start Gemini CLI, run /mcp auth mmentum, and follow the browser sign-in. Review access, then return to Gemini CLI."
+          "Run /mcp auth mmentum and finish sign-in in your browser."
         )
       ],
       install_url: nil,
@@ -291,18 +283,17 @@ defmodule MmentumWeb.MCPClientGuides do
       steps: [
         step(
           "Add the server",
-          "This adds the endpoint to Amp. It does not complete authentication.",
+          "Run this command to add the server.",
           "amp mcp add mmentum " <> shell_quote(server_url),
           "Terminal"
         ),
         step(
           "Configure manual OAuth",
-          "Amp documents manual login with a client ID and scopes. Its public-client flow without a secret still needs verification against Mmentum. Follow the current Amp documentation with your administrator."
+          "Follow Amp's manual OAuth instructions with your administrator."
         )
       ],
       install_url: nil,
-      note:
-        "Public-client authentication is not verified. Do not supply an invented client secret or assume URL-only registration will work.",
+      note: "Amp's public-client sign-in still needs verification.",
       requirements:
         "Amp documents http://localhost:8976/oauth/callback. Verify its current public-client login before registering it.",
       docs_url: "https://ampcode.com/docs/customize/mcp"
@@ -312,15 +303,14 @@ defmodule MmentumWeb.MCPClientGuides do
   defp instructions("notion", _server_url, _registration) do
     %{
       steps: [
-        step("Open your Custom Agent", "Open Settings → Tools & Access → Add connection → Custom MCP server."),
+        step("Open your Custom Agent", "Settings → Tools & Access → Add connection → Custom MCP server."),
         step(
           "Add Mmentum",
-          "Paste the server URL above and choose OAuth. Connect only after the registration prerequisite below has been completed."
+          "Paste the server URL and choose OAuth."
         )
       ],
       install_url: nil,
-      note:
-        "Notion requires a registration arrangement for servers without automatic client registration. Mmentum does not offer automatic registration, so this connection is not available just by pasting the URL.",
+      note: "Notion requires a registration arrangement; URL-only setup won't work.",
       requirements:
         "Notion must pre-register an application with Mmentum. Its documentation does not expose a user-entered client ID or callback override.",
       docs_url: "https://www.notion.com/help/mcp-connections-for-custom-agents"
@@ -332,16 +322,15 @@ defmodule MmentumWeb.MCPClientGuides do
       steps: [
         step(
           "Open Credential vaults",
-          "In the Claude Console, open Credential vaults → Create vault → Add credential."
+          "Claude Console → Credential vaults → Create vault → Add credential."
         ),
         step(
           "Choose MCP OAuth",
-          "Enter the Mmentum server URL. Complete client registration with your administrator before attempting the browser connection."
+          "Enter the server URL after your administrator completes registration."
         )
       ],
       install_url: nil,
-      note:
-        "The Managed Agents browser authorization flow still needs verification. Its support for refreshing public-client tokens does not establish a working initial connection.",
+      note: "Managed Agents sign-in still needs verification.",
       requirements:
         "Verify the Console's public-client authorization and exact callback. Do not reuse Claude web's callback without confirming it.",
       docs_url: "https://platform.claude.com/docs/en/managed-agents/vaults"
@@ -353,26 +342,54 @@ defmodule MmentumWeb.MCPClientGuides do
       steps: [
         step(
           "Add a remote server",
-          "In your app's MCP settings, add Mmentum using the server URL above. Select Streamable HTTP if it asks for a transport."
+          "Add the server URL in your app's MCP settings. Choose Streamable HTTP."
         ),
         step(
           "Configure OAuth",
-          "Use the approved public client ID, request mmentum:read, and use an exactly registered callback URL. No client secret is needed.",
+          "Use this client ID, the registered callback, and mmentum:read. Leave the secret blank.",
           client_id(registration),
           "Public client ID"
         ),
         step(
           "Authenticate",
-          "Start authentication in your app. Sign in to Mmentum, review access, then return to your app."
+          "Start authentication in your app and finish sign-in in your browser."
         )
       ],
       install_url: nil,
-      note:
-        "Your app must support remote Streamable HTTP and pre-registered public OAuth clients. URL-only automatic registration is not available.",
+      note: "Requires pre-registered public OAuth support; URL-only setup won't work.",
       requirements:
         "Register the app's exact redirect URI before authentication. HTTPS is required except for supported local loopback callbacks.",
       docs_url: "https://modelcontextprotocol.io/docs/develop/connect-remote-servers"
     }
+  end
+
+  defp agent_prompt(client, guide) do
+    first_step = hd(guide.steps)
+
+    if client.key in ["cursor", "vscode", "claude-code", "opencode", "codex", "gemini"] and first_step.code do
+      installation =
+        if first_step.label == "Terminal" do
+          "Run this command:"
+        else
+          "Merge this configuration into #{first_step.label}, preserving existing servers:"
+        end
+
+      authentication = Enum.at(guide.steps, 1)
+
+      authentication_steps =
+        [authentication.description, authentication.code] |> Enum.reject(&is_nil/1) |> Enum.join("\n")
+
+      """
+      Set up Mmentum in #{client.name}.
+
+      #{installation}
+      #{first_step.code}
+
+      #{authentication_steps}
+      Let me complete OAuth approval in my browser. Do not ask me to paste tokens or client secrets.
+      After approval, call list_habits to show my habits and current progress. Do not change my habits.
+      """
+    end
   end
 
   defp step(title, description, code \\ nil, label \\ nil) do

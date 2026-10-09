@@ -92,6 +92,20 @@ defmodule MmentumWeb.MCPSetupLiveTest do
     assert query["config"] |> Base.decode64!() |> Jason.decode!() == get_in(configuration, ["mcpServers", "mmentum"])
   end
 
+  test "named clients use local publisher marks while other clients has no invented brand", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/users/connections/new")
+
+    for key <- ~w(cursor vscode claude-code opencode codex claude gemini amp notion claude-managed-agents) do
+      sources =
+        view |> element("#client-#{key}") |> render() |> Floki.parse_fragment!() |> Floki.attribute("img", "src")
+
+      assert sources != []
+      assert Enum.all?(sources, &File.regular?("priv/static" <> &1))
+    end
+
+    refute has_element?(view, "#client-other img")
+  end
+
   test "OpenCode V2 configuration preserves the exact registered callback", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/users/connections/new?client=opencode")
 
@@ -106,6 +120,25 @@ defmodule MmentumWeb.MCPSetupLiveTest do
            }
 
     refute Map.has_key?(configuration["mcp"], "mmentum")
+  end
+
+  test "the agent prompt carries a ready configuration, browser approval, and read-only verification", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/users/connections/new?client=opencode")
+
+    prompt =
+      view |> element("#agent-setup-prompt [data-copy-content]") |> render() |> Floki.parse_fragment!() |> Floki.text()
+
+    [_, configuration] = Regex.run(~r/\n(\{.*\})\n/s, prompt)
+    server = configuration |> Jason.decode!() |> get_in(["mcp", "servers", "mmentum"])
+
+    assert server["url"] == OAuth.config().audience
+    assert server["oauth"]["client_id"] == "opencode-public"
+    assert server["oauth"]["redirect_uri"] == "http://127.0.0.1:19876/callback"
+    assert server["oauth"]["scope"] == "mmentum:read"
+    assert prompt =~ "~/.config/opencode/opencode.jsonc"
+    assert prompt =~ "browser"
+    assert prompt =~ "list_habits"
+    refute has_element?(view, "#manual-setup[open]")
   end
 
   test "VS Code install carries its own configuration shape and no invented scope override", %{conn: conn} do
@@ -123,6 +156,7 @@ defmodule MmentumWeb.MCPSetupLiveTest do
 
     assert has_element?(view, "#registration-required")
     refute has_element?(view, "#install-client")
+    refute has_element?(view, "#agent-setup-prompt")
     refute has_element?(view, "#setup-step-1")
     assert has_element?(view, "#mcp-server-url code", OAuth.config().audience)
     assert has_element?(view, "#mcp-verify-prompt")
@@ -190,6 +224,7 @@ defmodule MmentumWeb.MCPSetupLiveTest do
     {:ok, view, _html} = live(conn, ~p"/users/connections/new?client=claude-code")
     assert has_element?(view, "#callback-required")
     refute has_element?(view, "#setup-step-1")
+    refute has_element?(view, "#agent-setup-prompt")
   end
 
   test "mobile selection updates the same guide and URL", %{conn: conn} do

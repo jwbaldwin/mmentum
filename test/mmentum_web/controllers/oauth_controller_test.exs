@@ -73,8 +73,9 @@ defmodule MmentumWeb.OAuthControllerTest do
     {conn, _fields} = OAuthFixtures.consent_form(log_in_user(OAuthFixtures.https_conn(), user), params)
     html = conn |> html_response(200) |> Floki.parse_document!()
 
-    assert Floki.text(Floki.find(html, "#consent-account")) == user.email
+    assert html |> Floki.find("#consent-account") |> Floki.text() |> String.trim() == user.email
     assert Floki.find(html, "main #oauth-consent") != []
+    assert Floki.find(html, "#oauth-consent > input[name=request][type=hidden]") != []
     assert Floki.text(html) =~ "https://client.example/callback"
     assert Floki.text(html) =~ "Read your habits"
     refute Floki.text(html) =~ "Change habits and record progress"
@@ -177,7 +178,10 @@ defmodule MmentumWeb.OAuthControllerTest do
       |> OAuthFixtures.browser_recycle()
       |> get("https://localhost:4443/oauth/authorize", Map.merge(params, fields))
 
-    assert html_response(conn, 200) =~ "Allow"
+    assert conn |> html_response(200) |> Floki.parse_document!() |> Floki.attribute("#oauth-allow", "value") == [
+             "allow"
+           ]
+
     assert get_resp_header(conn, "location") == []
     assert Repo.aggregate(Connection, :count) == 0
   end

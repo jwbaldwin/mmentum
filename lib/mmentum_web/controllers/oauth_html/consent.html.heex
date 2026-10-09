@@ -1,29 +1,57 @@
 <section class="mx-auto max-w-lg">
-  <span class="mb-5 flex h-11 w-11 items-center justify-center rounded-control bg-zinc-100 dark:bg-zinc-900">
-    <.icon name="hero-link" class="h-5 w-5 text-muted dark:text-zinc-400" />
-  </span>
-  <.header>
-    Connect {@client["name"]}?
-    <:subtitle>Review what this app can access before you continue.</:subtitle>
+  <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-panel border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
+    <.client_logo client_key={@client["setup_client"]} class="h-9 w-9" />
+  </div>
+  <.header class="mt-5 text-center">
+    {@client["name"]}
+    <:subtitle>would like access to Mmentum</:subtitle>
   </.header>
 
-  <div class="mt-6 rounded-panel border border-zinc-200 p-5 sm:p-6 dark:border-zinc-800">
-    <p class="text-xs font-medium text-muted dark:text-zinc-400">Mmentum account</p>
-    <p id="consent-account" class="mt-1 break-all text-sm font-medium">{@current_user.email}</p>
-    <div class="mt-5 border-t border-zinc-100 pt-5 dark:border-zinc-900">
+  <div class="mt-6 rounded-panel border border-zinc-200 dark:border-zinc-800">
+    <div class="flex items-center gap-3 p-4 sm:px-5">
+      <.icon name="hero-user-circle" class="h-8 w-8 flex-none text-muted dark:text-zinc-400" />
+      <div class="min-w-0">
+        <p class="text-sm font-medium">{@current_user.full_name}</p>
+        <p id="consent-account" class="mt-0.5 break-all text-xs leading-5 text-muted dark:text-zinc-400">
+          {@current_user.email}
+        </p>
+      </div>
+    </div>
+    <div class="border-t border-zinc-200 p-4 sm:p-5 dark:border-zinc-800">
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <span class="text-xs font-medium text-muted dark:text-zinc-400">Requested access</span>
+        <span
+          :if={"mmentum:read" in @scopes && "mmentum:write" not in @scopes}
+          class="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400"
+        >Read only</span>
+      </div>
       <.permissions scopes={@scopes} />
     </div>
   </div>
 
-  <p class="mt-5 text-sm leading-6 text-muted dark:text-zinc-400">
-    Only approve apps you trust. You can remove this access at any time from <.text_link
+  <.form for={@form} id="oauth-consent" action={~p"/oauth/consent"} class="mt-6">
+    <.input field={@form[:request]} type="hidden" />
+    <div id="consent-actions" class="flex items-center justify-center gap-3">
+      <.button id="oauth-allow" name="decision" value="allow" phx-disable-with="Authorizing...">Authorize access</.button>
+      <.button
+        id="oauth-deny"
+        name="decision"
+        value="deny"
+        variant="quiet"
+        class="border border-zinc-200 dark:border-zinc-800"
+      >Cancel</.button>
+    </div>
+  </.form>
+  <p class="mt-4 text-center text-xs leading-5 text-muted dark:text-zinc-400">
+    Remove access any time in
+    <.text_link
       href={~p"/users/connections"}
       target="_blank"
       rel="noopener noreferrer"
-    >Connected apps</.text_link>.
+    >Connected apps</.text_link>
   </p>
-  <details class="mt-4 text-xs leading-5 text-muted dark:text-zinc-400">
-    <summary class="w-fit cursor-pointer rounded-sm font-medium focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus/25">
+  <details class="mt-5 text-xs leading-5 text-muted dark:text-zinc-400">
+    <summary class="mx-auto w-fit cursor-pointer rounded-sm font-medium focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus/25">
       Connection details
     </summary>
     <dl class="mt-3 space-y-3">
@@ -35,10 +63,4 @@
       </div>
     </dl>
   </details>
-  <.form for={@form} id="oauth-consent" action={~p"/oauth/consent"} class="mt-6 flex flex-wrap gap-3">
-    <.input field={@form[:request]} type="hidden" />
-    <.button id="oauth-allow" name="decision" value="allow" phx-disable-with="Allowing...">Allow access</.button>
-    <.button id="oauth-deny" name="decision" value="deny" variant="quiet">Cancel</.button>
-  </.form>
-  <p class="mt-4 text-xs leading-5 text-muted dark:text-zinc-400">You'll return to your AI app after approval.</p>
 </section>

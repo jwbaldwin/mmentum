@@ -1,6 +1,10 @@
 # MCP client setup
 
-Open **Connected apps → Connect an AI app** to choose a client, add the server, approve access, and try a read-only habit query. The setup page is `/users/connections/new` and requires a Mmentum login.
+Open **Connected apps → Connect an AI app**, choose your client, and copy the setup prompt into your agent. It contains the registered configuration, browser sign-in instructions, and a read-only `list_habits` check. You still approve access in your browser. The setup page is `/users/connections/new` and requires a Mmentum login.
+
+The prompt is self-contained: the agent does not need a Mmentum session to read setup instructions. It includes only public configuration, never credentials. Cursor and VS Code also offer direct installation. Detailed manual instructions and troubleshooting stay collapsed until needed. Hosted clients that cannot use an agent-edited config retain their manual flow.
+
+Client marks use official publisher assets, shared by setup, consent, and Connected apps. Sources and usage limits are recorded in [`priv/static/images/mcp-clients/README.md`](../priv/static/images/mcp-clients/README.md). Codex uses the official OpenAI Blossom from its extension, not a fabricated app mark. Anthropic's published terms require permission for some third-party logo uses; that permission has not been obtained. Review brand restrictions before publishing.
 
 The client list follows PlanetScale: Cursor, VS Code, Claude Code, OpenCode, Codex CLI, Claude web/desktop, Gemini CLI, Amp CLI, Notion, Claude Managed Agents, and other remote clients. These are setup guides, not a claim that every client has passed end-to-end compatibility testing.
 
@@ -49,7 +53,7 @@ Scope configuration requests `mmentum:read` where the client exposes that settin
 
 ## Approval and management
 
-Consent keeps the existing signed request, CSRF protection, one-use approval, and client redirect. It shows the Mmentum account, requested permissions, return destination, and Allow access/Cancel actions.
+Consent keeps the existing signed request, CSRF protection, one-use approval, and client redirect. It leads with the requesting app, followed by a compact account and permission panel. Authorize access and Cancel sit below; the callback and server details remain available in a disclosure. Hidden inputs render without layout wrappers so they cannot offset the actions.
 
 Connected apps shows only the current user's active grants. A grant awaiting token exchange is **Setup unfinished**; a completed exchange is **Access approved**, not proof that the app is online. Names come from configured client registrations, with the stored client ID retained when a registration has been removed. Approval dates are shown in UTC.
 

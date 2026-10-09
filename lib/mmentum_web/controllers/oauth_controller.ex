@@ -69,11 +69,11 @@ defmodule MmentumWeb.OAuthController do
   end
 
   def connections(conn, _params) do
-    client_names = Map.new(Application.fetch_env!(:mmentum, :oauth_clients), &{&1["id"], &1["name"]})
+    registered_clients = Map.new(Application.fetch_env!(:mmentum, :oauth_clients), &{&1["id"], &1})
 
     render(conn, :connections,
       connections: OAuth.list_connections(conn.assigns.current_user),
-      client_names: client_names,
+      registered_clients: registered_clients,
       page_title: "Connected apps"
     )
   end

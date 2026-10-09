@@ -35,6 +35,10 @@ Sources: [MCP setup](https://planetscale.com/docs/mcp-server), [installed OAuth 
 
 **Evidence limit:** authenticated consent and management screens were not exercised. The public OAuth documentation's inspected February 2024 screenshot shows developer scope configuration, not current MCP user consent; it must not be treated as a visual reference for that screen.
 
+**Follow-up: agent-first setup.** PlanetScale's [agent setup prompt](https://planetscale.com/docs/agent-setup/prompt) provides a single copy action that tells an agent to fetch its [machine-readable setup instructions](https://planetscale.com/docs/agent-setup/prompt.md). The agent performs setup; the user completes browser approval. Its [agent-guide CLI](https://planetscale.com/docs/cli/agent-guide) and [Claude plugin](https://github.com/planetscale/claude-plugin) provide deeper workflow packaging. For Mmentum's one read-only tool, a self-contained prompt with the actual registered client config is sufficient; no new CLI, plugin, or public setup endpoint is needed.
+
+**Follow-up: real consent footage.** The [official January 2023 OAuth launch article](https://planetscale.com/blog/introducing-planetscale-api-and-oauth-applications) includes a [PlanetPets authorization GIF](https://planetscale.com/assets-2024/blog/content/introducing-planetscale-api-and-oauth-applications/planetpets.gif). Its user-facing screen leads with an app avatar/name and one short permission request, then compact account/resource panels, followed by a centered Authorize access/Cancel row. This is historical evidence, not a claim about today's Cursor consent screen. Mmentum follows that hierarchy while retaining its own styling and showing only permissions it actually enforces.
+
 **Borrow:** client-first entry, direct install where verified, copyable manual instructions, explicit browser handoff, concrete success examples, and visible revocation. Do not copy its database/organization complexity or assume Mmentum supports its URL-only registration flow.
 
 ## Reference: Sentry

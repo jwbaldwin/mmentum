@@ -23,6 +23,8 @@ export default {
         status.textContent = "Copy didn't work. Select the text and copy it."
         status.classList.remove("sr-only")
         status.classList.add("px-4", "pb-3", "text-xs", "text-muted")
+        const fallback = this.el.querySelector("[data-copy-fallback]")
+        if (fallback) fallback.hidden = false
       } finally {
         if (attempt === this.copyAttempt) button.disabled = false
       }
@@ -41,12 +43,14 @@ export default {
 
   reset() {
     window.clearTimeout(this.resetTimer)
-    this.el.querySelector("[data-copy-label]").textContent = "Copy"
+    this.el.querySelector("[data-copy-label]").textContent = this.el.dataset.copyIdleLabel
     this.el.querySelector("[data-copy-button]").disabled = false
     const status = this.el.querySelector("[data-copy-status]")
     status.textContent = ""
     status.classList.add("sr-only")
     status.classList.remove("px-4", "pb-3", "text-xs", "text-muted")
+    const fallback = this.el.querySelector("[data-copy-fallback]")
+    if (fallback) fallback.hidden = true
   },
 
   destroyed() {

@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import {test} from "node:test"
 import CopyText from "../../assets/js/hooks/copy_text.js"
 
-function mountCopy(writeText) {
+function mountCopy(writeText, idleLabel = "Copy") {
   const classes = new Set(["sr-only"])
   const status = {
     textContent: "",
@@ -12,13 +12,15 @@ function mountCopy(writeText) {
     }
   }
   const content = {textContent: "first\nsecond"}
-  const label = {textContent: "Copy"}
+  const label = {textContent: idleLabel}
+  const fallback = {hidden: true}
   const button = {disabled: false}
   const elements = {
     "[data-copy-content]": content,
     "[data-copy-label]": label,
     "[data-copy-status]": status,
-    "[data-copy-button]": button
+    "[data-copy-button]": button,
+    "[data-copy-fallback]": idleLabel === "Copy" ? null : fallback
   }
   const listeners = new Map()
   const timers = new Map()
@@ -33,6 +35,7 @@ function mountCopy(writeText) {
   const hook = {
     ...CopyText,
     el: {
+      dataset: {copyIdleLabel: idleLabel},
       querySelector: selector => elements[selector],
       contains: element => element === button,
       addEventListener: (name, callback) => listeners.set(name, callback),
@@ -42,7 +45,7 @@ function mountCopy(writeText) {
   hook.mounted()
 
   return {
-    hook, content, label, status, button, classes, timers, listeners,
+    hook, content, label, status, button, classes, timers, listeners, fallback,
     click: () => listeners.get("click")({target: {closest: () => button}})
   }
 }
@@ -68,6 +71,16 @@ test("clipboard rejection leaves a visible manual-copy instruction", async () =>
   assert.equal(copy.button.disabled, false)
   assert.equal(copy.classes.has("sr-only"), false)
   assert.match(copy.status.textContent, /Select the text/)
+  copy.hook.destroyed()
+})
+
+test("a prompt copy failure exposes its text and preserves the action label when reset", async () => {
+  const copy = mountCopy(async () => {throw new Error("Clipboard denied")}, "Copy setup prompt")
+  await copy.click()
+  assert.equal(copy.fallback.hidden, false)
+  copy.hook.reset()
+  assert.equal(copy.fallback.hidden, true)
+  assert.equal(copy.label.textContent, "Copy setup prompt")
   copy.hook.destroyed()
 })
 
