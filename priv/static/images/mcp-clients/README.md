@@ -15,7 +15,7 @@ ratio and built-in clear space; render with `object-fit: contain`, not cropping.
   `#26251e` / light `#edecec`. Do not invert these off-black/off-white brand colors.
 - Visual Studio Code: `vscode.svg`; blue stable mark for both themes. Do not
   invert. Its brand guide requires clear space equal to 25% of the fish motif.
-- Claude Code and Claude Managed Agents: share `claude.svg`, Claude's official
+- Claude Code and Claude: share `claude.svg`, Claude's official
   `#D97757` symbol. Use unchanged on both themes; do not invert.
 - OpenCode V2: `opencode-light.svg` / `opencode-dark.svg`; official two-color
   mark from the V2 repository branch. Do not invert.
@@ -23,6 +23,7 @@ ratio and built-in clear space; render with `object-fit: contain`, not cropping.
   Blossom, an explicitly documented fallback below. These are monochrome, so
   inversion is technically suitable, but the supplied official variants avoid
   altering the files or their prescribed clear space.
+- ChatGPT shares those official OpenAI Blossom variants.
 - Gemini CLI: `gemini-cli.svg`; official full-color terminal icon with its
   built-in dark background, suitable on both themes. Do not invert or replace
   its gradient with current Gemini model colors.
@@ -30,6 +31,7 @@ ratio and built-in clear space; render with `object-fit: contain`, not cropping.
   green background, suitable on both themes. Do not invert.
 - Notion: `notion.svg`; official black mark with the publisher's white backing
   and outline, suitable on both themes. Preserve the backing; do not invert.
+- Pi: `pi.svg`; the official multicolor Pi mark, unchanged on both themes.
 - Other clients: no brand asset; retain the application's generic icon.
 
 ## Sources and usage limits
@@ -63,14 +65,11 @@ ratio and built-in clear space; render with `object-fit: contain`, not cropping.
 - Publisher/product page: https://claude.com/
 - Exact vector: https://claude.com/favicon.svg
 - Brand terms: https://www.anthropic.com/legal/consumer-terms
-- This is Anthropic's official Claude symbol, shared for the two Claude client
-  entries rather than a fabricated Managed Agents or terminal logo.
-- **Permission limit:** the consumer terms' “Use of our brand” section requires
-  prior written permission for names/logos used in connection with products or
-  services other than Anthropic's Services, or uses implying affiliation,
-  endorsement or sponsorship. It names `marketing@anthropic.com` for permission
-  requests. No permission or blanket redistribution license was obtained here;
-  review that restriction before publishing the integration UI.
+- This is Anthropic's official Claude symbol, shared for Claude and Claude Code
+  rather than a fabricated terminal logo.
+- James reviewed Anthropic's logo terms and approved this integration's use on
+  October 9, 2026. This records the project owner's approval, not an unrestricted
+  redistribution license or an endorsement by Anthropic.
 
 ### OpenCode V2
 
@@ -143,6 +142,18 @@ ratio and built-in clear space; render with `object-fit: contain`, not cropping.
   no broad redistribution permission was verified. Notion retains its marks.
   Review its current trademark guidelines before promotional or co-brand use.
 
+### Pi
+
+- Official publisher asset: https://pi.dev/logo-auto.svg
+- Publisher repository: https://github.com/earendil-works/pi (formerly badlogic/pi-mono)
+- The coding-agent README links this asset as the Pi logo. Copied byte-for-byte,
+  preserving its viewBox, geometry, padding, and colors. No third-party redraw.
+- The publisher repository uses the MIT license; no separate unrestricted
+  trademark license was verified. This use identifies the Pi client only.
+- Repository license: https://github.com/earendil-works/pi/blob/v1.1.0/LICENSE
+- Retrieved October 9, 2026. SHA-256:
+  `abd66e7868b2d24f0f0895f9237ee8a6dcb22337583b0dc54aeb595acecb4d6b`.
+
 ## File safety and fidelity
 
 All vendored images are SVG, with no scripts, event handlers, external images,
@@ -157,6 +168,30 @@ dependency were removed. Geometry and the supplied viewBoxes remain unchanged.
 MIT License
 
 Copyright (c) 2025 opencode
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## Pi MIT notice
+
+MIT License
+
+Copyright (c) 2025 Mario Zechner
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

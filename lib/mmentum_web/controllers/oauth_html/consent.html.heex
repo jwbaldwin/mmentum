@@ -1,6 +1,18 @@
 <section class="mx-auto max-w-lg">
-  <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-panel border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
-    <.client_logo client_key={@client["setup_client"]} class="h-9 w-9" />
+  <div id="consent-app-link" aria-hidden="true" class="flex items-center justify-center gap-4">
+    <div
+      id="consent-requesting-app"
+      class="flex h-16 w-16 items-center justify-center rounded-panel border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900"
+    >
+      <.client_logo client_key={@client["setup_client"]} class="h-9 w-9" />
+    </div>
+    <.icon name="hero-arrow-right" class="h-5 w-5 flex-none text-muted dark:text-zinc-400" />
+    <div
+      id="consent-mmentum"
+      class="flex h-16 w-16 items-center justify-center rounded-panel border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900"
+    >
+      <img src={~p"/images/mmentum.svg"} alt="" class="theme-logo h-9 w-9 object-contain" />
+    </div>
   </div>
   <.header class="mt-5 text-center">
     {@client["name"]}

@@ -8,11 +8,12 @@ defmodule MmentumWeb.MCPComponents do
     "claude-code" => {"claude.svg", "claude.svg"},
     "opencode" => {"opencode-light.svg", "opencode-dark.svg"},
     "codex" => {"codex-light.svg", "codex-dark.svg"},
+    "chatgpt" => {"codex-light.svg", "codex-dark.svg"},
     "claude" => {"claude.svg", "claude.svg"},
     "gemini" => {"gemini-cli.svg", "gemini-cli.svg"},
     "amp" => {"amp.svg", "amp.svg"},
     "notion" => {"notion.svg", "notion.svg"},
-    "claude-managed-agents" => {"claude.svg", "claude.svg"}
+    "pi" => {"pi.svg", "pi.svg"}
   }
 
   attr :client_key, :string, default: nil

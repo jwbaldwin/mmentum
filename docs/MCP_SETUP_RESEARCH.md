@@ -2,7 +2,13 @@
 
 Research date: October 9, 2026. Recommendations below are proposals, not agreed implementation scope.
 
-Agreed after research: PlanetScale is the primary UX reference, its full client list belongs in the setup page, and Mmentum's existing styles stay unchanged. The implementation and registration requirements are documented in [`MCP_SETUP.md`](MCP_SETUP.md). The recommendations below retain the original research context.
+Agreed after research: PlanetScale is the primary UX reference and Mmentum's existing styles stay unchanged. Its client list was the starting point; James later requested removing Claude Managed Agents and adding ChatGPT and Pi. The implementation and registration requirements are documented in [`MCP_SETUP.md`](MCP_SETUP.md). The recommendations below retain the original research context.
+
+## Client-list follow-up
+
+ChatGPT's current official [custom MCP guide](https://developers.openai.com/api/docs/guides/custom-mcp-server.md) uses Plugins → Add custom MCP server, OAuth configuration, then installation and selection with `@`. This replaces the older developer-mode settings path. Its [authentication guide](https://developers.openai.com/plugins/build/auth.md) documents predefined clients as well as CIMD/DCR. Callback addresses can be connection-specific or stable; register the exact URI shown in ChatGPT rather than assume one shared callback. Mmentum's guide exposes only an already-registered public ID and keeps real-client verification outstanding. No registration protocol or server authorization behavior changes.
+
+Pi's [version-pinned native MCP guide](https://github.com/earendil-works/pi/blob/v1.1.0/packages/coding-agent/docs/mcp.md) documents built-in Streamable HTTP, `~/.pi/agent/mcp.json`, public `oauth.clientId`, optional secrets, exact `oauth.callbackUrl`, and `pi mcp login`. The [native flow](https://github.com/earendil-works/pi/blob/v1.1.0/packages/mcp/src/oauth/flow.ts#L349-L353) gives the configured scope precedence over metadata, but [authentication challenges can add scopes](https://github.com/earendil-works/pi/blob/v1.1.0/packages/coding-agent/src/extensions/mcp/oauth.ts#L527-L532). An installed extension registering `/mcp` replaces native MCP in sessions, so the guide explicitly requires Pi 1.1 or later without `pi-mcp-adapter`. Existing local OAuth evidence covers the older adapter, not this native flow. Setup withholds snippets unless an exact, fixed-port HTTP loopback callback is registered: port 80 is normalized, port zero cannot receive the redirect, and query parameters fail native validation. The Pi mark comes unchanged from the publisher's `https://pi.dev/logo-auto.svg`.
 
 ## Recommendation
 

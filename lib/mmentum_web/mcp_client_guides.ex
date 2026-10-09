@@ -7,11 +7,12 @@ defmodule MmentumWeb.MCPClientGuides do
     %{key: "claude-code", name: "Claude Code"},
     %{key: "opencode", name: "OpenCode"},
     %{key: "codex", name: "Codex CLI"},
+    %{key: "chatgpt", name: "ChatGPT"},
     %{key: "claude", name: "Claude"},
     %{key: "gemini", name: "Gemini CLI"},
     %{key: "amp", name: "Amp CLI"},
     %{key: "notion", name: "Notion"},
-    %{key: "claude-managed-agents", name: "Claude Managed Agents"},
+    %{key: "pi", name: "Pi"},
     %{key: "other", name: "Other clients"}
   ]
 
@@ -24,7 +25,7 @@ defmodule MmentumWeb.MCPClientGuides do
       registration: registration,
       agent_prompt: agent_prompt(client, guide),
       callback_missing?:
-        not is_nil(registration) and client.key in ["claude-code", "opencode", "gemini"] and
+        not is_nil(registration) and client.key in ["claude-code", "opencode", "gemini", "pi"] and
           is_nil(hd(guide.steps).code)
     })
   end
@@ -127,7 +128,7 @@ defmodule MmentumWeb.MCPClientGuides do
         )
       ],
       install_url: nil,
-      note: "Claude Code sign-in still needs verification with this server.",
+      note: nil,
       requirements:
         "Register a fixed http://localhost:PORT/callback. Current Claude Code uses localhost; some earlier releases used 127.0.0.1.",
       docs_url: "https://code.claude.com/docs/en/mcp"
@@ -293,9 +294,8 @@ defmodule MmentumWeb.MCPClientGuides do
         )
       ],
       install_url: nil,
-      note: "Amp's public-client sign-in still needs verification.",
-      requirements:
-        "Amp documents http://localhost:8976/oauth/callback. Verify its current public-client login before registering it.",
+      note: nil,
+      requirements: "Register http://localhost:8976/oauth/callback for Amp's manual OAuth setup.",
       docs_url: "https://ampcode.com/docs/customize/mcp"
     }
   end
@@ -317,23 +317,76 @@ defmodule MmentumWeb.MCPClientGuides do
     }
   end
 
-  defp instructions("claude-managed-agents", _server_url, _registration) do
+  defp instructions("chatgpt", _server_url, registration) do
     %{
       steps: [
         step(
-          "Open Credential vaults",
-          "Claude Console → Credential vaults → Create vault → Add credential."
+          "Add a custom server",
+          "ChatGPT Plugins → + → Add custom MCP server. Name it Mmentum and enter the server URL."
         ),
         step(
-          "Choose MCP OAuth",
-          "Enter the server URL after your administrator completes registration."
+          "Use the approved OAuth client",
+          "Choose OAuth and enter this client ID. Leave the secret blank.",
+          client_id(registration),
+          "Public client ID"
+        ),
+        step(
+          "Approve and install",
+          "Review the warning, create the plugin, and finish sign-in. Install it, then select it with @ in a conversation."
         )
       ],
       install_url: nil,
-      note: "Managed Agents sign-in still needs verification.",
+      note: "Requires custom MCP access and a public HTTPS server.",
       requirements:
-        "Verify the Console's public-client authorization and exact callback. Do not reuse Claude web's callback without confirming it.",
-      docs_url: "https://platform.claude.com/docs/en/managed-agents/vaults"
+        "Register the exact redirect URI shown in ChatGPT's MCP server settings. Do not assume a shared callback. Use a pre-registered public client; automatic registration is not available.",
+      docs_url: "https://developers.openai.com/api/docs/guides/custom-mcp-server"
+    }
+  end
+
+  defp instructions("pi", server_url, registration) do
+    configuration =
+      configuration(registration, fn client ->
+        callback =
+          Enum.find(client["redirect_uris"], fn redirect ->
+            uri = URI.parse(redirect)
+
+            uri.scheme == "http" and uri.host in ["localhost", "127.0.0.1", "::1"] and
+              uri.port in 1..65_535 and uri.port != 80 and is_nil(uri.query) and
+              Regex.match?(~r/:\d+$/, uri.authority)
+          end)
+
+        if callback do
+          json(%{
+            "mcpServers" => %{
+              "mmentum" => %{
+                "url" => server_url,
+                "oauth" => %{"clientId" => client["id"], "scope" => "mmentum:read", "callbackUrl" => callback}
+              }
+            }
+          })
+        end
+      end)
+
+    %{
+      steps: [
+        step(
+          "Configure native Pi",
+          "Merge this into Pi's MCP config. Requires Pi 1.1 or later without pi-mcp-adapter.",
+          configuration,
+          "~/.pi/agent/mcp.json"
+        ),
+        step(
+          "Authenticate",
+          "Run this command and finish sign-in in your browser. Use /reload in an existing Pi session.",
+          "pi mcp login mmentum",
+          "Terminal"
+        )
+      ],
+      install_url: nil,
+      note: "Requires native MCP in Pi 1.1 or later, without pi-mcp-adapter.",
+      requirements:
+        "Register an HTTP loopback callback with an explicit fixed port other than 80 and no query parameters. Native callbackUrl preserves that URI; missing/default ports can change it. Older pi-mcp-adapter uses redirectUri instead.",
+      docs_url: "https://github.com/earendil-works/pi/blob/v1.1.0/packages/coding-agent/docs/mcp.md"
     }
   end
 
@@ -366,7 +419,7 @@ defmodule MmentumWeb.MCPClientGuides do
   defp agent_prompt(client, guide) do
     first_step = hd(guide.steps)
 
-    if client.key in ["cursor", "vscode", "claude-code", "opencode", "codex", "gemini"] and first_step.code do
+    if client.key in ["cursor", "vscode", "claude-code", "opencode", "codex", "gemini", "pi"] and first_step.code do
       installation =
         if first_step.label == "Terminal" do
           "Run this command:"
@@ -381,6 +434,7 @@ defmodule MmentumWeb.MCPClientGuides do
 
       """
       Set up Mmentum in #{client.name}.
+      #{guide.note}
 
       #{installation}
       #{first_step.code}

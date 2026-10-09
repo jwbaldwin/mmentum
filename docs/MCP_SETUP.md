@@ -4,9 +4,9 @@ Open **Connected apps → Connect an AI app**, choose your client, and copy the 
 
 The prompt is self-contained: the agent does not need a Mmentum session to read setup instructions. It includes only public configuration, never credentials. Cursor and VS Code also offer direct installation. Detailed manual instructions and troubleshooting stay collapsed until needed. Hosted clients that cannot use an agent-edited config retain their manual flow.
 
-Client marks use official publisher assets, shared by setup, consent, and Connected apps. Sources and usage limits are recorded in [`priv/static/images/mcp-clients/README.md`](../priv/static/images/mcp-clients/README.md). Codex uses the official OpenAI Blossom from its extension, not a fabricated app mark. Anthropic's published terms require permission for some third-party logo uses; that permission has not been obtained. Review brand restrictions before publishing.
+Client marks use official publisher assets, shared by setup, consent, and Connected apps. Sources and usage limits are recorded in [`priv/static/images/mcp-clients/README.md`](../priv/static/images/mcp-clients/README.md). ChatGPT and Codex share the official OpenAI Blossom; Codex's extension uses this mark. James reviewed Anthropic's terms and approved this integration's logo use on October 9, 2026.
 
-The client list follows PlanetScale: Cursor, VS Code, Claude Code, OpenCode, Codex CLI, Claude web/desktop, Gemini CLI, Amp CLI, Notion, Claude Managed Agents, and other remote clients. These are setup guides, not a claim that every client has passed end-to-end compatibility testing.
+The client list builds on PlanetScale's choices: Cursor, VS Code, Claude Code, Claude web/desktop, OpenCode, Codex CLI, ChatGPT, Gemini CLI, Amp CLI, Notion, Pi, and other remote clients. Claude Managed Agents was removed at James's request.
 
 ## Link an existing registration to its guide
 
@@ -42,18 +42,23 @@ The page builds snippets from the configured MCP audience, public client ID, and
 - **Codex CLI (`codex`):** register the exact callback printed by `codex mcp add` with a public client ID. It may include an endpoint-specific path. The guide uses the registration's first callback; put the Codex callback first.
 - **Claude web/desktop (`claude`):** `https://claude.ai/api/mcp/auth_callback`. Use a remote custom connector and its own-client OAuth option.
 - **Gemini CLI (`gemini`):** a fixed `http://localhost:PORT/oauth/callback`.
-- **Amp CLI (`amp`):** documentation names `http://localhost:8976/oauth/callback`, but its public-client/no-secret login still needs verification.
+- **Amp CLI (`amp`):** register `http://localhost:8976/oauth/callback` for manual OAuth setup.
 - **Notion (`notion`):** arrange pre-registration with Notion. Its Custom Agents flow does not document an arbitrary user-supplied client ID. A URL alone cannot connect it to this server.
-- **Claude Managed Agents (`claude-managed-agents`):** verify initial public-client authorization and its callback before mapping a registration. Public-client token refresh support does not prove the browser setup flow.
+- **ChatGPT (`chatgpt`):** copy the exact redirect URI from the MCP server's management page in ChatGPT. Callback-specific and stable redirect modes exist; do not substitute a universal callback. Use OAuth with the pre-registered public client ID, not CIMD or DCR.
+- **Pi (`pi`):** the guide targets native MCP in Pi 1.1 or later, without the `pi-mcp-adapter` extension. Register a fixed HTTP callback on `localhost`, `127.0.0.1`, or `::1`, including an explicit nonzero port other than 80 and no query parameters. Pi normalizes port 80 and rejects query-bearing callbacks. Generated `oauth.callbackUrl` preserves the exact URI in `~/.pi/agent/mcp.json`; login uses `pi mcp login mmentum`. A missing or unsuitable callback withholds the configuration and agent prompt.
 - **Other (`other`):** requires Streamable HTTP and pre-registered public OAuth support, with an exactly registered callback.
 
 OpenCode, Claude Code, and Gemini snippets are withheld if the registration lacks their documented loopback callback shape. Claude Code also requires a callback without query parameters, since its port-only setting cannot reproduce them. The page shows a callback correction message instead.
 
 Scope configuration requests `mmentum:read` where the client exposes that setting. VS Code and Claude connectors do not expose a documented override, and Codex can prefer the server's advertised scopes. The approval page always shows the actual requested permissions. Write tools are not currently available.
 
+Native Pi starts with the configured read scope but can add scopes requested by an authentication challenge; review the actual consent. Older `pi-mcp-adapter` setups use `oauth.redirectUri` and `/mcp-auth` instead of native Pi's settings and commands.
+
+`claude-managed-agents` is no longer a setup key. If an existing registration uses it, remove its optional `setup_client` field before restarting; the registration itself can remain valid and no grant is revoked by removing a guide.
+
 ## Approval and management
 
-Consent keeps the existing signed request, CSRF protection, one-use approval, and client redirect. It leads with the requesting app, followed by a compact account and permission panel. Authorize access and Cancel sit below; the callback and server details remain available in a disclosure. Hidden inputs render without layout wrappers so they cannot offset the actions.
+Consent keeps the existing signed request, CSRF protection, one-use approval, and client redirect. It leads with the requesting app's logo pointing to Mmentum's logo, followed by a compact account and permission panel. The heading names the requesting app and Mmentum in text as well. Authorize access and Cancel sit below; the callback and server details remain available in a disclosure. Hidden inputs render without layout wrappers so they cannot offset the actions.
 
 Connected apps shows only the current user's active grants. A grant awaiting token exchange is **Setup unfinished**; a completed exchange is **Access approved**, not proof that the app is online. Names come from configured client registrations, with the stored client ID retained when a registration has been removed. Approval dates are shown in UTC.
 

@@ -74,6 +74,27 @@ defmodule Mmentum.OAuthRedirectConfigTest do
     end
   end
 
+  test "ChatGPT and Pi setup mappings are available, while the retired guide cannot be mapped" do
+    for {key, redirect} <- [
+          {"chatgpt", "https://chatgpt.com/connector/oauth/test"},
+          {"pi", "http://localhost:19879/callback"}
+        ] do
+      client = %{"id" => key <> "-public", "name" => key, "setup_client" => key, "redirect_uris" => [redirect]}
+      System.put_env("OAUTH_PUBLIC_CLIENTS_JSON", Jason.encode!([client]))
+      assert Config.Reader.read!("config/runtime.exs", env: :test)[:mmentum][:oauth_clients] == [client]
+    end
+
+    client = %{
+      "id" => "retired-public",
+      "name" => "Retired",
+      "setup_client" => "claude-managed-agents",
+      "redirect_uris" => ["https://client.example/callback"]
+    }
+
+    System.put_env("OAUTH_PUBLIC_CLIENTS_JSON", Jason.encode!([client]))
+    assert_raise ArgumentError, fn -> Config.Reader.read!("config/runtime.exs", env: :test) end
+  end
+
   defp configure_redirect(redirect) do
     System.put_env(
       "OAUTH_PUBLIC_CLIENTS_JSON",

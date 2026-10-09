@@ -46,6 +46,18 @@ defmodule MmentumWeb.MCPSetupLiveTest do
         "name" => "Codex CLI",
         "setup_client" => "codex",
         "redirect_uris" => ["http://localhost:19876/callback/mmentum-specific"]
+      },
+      %{
+        "id" => "chatgpt-public",
+        "name" => "ChatGPT",
+        "setup_client" => "chatgpt",
+        "redirect_uris" => ["https://chatgpt.com/connector/oauth/mmentum-specific"]
+      },
+      %{
+        "id" => "pi-public",
+        "name" => "Pi",
+        "setup_client" => "pi",
+        "redirect_uris" => ["http://127.0.0.1:19879/callback/mmentum"]
       }
     ])
 
@@ -57,10 +69,10 @@ defmodule MmentumWeb.MCPSetupLiveTest do
     assert redirected_to(conn) == ~p"/login"
   end
 
-  test "covers every PlanetScale client and switches instructions through the URL", %{conn: conn} do
+  test "offers the requested clients and switches instructions through the URL", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/users/connections/new")
 
-    for key <- ~w(cursor vscode claude-code opencode codex claude gemini amp notion claude-managed-agents other) do
+    for key <- ~w(cursor vscode claude-code opencode codex chatgpt claude gemini amp notion pi other) do
       assert has_element?(view, "#client-#{key}")
       view |> element("#client-#{key}") |> render_click()
       assert_patch(view, ~p"/users/connections/new?client=#{key}")
@@ -71,6 +83,7 @@ defmodule MmentumWeb.MCPSetupLiveTest do
     view |> element("#client-cursor") |> render_click()
     assert_patch(view, ~p"/users/connections/new?client=cursor")
     refute has_element?(view, "#registration-required")
+    refute has_element?(view, "#client-claude-managed-agents")
   end
 
   test "Cursor install and manual configuration use the registered public client and read scope", %{conn: conn} do
@@ -95,7 +108,7 @@ defmodule MmentumWeb.MCPSetupLiveTest do
   test "named clients use local publisher marks while other clients has no invented brand", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/users/connections/new")
 
-    for key <- ~w(cursor vscode claude-code opencode codex claude gemini amp notion claude-managed-agents) do
+    for key <- ~w(cursor vscode claude-code opencode codex chatgpt claude gemini amp notion pi) do
       sources =
         view |> element("#client-#{key}") |> render() |> Floki.parse_fragment!() |> Floki.attribute("img", "src")
 
@@ -149,6 +162,91 @@ defmodule MmentumWeb.MCPSetupLiveTest do
     assert configuration["type"] == "http"
     assert configuration["url"] == OAuth.config().audience
     assert configuration["oauth"] == %{"clientId" => "vscode-public"}
+  end
+
+  test "ChatGPT uses its registered client ID with manual OAuth and no automatic-install promise", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/users/connections/new?client=chatgpt")
+
+    assert has_element?(view, "#manual-setup[open]")
+    assert has_element?(view, "#setup-step-2 code", "chatgpt-public")
+    refute has_element?(view, "#registration-required")
+    refute has_element?(view, "#install-client")
+    refute has_element?(view, "#agent-setup-prompt")
+
+    clients = Application.fetch_env!(:mmentum, :oauth_clients)
+    Application.put_env(:mmentum, :oauth_clients, Enum.reject(clients, &(&1["setup_client"] == "chatgpt")))
+    render_patch(view, ~p"/users/connections/new?client=cursor")
+    render_patch(view, ~p"/users/connections/new?client=chatgpt")
+    assert has_element?(view, "#registration-required")
+    refute has_element?(view, "#setup-step-2 code")
+  end
+
+  test "native Pi uses its own callback setting and login command without adapter fields", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/users/connections/new?client=pi")
+
+    configuration =
+      view |> element("#setup-step-1 code") |> render() |> Floki.parse_fragment!() |> Floki.text() |> Jason.decode!()
+
+    server = get_in(configuration, ["mcpServers", "mmentum"])
+    assert server["url"] == OAuth.config().audience
+
+    assert server["oauth"] == %{
+             "clientId" => "pi-public",
+             "scope" => "mmentum:read",
+             "callbackUrl" => "http://127.0.0.1:19879/callback/mmentum"
+           }
+
+    refute Map.has_key?(server, "auth")
+    refute Map.has_key?(server, "protocolVersion")
+    assert has_element?(view, "#setup-step-2 code", "pi mcp login mmentum")
+    assert has_element?(view, "#agent-setup-prompt [data-copy-content]", "without pi-mcp-adapter")
+    assert has_element?(view, "#agent-setup-prompt [data-copy-content]", "callbackUrl")
+    refute has_element?(view, "#manual-setup[open]")
+  end
+
+  test "Pi withholds setup when it cannot reproduce the registered callback exactly", %{conn: conn} do
+    clients = Application.fetch_env!(:mmentum, :oauth_clients)
+
+    for redirect <- [
+          "http://localhost/callback",
+          "http://127.0.0.1:0/callback",
+          "http://127.0.0.1:80/callback",
+          "http://127.0.0.1:19879/callback?required=value",
+          "https://client.example/callback"
+        ] do
+      Application.put_env(
+        :mmentum,
+        :oauth_clients,
+        Enum.map(clients, fn client ->
+          if client["setup_client"] == "pi", do: Map.put(client, "redirect_uris", [redirect]), else: client
+        end)
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/users/connections/new?client=pi")
+      assert has_element?(view, "#callback-required")
+      refute has_element?(view, "#agent-setup-prompt")
+      refute has_element?(view, "#setup-step-1")
+    end
+  end
+
+  test "mapped client consent shows the requesting logo pointing to Mmentum", %{conn: conn} do
+    {params, _verifier} =
+      Mmentum.OAuthFixtures.authorization_params(%{
+        "client_id" => "cursor-public",
+        "redirect_uri" => "http://localhost:8787/callback",
+        "scope" => "mmentum:read"
+      })
+
+    {consent, _fields} = Mmentum.OAuthFixtures.consent_form(conn, params)
+    html = consent |> html_response(200) |> Floki.parse_document!()
+
+    assert Floki.attribute(html, "#consent-requesting-app img", "src") == [
+             "/images/mcp-clients/cursor-light.svg",
+             "/images/mcp-clients/cursor-dark.svg"
+           ]
+
+    assert Floki.attribute(html, "#consent-mmentum img", "src") == ["/images/mmentum.svg"]
+    assert html |> Floki.find("h1") |> Floki.text() |> String.trim() == "Cursor"
   end
 
   test "unregistered clients have instructions but no fabricated credentials or install action", %{conn: conn} do
@@ -269,6 +367,10 @@ defmodule MmentumWeb.MCPSetupLiveTest do
     refute has_element?(view, "#setup-step-1 code", "unapproved")
 
     render_patch(view, "/users/connections/new?client=not-a-client")
+    assert_patch(view, ~p"/users/connections/new")
+    assert has_element?(view, "#client-cursor[aria-current=true]")
+
+    render_patch(view, "/users/connections/new?client=claude-managed-agents")
     assert_patch(view, ~p"/users/connections/new")
     assert has_element?(view, "#client-cursor[aria-current=true]")
   end

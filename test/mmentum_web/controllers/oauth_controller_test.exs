@@ -76,6 +76,8 @@ defmodule MmentumWeb.OAuthControllerTest do
     assert html |> Floki.find("#consent-account") |> Floki.text() |> String.trim() == user.email
     assert Floki.find(html, "main #oauth-consent") != []
     assert Floki.find(html, "#oauth-consent > input[name=request][type=hidden]") != []
+    assert Floki.find(html, "#consent-app-link #consent-requesting-app") != []
+    assert Floki.attribute(html, "#consent-app-link #consent-mmentum img", "src") == ["/images/mmentum.svg"]
     assert Floki.text(html) =~ "https://client.example/callback"
     assert Floki.text(html) =~ "Read your habits"
     refute Floki.text(html) =~ "Change habits and record progress"
