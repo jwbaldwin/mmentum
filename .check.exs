@@ -11,6 +11,7 @@
     {:xref, "mix xref graph --format cycles --label compile-connected --fail-above 0 --no-compile",
      env: %{"MIX_ENV" => "test"}},
     {:unused, "mix compile --severity error", env: %{"MIX_ENV" => "test"}},
+    {:clipboard, ["node", "--test", "test/js/copy_text_test.mjs"]},
     {:doctor, false},
     {:dialyzer, false},
     {:ex_doc, false},

@@ -27,6 +27,7 @@ The runner uses the test build for compilation, formatting, source analysis, and
 - **mix_unused:** reports unused public functions and functions that could be private. `mix.exs` lists dynamic framework entry points, configured OAuth callbacks, MCP dispatch, and release commands that the tracer cannot discover. Findings are hints during normal compilation and failures in the runner's separate `unused` check
 - **xref:** rejects compile-connected cycles, which can cause unnecessary recompilation. It does not prohibit every runtime dependency cycle
 - **ExUnit:** runs the existing full test suite
+- **Clipboard hook:** runs the built-in Node tests for exact copying, copy failures, client changes, and hook cleanup
 - **Unused dependency locks:** reports stale entries in `mix.lock`
 
 No additional Credo rule packages are needed for this setup. The chosen checks use Credo itself, ExSlop, and Jump

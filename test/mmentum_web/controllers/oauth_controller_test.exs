@@ -39,6 +39,48 @@ defmodule MmentumWeb.OAuthControllerTest do
     assert resource["authorization_servers"] == [OAuth.config().issuer]
   end
 
+  test "Connected apps offers setup when there are no approved grants", %{conn: conn, user: user} do
+    html = conn |> log_in_user(user) |> get(~p"/users/connections") |> html_response(200) |> Floki.parse_document!()
+    assert Floki.find(html, "#connections-empty") != []
+    assert Floki.attribute(html, "#connect-app", "href") == [~p"/users/connections/new"]
+  end
+
+  test "Connected apps separates pending token exchange from approved access", %{conn: conn, user: user} do
+    {code, verifier} = OAuthFixtures.authorize(user, %{"scope" => "mmentum:read"})
+    other_user = Mmentum.AccountsFixtures.user_fixture()
+    OAuthFixtures.authorize(other_user)
+    connection = Repo.one!(from connection in Connection, where: connection.user_id == ^user.id)
+
+    pending = conn |> log_in_user(user) |> get(~p"/users/connections") |> html_response(200) |> Floki.parse_document!()
+    assert length(Floki.find(pending, "article[id^=connection-]")) == 1
+    assert Floki.text(Floki.find(pending, "#connection-#{connection.id}")) =~ "Setup unfinished"
+
+    assert pending |> Floki.find("#connection-#{connection.id} h2") |> Floki.text() |> String.trim() ==
+             "OAuth test client"
+
+    OAuthFixtures.exchange(code, verifier)
+
+    approved = conn |> log_in_user(user) |> get(~p"/users/connections") |> html_response(200) |> Floki.parse_document!()
+    assert Floki.text(Floki.find(approved, "#connection-#{connection.id}")) =~ "Access approved"
+    refute Floki.text(Floki.find(approved, "#connection-#{connection.id}")) =~ "Setup unfinished"
+    assert Floki.find(approved, "#disconnect-#{connection.id}") != []
+    assert Floki.text(approved) =~ "Read your habits"
+    refute Floki.text(approved) =~ "Change habits and record progress"
+  end
+
+  test "read-only consent names the account and return destination without showing write access", %{user: user} do
+    {params, _verifier} = OAuthFixtures.authorization_params(%{"scope" => "mmentum:read"})
+    {conn, _fields} = OAuthFixtures.consent_form(log_in_user(OAuthFixtures.https_conn(), user), params)
+    html = conn |> html_response(200) |> Floki.parse_document!()
+
+    assert Floki.text(Floki.find(html, "#consent-account")) == user.email
+    assert Floki.find(html, "main #oauth-consent") != []
+    assert Floki.text(html) =~ "https://client.example/callback"
+    assert Floki.text(html) =~ "Read your habits"
+    refute Floki.text(html) =~ "Change habits and record progress"
+    assert Floki.attribute(html, "#oauth-deny", "value") == ["deny"]
+  end
+
   test "OAuth metadata requires HTTPS without requiring login" do
     for path <- ["/.well-known/oauth-authorization-server", "/.well-known/oauth-protected-resource/mcp"] do
       assert build_conn() |> get("http://localhost:4000" <> path) |> response(400)
@@ -295,6 +337,10 @@ defmodule MmentumWeb.OAuthControllerTest do
       |> delete(~p"/users/connections/#{connection.id}")
 
     assert redirected_to(disconnected) == ~p"/users/connections"
+
+    html = disconnected |> recycle() |> get(~p"/users/connections") |> html_response(200) |> Floki.parse_document!()
+    assert Floki.find(html, "#connections-empty") != []
+    assert Floki.text(html) =~ "App disconnected"
 
     assert send_mcp(OAuthFixtures.bearer_conn(tokens["access_token"])).status == 401
     assert send_mcp(OAuthFixtures.bearer_conn(refreshed["access_token"])).status == 401

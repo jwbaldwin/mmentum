@@ -287,7 +287,7 @@ defmodule MmentumWeb.CoreComponents do
   attr :navigate, :any, default: nil
   attr :href, :any, default: nil
   attr :class, :any, default: nil
-  attr :rest, :global
+  attr :rest, :global, include: ~w(target rel)
   slot :inner_block, required: true
 
   def text_link(assigns) do

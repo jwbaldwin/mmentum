@@ -41,6 +41,39 @@ defmodule Mmentum.OAuthRedirectConfigTest do
     end
   end
 
+  test "setup guide metadata is optional and valid mapped registrations retain their public configuration" do
+    client = %{
+      "id" => "cursor-public",
+      "name" => "Cursor",
+      "setup_client" => "cursor",
+      "redirect_uris" => ["http://localhost:8787/callback"]
+    }
+
+    System.put_env("OAUTH_PUBLIC_CLIENTS_JSON", Jason.encode!([client]))
+    config = Config.Reader.read!("config/runtime.exs", env: :test)
+    assert config[:mmentum][:oauth_clients] == [client]
+  end
+
+  test "setup guide metadata rejects unknown keys, duplicate mappings, and incomplete registrations" do
+    client = %{
+      "id" => "cursor-public",
+      "name" => "Cursor",
+      "setup_client" => "cursor",
+      "redirect_uris" => ["http://localhost:8787/callback"]
+    }
+
+    for clients <- [
+          [Map.put(client, "setup_client", "not-a-client")],
+          [Map.put(client, "setup_client", 123)],
+          [client, Map.put(client, "id", "another-cursor")],
+          [Map.delete(client, "name")],
+          [Map.put(client, "redirect_uris", [])]
+        ] do
+      System.put_env("OAUTH_PUBLIC_CLIENTS_JSON", Jason.encode!(clients))
+      assert_raise ArgumentError, fn -> Config.Reader.read!("config/runtime.exs", env: :test) end
+    end
+  end
+
   defp configure_redirect(redirect) do
     System.put_env(
       "OAUTH_PUBLIC_CLIENTS_JSON",

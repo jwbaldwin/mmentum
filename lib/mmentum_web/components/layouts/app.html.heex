@@ -1,16 +1,16 @@
 <header class="px-4 sm:px-6 lg:px-8">
   <nav
     aria-label="Primary"
-    class="flex items-center justify-between border-b border-zinc-100 py-3 text-sm dark:border-zinc-900"
+    class="flex items-center justify-between gap-3 border-b border-zinc-100 py-3 text-sm dark:border-zinc-900"
   >
     <.link
       navigate={~p"/"}
       aria-label="Dashboard"
-      class="rounded-control focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20"
+      class="shrink-0 rounded-control focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/20"
     >
       <img class="theme-logo" src={~p"/images/mmentum.svg"} width="36" alt="" />
     </.link>
-    <div class="flex items-center gap-1 font-semibold leading-6 text-zinc-900 dark:text-zinc-100">
+    <div class="flex min-w-0 items-center gap-1 font-semibold leading-6 text-zinc-900 dark:text-zinc-100">
       <%= if @current_user do %>
         <.tooltip id="new-habit-tooltip" content="New habit" placement="bottom">
           <.button_link

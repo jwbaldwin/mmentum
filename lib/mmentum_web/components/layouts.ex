@@ -12,7 +12,7 @@ defmodule MmentumWeb.Layouts do
     ~H"""
     <details
       id="account-menu"
-      class="group relative"
+      class="group relative min-w-0"
       phx-click-away={JS.remove_attribute("open", to: "#account-menu")}
       phx-window-keydown={JS.remove_attribute("open", to: "#account-menu")}
       phx-key="escape"

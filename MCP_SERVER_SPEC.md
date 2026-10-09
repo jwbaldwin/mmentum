@@ -41,6 +41,8 @@ All OAuth routes, including discovery, require HTTPS. MCP requests require a val
 
 Register public clients through `OAUTH_PUBLIC_CLIENTS_JSON`. Callback addresses must use HTTPS, except that HTTP is allowed for `localhost`, `127.0.0.1`, and `::1`. Startup rejects callbacks without a host or with userinfo or a fragment. Authorization still requires an exact match to a registered address. Dynamic registration and Client ID Metadata Documents are not implemented.
 
+The browser setup page covers PlanetScale's client list at `/users/connections/new`. An optional `setup_client` key links an existing public registration to its client-specific guide. This is presentation metadata, not a new registration or authorization mechanism. See [`docs/MCP_SETUP.md`](docs/MCP_SETUP.md) for keys, callback requirements, and compatibility limits.
+
 ## Client compatibility
 
 Local client checks on September 22, 2026:

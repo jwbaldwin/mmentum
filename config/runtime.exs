@@ -151,6 +151,21 @@ clients =
     json -> Jason.decode!(json)
   end
 
+setup_keys = Enum.map(MmentumWeb.MCPClientGuides.list(), & &1.key)
+configured_setup_keys = for client <- clients, key = client["setup_client"], not is_nil(key), do: key
+
+if Enum.any?(configured_setup_keys, &(&1 not in setup_keys)) or
+     length(configured_setup_keys) != length(Enum.uniq(configured_setup_keys)) do
+  raise ArgumentError, "OAuth setup_client must identify a known setup guide and be unique"
+end
+
+for client <- clients, client["setup_client"] do
+  if !(is_binary(client["id"]) and is_binary(client["name"]) and
+         is_list(client["redirect_uris"]) and client["redirect_uris"] != []) do
+    raise ArgumentError, "OAuth setup clients require a public id, name, and at least one redirect URI"
+  end
+end
+
 for client <- clients, redirect <- Map.fetch!(client, "redirect_uris") do
   uri = URI.new!(redirect)
   secure? = uri.scheme == "https"

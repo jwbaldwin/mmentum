@@ -38,10 +38,13 @@ defmodule MmentumWeb.OAuthController do
            |> put_resp_header("cache-control", "no-store")
            |> put_resp_header("referrer-policy", "no-referrer")
            |> put_view(html: MmentumWeb.OAuthHTML)
+           |> put_layout(html: {MmentumWeb.Layouts, :app})
            |> render(:consent,
              client: client,
              scopes: request.scope,
              audience: OAuth.config().audience,
+             return_to: request.redirect_uri,
+             page_title: "Approve access",
              form: Phoenix.Component.to_form(%{"request" => signed_request})
            )}
       end
@@ -66,13 +69,24 @@ defmodule MmentumWeb.OAuthController do
   end
 
   def connections(conn, _params) do
-    render(conn, :connections, connections: OAuth.list_connections(conn.assigns.current_user))
+    client_names = Map.new(Application.fetch_env!(:mmentum, :oauth_clients), &{&1["id"], &1["name"]})
+
+    render(conn, :connections,
+      connections: OAuth.list_connections(conn.assigns.current_user),
+      client_names: client_names,
+      page_title: "Connected apps"
+    )
   end
 
   def disconnect(conn, %{"id" => id}) do
     case OAuth.disconnect(conn.assigns.current_user, id) do
-      {:ok, :ok} -> redirect(conn, to: ~p"/users/connections")
-      {:error, :not_found} -> conn |> put_status(:not_found) |> text("Connection not found")
+      {:ok, :ok} ->
+        conn
+        |> put_flash(:info, "App disconnected. Your habits haven't changed.")
+        |> redirect(to: ~p"/users/connections")
+
+      {:error, :not_found} ->
+        conn |> put_status(:not_found) |> text("Connection not found")
     end
   end
 

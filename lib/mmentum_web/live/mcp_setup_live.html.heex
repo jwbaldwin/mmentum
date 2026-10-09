@@ -1,0 +1,165 @@
+<section class="mx-auto max-w-3xl">
+  <.text_link href={~p"/users/connections"} class="inline-flex items-center gap-1.5 text-xs">
+    <.icon name="hero-arrow-left-mini" class="h-3.5 w-3.5" /> Connected apps
+  </.text_link>
+  <.header class="mt-5">
+    Connect an AI app
+    <:subtitle>Bring your habits and current progress into the apps you already use.</:subtitle>
+  </.header>
+
+  <section aria-labelledby="choose-client-title" class="mt-8">
+    <.section_title id="choose-client-title">Choose your app</.section_title>
+    <.form for={%{}} id="mobile-client-picker" phx-change="choose_client" class="mt-4 sm:hidden">
+      <.input
+        type="select"
+        id="mobile-client"
+        name="client"
+        label="Your app"
+        value={@client.key}
+        options={Enum.map(@clients, &{&1.name, &1.key})}
+      />
+    </.form>
+    <nav aria-label="AI apps" class="mt-4 hidden grid-cols-3 gap-3 sm:grid">
+      <.link
+        :for={client <- @clients}
+        id={"client-#{client.key}"}
+        patch={~p"/users/connections/new?client=#{client.key}"}
+        aria-current={if client.key == @client.key, do: "true"}
+        class={[
+          "min-w-0 rounded-panel border p-4 text-left transition-colors duration-(--motion-duration-press) focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus/25",
+          if(client.key == @client.key,
+            do: "border-zinc-900 bg-zinc-50 dark:border-zinc-200 dark:bg-zinc-900",
+            else:
+              "border-zinc-200 hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:border-zinc-600 dark:hover:bg-zinc-900/50"
+          )
+        ]}
+      >
+        <div class="flex items-center justify-between gap-2">
+          <.icon name={client.icon} class="h-5 w-5 flex-none text-muted dark:text-zinc-400" />
+          <.icon :if={client.key == @client.key} name="hero-check-mini" class="h-4 w-4 flex-none" />
+        </div>
+        <p class="mt-3 text-sm font-medium leading-5">{client.name}</p>
+        <p class="mt-1 text-xs leading-5 text-muted dark:text-zinc-400">{client.description}</p>
+      </.link>
+    </nav>
+  </section>
+
+  <section
+    id="client-guide"
+    aria-labelledby="client-guide-title"
+    class="mt-8 scroll-mt-8 rounded-panel border border-zinc-200 p-5 sm:p-6 dark:border-zinc-800"
+  >
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <.section_title id="client-guide-title">Set up {@client.name}</.section_title>
+      <.text_link
+        href={@guide.docs_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-1 text-xs"
+      >
+        App documentation <.icon name="hero-arrow-up-right-mini" class="h-3.5 w-3.5" />
+      </.text_link>
+    </div>
+    <div
+      :if={@guide.callback_missing?}
+      id="callback-required"
+      class="mt-5 rounded-control bg-zinc-100 p-4 dark:bg-zinc-900"
+    >
+      <p class="text-sm font-medium">The app's callback needs updating</p>
+      <p class="mt-1 text-sm leading-6 text-muted dark:text-zinc-400">
+        This app is registered, but its callback doesn't match the setup below. Ask your administrator to update it before connecting.
+      </p>
+    </div>
+    <p class="mt-2 text-sm leading-6 text-muted dark:text-zinc-400">
+      Add Mmentum, sign in through your browser, then return to your app.
+    </p>
+
+    <div
+      :if={is_nil(@guide.registration)}
+      id="registration-required"
+      class="mt-5 rounded-control bg-zinc-100 p-4 dark:bg-zinc-900"
+    >
+      <p class="text-sm font-medium">This app needs server setup first</p>
+      <p class="mt-1 text-sm leading-6 text-muted dark:text-zinc-400">
+        An administrator must register {@client.name} with this Mmentum server before authentication will work. You can copy the server URL now, but it doesn't grant access on its own.
+      </p>
+    </div>
+    <p :if={@guide.note} id="client-setup-note" class="mt-5 text-sm leading-6 text-muted dark:text-zinc-400">
+      {@guide.note}
+    </p>
+
+    <div class="mt-5"><.copy_block id="mcp-server-url" text={@server_url} label="Server URL" /></div>
+
+    <.button_link :if={@guide.install_url} id="install-client" href={@guide.install_url} class="mt-4">
+      <.icon name="hero-arrow-down-tray" class="h-4 w-4" /> Add to {@client.name}
+    </.button_link>
+
+    <ol class="mt-6 space-y-6">
+      <li :for={{step, index} <- Enum.with_index(@guide.steps, 1)} class="flex min-w-0 items-start gap-3 sm:gap-4">
+        <span
+          aria-hidden="true"
+          class="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-zinc-100 text-xs font-medium dark:bg-zinc-900"
+        >{index}</span>
+        <div class="min-w-0 flex-1">
+          <h3 class="text-sm font-medium leading-6">{step.title}</h3>
+          <p class="mt-1 text-sm leading-6 text-muted dark:text-zinc-400">{step.description}</p>
+          <div :if={step.code} class="mt-3">
+            <.copy_block id={"setup-step-#{index}"} text={step.code} label={step.label} multiline />
+          </div>
+        </div>
+      </li>
+    </ol>
+
+    <details class="mt-6 border-t border-zinc-100 pt-4 text-xs leading-5 text-muted dark:border-zinc-900 dark:text-zinc-400">
+      <summary class="w-fit cursor-pointer rounded-sm font-medium focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus/25">
+        Server registration requirements
+      </summary>
+      <p class="mt-3">{@guide.requirements}</p>
+      <p class="mt-2">
+        Mmentum accepts pre-registered public OAuth clients. Automatic registration is not available. The registration must use this app's exact callback and the setup key <code class="font-mono">{@client.key}</code>.
+      </p>
+      <p :if={@guide.registration} class="mt-2 break-all">Public client ID: {@guide.registration["id"]}</p>
+    </details>
+  </section>
+
+  <section aria-labelledby="verify-title" class="mt-8">
+    <.section_title id="verify-title">Try it in your app</.section_title>
+    <p class="mt-2 text-sm leading-6 text-muted dark:text-zinc-400">
+      After authentication, open a conversation and ask:
+    </p>
+    <div class="mt-4">
+      <.copy_block id="mcp-verify-prompt" text="Show my Mmentum habits and current progress." label="First prompt" />
+    </div>
+    <p class="mt-3 text-sm leading-6 text-muted dark:text-zinc-400">
+      Your app should call <code class="font-mono text-xs">list_habits</code>
+      and return your habits. An empty list is a successful result if you haven't created any yet. No habits will be changed.
+    </p>
+  </section>
+
+  <section aria-labelledby="setup-help-title" class="mt-8 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+    <.section_title id="setup-help-title">Need a hand?</.section_title>
+    <div class="mt-3 divide-y divide-zinc-100 dark:divide-zinc-900">
+      <details
+        :for={
+          {title, explanation} <- [
+            {"My app won't authenticate",
+             "Check that your app is registered on this server and that its client ID and callback match exactly. Open authentication from the app's MCP settings if it didn't start automatically. Mmentum requires HTTPS, including for local OAuth testing."},
+            {"I approved access, but the app isn't working",
+             "Return to the app to finish token exchange. Restart or reload its MCP connection, then try the first prompt above. An approved grant alone does not prove a successful tool call."},
+            {"I signed in to the wrong account",
+             "Disconnect the app from Connected apps, then authenticate again and check the email shown on the approval page."},
+            {"I want to remove access",
+             "Disconnect the grant from Connected apps. This revokes its access and leaves your habits unchanged. Remove the server configuration from your AI app separately."}
+          ]
+        }
+        class="py-3"
+      >
+        <summary class="cursor-pointer rounded-sm text-sm font-medium leading-6 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus/25">
+          {title}
+        </summary>
+        <p class="mt-2 text-sm leading-6 text-muted dark:text-zinc-400">{explanation}</p>
+      </details>
+    </div>
+    <.text_link href={~p"/users/connections"} class="mt-4 inline-flex text-sm">Manage connected apps</.text_link>
+  </section>
+</section>
