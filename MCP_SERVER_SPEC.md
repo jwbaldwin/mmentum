@@ -53,11 +53,13 @@ Local client checks on September 22, 2026:
 
 After adding older-protocol support on October 4, Claude Code 2.1.170 connected over local HTTPS with a supplied OAuth access token: initialization, readiness notification, and empty tool listing succeeded. The installed Pi MCP SDK also connected and listed tools in both protocol modes, including an older-protocol ping. These checks cover message compatibility; they do not resolve Claude's earlier token-storage failure or repeat its browser OAuth flow.
 
+On October 9, a temporary Claude Code 2.1.295 CLI connected to the local HTTPS server with a supplied read-only OAuth token. Its debug log confirmed `2026-07-28` negotiation, and the server returned all five implemented tools. Separate live HTTPS calls in both protocol versions checked recent history and complete-history paging, including sending the returned cursor back for the next page. These were direct endpoint calls, not a Claude-driven conversation. No Anthropic account was available, and Claude-managed browser login and refresh remain unverified.
+
 OpenCode and Pi can use the older initialization flow or explicitly select `2026-07-28`. Configure a public client ID, requested scopes, and the exact registered callback address. Public clients need no client secret. A URL alone is insufficient because the server does not register clients automatically.
 
 Local OAuth requires HTTPS. Use the existing `OAUTH_DEV_TLS_CERTFILE` and `OAUTH_DEV_TLS_KEYFILE` settings with a locally trusted certificate, and set `OAUTH_ISSUER` to that HTTPS origin. Keep certificate and key files outside the checkout. The ordinary HTTP development server alone is insufficient for this flow.
 
-Current Claude Code, Claude, ChatGPT, Codex, and OMP remain unverified. These results establish the tested flows, not complete protocol conformance.
+Claude, ChatGPT, Codex, and OMP remain unverified. Claude Code's latest connection check covers discovery and tool listing, not its full OAuth flow or agent-driven tool use. These results establish the tested flows, not complete protocol conformance.
 
 ## Application shape
 
