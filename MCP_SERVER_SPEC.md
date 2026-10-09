@@ -1,5 +1,7 @@
 # MCP Server Specification
 
+The MCP server milestone is complete, with OpenCode as the primary supported client.
+
 ## Protocol implementation
 
 Mmentum supports MCP `2026-07-28` and `2025-11-25` at the same `/mcp` endpoint, including discovery and execution of `list_habits`, `get_habit`, `create_habit`, `update_habit`, and `manage_habit_completions`. Their arguments and behavior are listed in [`mcp-tools.md`](mcp-tools.md).
@@ -15,7 +17,7 @@ Design decisions:
 - Target MCP `2026-07-28`
 - Implement protocol features when they improve or enable the user experience
 - Keep tool definitions and executors independent from the HTTP transport
-- Validate the implementation with MCP Inspector and supported clients
+- Validate with supported clients, with OpenCode as the primary target
 - Keep `2025-11-25` compatibility isolated so it can be removed without changing the newer implementation
 - Implement OAuth with maintained libraries rather than writing OAuth itself
 
@@ -163,7 +165,3 @@ The tool checks the input and calls `Habits.Services.ManageHabitCompletions` to 
 The tool returns `{added: [...], removed: [...]}`. `Logs.Values.Log` builds each entry with `id`, `habit_id`, and `completed_at` in UTC. Both lists keep their request order. Completion time uses the existing `logs.inserted_at` field, which stores whole seconds; `updated_at` records when the database write happened. No migration is needed.
 
 The tool can remove historical completions; dashboard undo still removes only the latest entry in the current period. Future completion times are accepted. Retrying additions creates more completions, and retrying an already-removed ID fails. The tool's annotations tell clients that it can delete entries and that repeating a call may change the result.
-
-## Deferred until later slices
-
-- Confirm protocol and OAuth compatibility with ChatGPT and the remaining target clients

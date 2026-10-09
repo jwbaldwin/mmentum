@@ -250,3 +250,9 @@ These are design recommendations for review, not approved implementation decisio
 - **Closing section:** repeat the opening visual motif alongside a single **Start using Mmentum** action
 
 The clearest combination is a warm, distinctive marketing page around an honest product experience. Decide the typography, product-demo behavior, and one recurring visual motif together before filling out the rest of the site
+
+## Selected marketing-page direction
+
+James selected the light, Popcorn-led direction at `/Users/jbaldwin/.agent/diagrams/mmentum-marketing-concepts/index.html`. It now uses a black, white, and gray palette, with no chosen accent color. The second concept has been deleted. The current pass adds floating navigation inspired by One/Cua and an annotated momentum diagram inspired by SF Compute. The adjacent `NOTES.md` records the changes and limits. The page explores marketing art direction and copy, not application UI or approved launch features
+
+The next iteration replaces flat gray artwork with reflective silver spheres and rings, rendered by a local WebGL shader. It adds One-style chapter controls and a hands-on sample action, Glen's shared feature panel and connected results, Context-style check-in selectors, and Popcorn's FAQ and closing motif. These remain authored demonstrations, not live agent integrations or an embedded production app
