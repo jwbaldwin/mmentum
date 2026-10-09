@@ -1,6 +1,6 @@
 defmodule Mmentum.Tools.ListHabits do
   @moduledoc """
-  Lists owned habits and their current-period completion counts
+  Lists habits and their current-period completion counts
 
   Habits owns the query and calendar-period filtering; Values.Habit builds each
   public habit value. This tool owns argument validation and the response wrapper
@@ -16,7 +16,7 @@ defmodule Mmentum.Tools.ListHabits do
   alias Mmentum.Tools.Scope
   alias Mmentum.Tools.Tool
 
-  @arguments_schema Zoi.map(%{}, unrecognized_keys: :error)
+  @input_schema Zoi.map(%{}, unrecognized_keys: :error)
   @output_schema Zoi.map(
                    %{
                      time_zone:
@@ -49,7 +49,7 @@ defmodule Mmentum.Tools.ListHabits do
 
   @impl true
   @spec input_schema() :: map()
-  def input_schema, do: Zoi.to_json_schema(@arguments_schema)
+  def input_schema, do: Zoi.to_json_schema(@input_schema)
 
   @impl true
   @spec output_schema() :: map()
@@ -65,7 +65,7 @@ defmodule Mmentum.Tools.ListHabits do
   @impl true
   @spec execute(Context.t(), Tool.arguments()) :: {:ok, output()} | {:error, :invalid_arguments, String.t()}
   def execute(%{user: user} = context, arguments) do
-    with {:ok, _arguments} <- Tool.parse_arguments(@arguments_schema, arguments) do
+    with {:ok, _arguments} <- Tool.parse_arguments(@input_schema, arguments) do
       current_time = Context.current_time(context)
 
       habits =

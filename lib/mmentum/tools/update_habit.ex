@@ -9,13 +9,13 @@ defmodule Mmentum.Tools.UpdateHabit do
   alias Mmentum.Tools.Scope
   alias Mmentum.Tools.Tool
 
-  @arguments_schema Zoi.map(
-                      %{
-                        "habit_id" => Zoi.integer(gte: 1, lte: 9_223_372_036_854_775_807),
-                        "fields" => HabitFields.update_schema()
-                      },
-                      unrecognized_keys: :error
-                    )
+  @input_schema Zoi.map(
+                  %{
+                    "habit_id" => Zoi.integer(gte: 1, lte: 9_223_372_036_854_775_807),
+                    "fields" => HabitFields.update_schema()
+                  },
+                  unrecognized_keys: :error
+                )
   @output_schema Zoi.map(
                    %{time_zone: Zoi.string(), habit: HabitValue.schema()},
                    unrecognized_keys: :error
@@ -44,18 +44,18 @@ defmodule Mmentum.Tools.UpdateHabit do
 
   @impl true
   @spec input_schema() :: map()
-  def input_schema, do: Zoi.to_json_schema(@arguments_schema)
+  def input_schema, do: Zoi.to_json_schema(@input_schema)
 
   @impl true
   @spec output_schema() :: map()
   def output_schema, do: Zoi.to_json_schema(@output_schema)
 
-  @doc "Updates an owned habit under its row lock; omitted fields are preserved and invalid changes do not write"
+  @doc "Updates supplied fields and returns progress for the updated period; omitted fields stay unchanged"
   @impl true
   @spec execute(Context.t(), Tool.arguments()) ::
           {:ok, output()} | {:error, :not_found | :invalid_arguments, String.t()}
   def execute(%{user: user} = context, arguments) do
-    with {:ok, %{"habit_id" => habit_id, "fields" => fields}} <- Tool.parse_arguments(@arguments_schema, arguments),
+    with {:ok, %{"habit_id" => habit_id, "fields" => fields}} <- Tool.parse_arguments(@input_schema, arguments),
          current_time = Context.current_time(context),
          {:ok, habit} <- Habits.update_habit(user, habit_id, fields) do
       habit = Habits.load_current_progress(user, habit, current_time)

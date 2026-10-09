@@ -1,5 +1,5 @@
 defmodule Mmentum.Tools.CreateHabit do
-  @moduledoc "Creates an owned habit through Habits and returns its Habit Value with current progress"
+  @moduledoc "Creates a habit and returns its definition and current progress"
   @behaviour Mmentum.Tools.Tool
 
   alias Mmentum.Habits
@@ -9,7 +9,7 @@ defmodule Mmentum.Tools.CreateHabit do
   alias Mmentum.Tools.Scope
   alias Mmentum.Tools.Tool
 
-  @arguments_schema HabitFields.create_schema()
+  @input_schema HabitFields.create_schema()
   @output_schema Zoi.map(
                    %{time_zone: Zoi.string(), habit: HabitValue.schema()},
                    unrecognized_keys: :error
@@ -38,7 +38,7 @@ defmodule Mmentum.Tools.CreateHabit do
 
   @impl true
   @spec input_schema() :: map()
-  def input_schema, do: Zoi.to_json_schema(@arguments_schema)
+  def input_schema, do: Zoi.to_json_schema(@input_schema)
 
   @impl true
   @spec output_schema() :: map()
@@ -48,7 +48,7 @@ defmodule Mmentum.Tools.CreateHabit do
   @impl true
   @spec execute(Context.t(), Tool.arguments()) :: {:ok, output()} | {:error, :invalid_arguments, String.t()}
   def execute(%{user: user} = context, arguments) do
-    with {:ok, fields} <- Tool.parse_arguments(@arguments_schema, arguments),
+    with {:ok, fields} <- Tool.parse_arguments(@input_schema, arguments),
          current_time = Context.current_time(context),
          {:ok, habit} <- Habits.create_habit(user, fields) do
       habit = Habits.load_current_progress(user, habit, current_time)

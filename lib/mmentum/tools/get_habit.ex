@@ -1,5 +1,5 @@
 defmodule Mmentum.Tools.GetHabit do
-  @moduledoc "Gets one owned habit; Habits loads progress and the Habit Value selects public fields"
+  @moduledoc "Returns a habit's definition and current progress"
   @behaviour Mmentum.Tools.Tool
 
   alias Mmentum.Habits
@@ -8,9 +8,9 @@ defmodule Mmentum.Tools.GetHabit do
   alias Mmentum.Tools.Scope
   alias Mmentum.Tools.Tool
 
-  @arguments_schema Zoi.map(%{"habit_id" => Zoi.integer(gte: 1, lte: 9_223_372_036_854_775_807)},
-                      unrecognized_keys: :error
-                    )
+  @input_schema Zoi.map(%{"habit_id" => Zoi.integer(gte: 1, lte: 9_223_372_036_854_775_807)},
+                  unrecognized_keys: :error
+                )
   @output_schema Zoi.map(
                    %{time_zone: Zoi.string(), habit: HabitValue.schema()},
                    unrecognized_keys: :error
@@ -37,18 +37,18 @@ defmodule Mmentum.Tools.GetHabit do
 
   @impl true
   @spec input_schema() :: map()
-  def input_schema, do: Zoi.to_json_schema(@arguments_schema)
+  def input_schema, do: Zoi.to_json_schema(@input_schema)
 
   @impl true
   @spec output_schema() :: map()
   def output_schema, do: Zoi.to_json_schema(@output_schema)
 
-  @doc "Reads an owned habit at the invocation's local time; missing and unowned IDs both return :not_found"
+  @doc "Returns the habit with completion counts for its current day, week, or month in the user's time zone"
   @impl true
   @spec execute(Context.t(), Tool.arguments()) ::
           {:ok, output()} | {:error, :not_found | :invalid_arguments, String.t()}
   def execute(%{user: user} = context, arguments) do
-    with {:ok, %{"habit_id" => habit_id}} <- Tool.parse_arguments(@arguments_schema, arguments),
+    with {:ok, %{"habit_id" => habit_id}} <- Tool.parse_arguments(@input_schema, arguments),
          current_time = Context.current_time(context),
          {:ok, habit} <- Habits.get_habit_with_current_progress(user, habit_id, current_time) do
       {:ok, %{habit: HabitValue.build(habit), time_zone: current_time.time_zone}}
