@@ -320,19 +320,19 @@ defmodule MmentumWeb.MCPClientGuides do
       steps: [
         step(
           "Use Antigravity's MCP settings",
-          "Global servers live in ~/.gemini/config/mcp_config.json; project servers live in .agents/mcp_config.json. Remote servers use serverUrl, not httpUrl."
+          "Edit ~/.gemini/config/mcp_config.json. Remote servers use serverUrl, not httpUrl."
         ),
         step(
           "Configure public OAuth",
-          "Ask your administrator to configure a pre-registered public OAuth client. Mmentum does not issue client secrets or register clients automatically."
+          "Your administrator must configure public OAuth. Mmentum does not issue client secrets."
         ),
         step(
           "Authenticate",
-          "In agy, open /mcp, select Mmentum, and choose Authenticate. Approve access in your browser and follow the CLI's instructions to finish."
+          "In agy, open /mcp → Mmentum → Authenticate, then follow the browser and CLI prompts."
         )
       ],
       requirements:
-        "Register https://antigravity.google/oauth-callback. Google's manual OAuth example includes a client secret; use an administrator-managed public-client setup, not that confidential-client example.",
+        "Register https://antigravity.google/oauth-callback. Project configuration lives in .agents/mcp_config.json. Google's manual OAuth example includes a client secret; Mmentum requires a public-client setup instead.",
       docs_url: "https://antigravity.google/docs/mcp?tab=cli"
     }
   end

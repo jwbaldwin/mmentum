@@ -16,6 +16,8 @@ The client list builds on PlanetScale's choices: Cursor, VS Code, Claude Code, C
 
 `MCPSetupLive` selects a known client from the URL, loads its mapped registration, and passes it to the catalog. One HEEx template renders every guide. These are web presentation structs, not new authentication or domain boundaries; they do not register clients or validate tokens.
 
+Desktop uses a grid of labeled client marks. Mobile keeps a native select with the selected client's mark inside the control; the mark updates from the same server-owned client selection. It is decorative and ignores pointer events, so it does not intercept taps or replace the select's native keyboard behavior. The heading supplies the accessible label. Other clients uses the generic link icon.
+
 ## Link an existing registration to its guide
 
 Mmentum still accepts only pre-registered public OAuth clients. Add the optional `setup_client` field to an existing entry in `OAUTH_PUBLIC_CLIENTS_JSON` to make its public configuration available on the corresponding setup page:

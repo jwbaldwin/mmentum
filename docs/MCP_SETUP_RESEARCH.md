@@ -22,6 +22,16 @@ A network-denied experiment with the official standalone macOS ARM64 1.3.3 archi
 
 ## Recommendation
 
+### Final visual and language pass, October 10
+
+Revisited the current [MCP quick start](https://planetscale.com/docs/connect/mcp), [agent-first setup](https://planetscale.com/docs/agent-setup/prompt), and [installed apps announcement](https://planetscale.com/changelog/installed-oauth-applications). Mmentum covers the relevant journey: recognizable client choice, a primary agent setup action, secondary installation links where supported, exact manual configuration, browser approval, a safe first prompt, troubleshooting, visible grants/permissions/approval dates, and confirmed revocation.
+
+The final changes add the selected client's publisher mark to the mobile native selector, remove its duplicate visible label while retaining an accessible name, name the destination app in the browser handoff, state the expected first-prompt result (including no habits), and shorten Antigravity's manual instructions. Project-specific configuration remains in the administrator disclosure rather than the main path.
+
+Mmentum deliberately retains its own fonts, design tokens, rounded controls, orange links, compact account layout, responsive native selector, app-to-Mmentum consent marks, and habit-specific language. It is an authenticated application flow, not PlanetScale's Mintlify documentation layout. Its self-contained prompt contains the actual public registration rather than requiring a PlanetScale-style CLI/skills installation or a fetched setup document. No organization/database/branch picker, headless service-token path, new integration directory, write tool, or connection-health badge is added.
+
+The public documentation and management announcement establish current workflows, not the layout of today's authenticated PlanetScale consent/management screens. The previously sourced consent footage remains historical evidence. Actual Antigravity public OAuth and retained usage telemetry remain separate implementation gaps; this design pass does not resolve them.
+
 Use PlanetScale's documentation clarity and Sentry's focused client-specific instruction panel. Borrow Context7's exact configuration examples and troubleshooting, and Cloudflare's plain-language permission presets. Keep Mmentum's existing visual style and OAuth implementation.
 
 The initial journey should be: **Choose client → add configuration → approve access → try a read-only query**. Keep connection management separate from setup. A copied configuration or approved grant must not produce a false “Connected” badge.

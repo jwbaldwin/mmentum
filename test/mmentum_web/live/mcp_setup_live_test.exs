@@ -409,10 +409,19 @@ defmodule MmentumWeb.MCPSetupLiveTest do
 
   test "mobile selection updates the same guide and URL", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/users/connections/new")
+    assert has_element?(view, "#mobile-client[aria-labelledby=choose-client-title]")
+    assert has_element?(view, "#mobile-client-logo img[src='/images/mcp-clients/cursor-light.svg']")
     view |> element("#mobile-client-picker") |> render_change(%{"client" => "opencode"})
     assert_patch(view, ~p"/users/connections/new?client=opencode")
     assert has_element?(view, "#client-guide-title", "Set up OpenCode")
     assert has_element?(view, "#mobile-client option[selected][value=opencode]")
+    assert has_element?(view, "#mobile-client-logo img[src='/images/mcp-clients/opencode-light.svg']")
+    refute has_element?(view, "#mobile-client-logo img[src='/images/mcp-clients/cursor-light.svg']")
+
+    view |> element("#mobile-client-picker") |> render_change(%{"client" => "other"})
+    assert_patch(view, ~p"/users/connections/new?client=other")
+    refute has_element?(view, "#mobile-client-logo img")
+    assert has_element?(view, "#mobile-client-logo [aria-hidden=true] svg")
   end
 
   test "a registered app with the wrong callback explains the correction and withholds configuration", %{conn: conn} do
