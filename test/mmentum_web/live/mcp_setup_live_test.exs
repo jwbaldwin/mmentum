@@ -4,6 +4,10 @@ defmodule MmentumWeb.MCPSetupLiveTest do
   import Phoenix.LiveViewTest
 
   alias Mmentum.OAuth
+  alias MmentumWeb.MCPClientGuides
+  alias MmentumWeb.MCPClientGuides.Client
+  alias MmentumWeb.MCPClientGuides.Guide
+  alias MmentumWeb.MCPClientGuides.Step
 
   setup :register_and_log_in_user
 
@@ -58,6 +62,12 @@ defmodule MmentumWeb.MCPSetupLiveTest do
         "name" => "Pi",
         "setup_client" => "pi",
         "redirect_uris" => ["http://127.0.0.1:19879/callback/mmentum"]
+      },
+      %{
+        "id" => "antigravity-public",
+        "name" => "Antigravity CLI",
+        "setup_client" => "antigravity",
+        "redirect_uris" => ["https://antigravity.google/oauth-callback"]
       }
     ])
 
@@ -69,10 +79,36 @@ defmodule MmentumWeb.MCPSetupLiveTest do
     assert redirected_to(conn) == ~p"/login"
   end
 
+  test "one typed catalog supplies every client's guide and logos" do
+    registrations = Application.fetch_env!(:mmentum, :oauth_clients)
+
+    for client <- MCPClientGuides.list() do
+      assert %Client{} = client
+      assert MCPClientGuides.find(client.key) == client
+      registration = Enum.find(registrations, &(&1["setup_client"] == client.key))
+      assert %Guide{} = guide = MCPClientGuides.build(client, OAuth.config().audience, registration)
+      assert Enum.all?(guide.steps, &match?(%Step{}, &1))
+
+      if is_nil(registration) do
+        assert guide.state == :registration_required
+        assert guide.agent_prompt == nil
+      end
+
+      if guide.agent_prompt do
+        assert guide.agent_setup?
+        assert [%Step{code: code, label: label}, %Step{} | _] = guide.steps
+        assert is_binary(code) and is_binary(label)
+      end
+    end
+
+    assert MCPClientGuides.find("not-a-client") == nil
+    assert MCPClientGuides.find(nil) == nil
+  end
+
   test "offers the requested clients and switches instructions through the URL", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/users/connections/new")
 
-    for key <- ~w(cursor vscode claude-code opencode codex chatgpt claude gemini amp notion pi other) do
+    for key <- ~w(cursor vscode claude-code opencode codex chatgpt claude antigravity gemini amp notion pi other) do
       assert has_element?(view, "#client-#{key}")
       view |> element("#client-#{key}") |> render_click()
       assert_patch(view, ~p"/users/connections/new?client=#{key}")
@@ -108,7 +144,7 @@ defmodule MmentumWeb.MCPSetupLiveTest do
   test "named clients use local publisher marks while other clients has no invented brand", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/users/connections/new")
 
-    for key <- ~w(cursor vscode claude-code opencode codex chatgpt claude gemini amp notion pi) do
+    for key <- ~w(cursor vscode claude-code opencode codex chatgpt claude antigravity gemini amp notion pi) do
       sources =
         view |> element("#client-#{key}") |> render() |> Floki.parse_fragment!() |> Floki.attribute("img", "src")
 
@@ -200,6 +236,7 @@ defmodule MmentumWeb.MCPSetupLiveTest do
     refute Map.has_key?(server, "protocolVersion")
     assert has_element?(view, "#setup-step-2 code", "pi mcp login mmentum")
     assert has_element?(view, "#agent-setup-prompt [data-copy-content]", "without pi-mcp-adapter")
+    assert has_element?(view, "#agent-setup-prompt [data-copy-content]", "Pi 0.99 or later")
     assert has_element?(view, "#agent-setup-prompt [data-copy-content]", "callbackUrl")
     refute has_element?(view, "#manual-setup[open]")
   end
@@ -226,6 +263,27 @@ defmodule MmentumWeb.MCPSetupLiveTest do
       assert has_element?(view, "#callback-required")
       refute has_element?(view, "#agent-setup-prompt")
       refute has_element?(view, "#setup-step-1")
+    end
+  end
+
+  test "Pi preserves a supported fixed-port callback after skipping unsuitable callbacks" do
+    for callback <- [
+          "http://localhost:19879/oauth/mmentum",
+          "http://127.0.0.1:19879/oauth/mmentum",
+          "http://[::1]:19879/oauth/mmentum"
+        ] do
+      registration = %{
+        "id" => "pi-public",
+        "name" => "Pi",
+        "redirect_uris" => ["https://client.example/callback", "http://localhost:80/callback", callback]
+      }
+
+      guide = MCPClientGuides.build(MCPClientGuides.find("pi"), OAuth.config().audience, registration)
+      assert guide.state == :ready
+      [installation | _] = guide.steps
+
+      assert installation.code |> Jason.decode!() |> get_in(["mcpServers", "mmentum", "oauth", "callbackUrl"]) ==
+               callback
     end
   end
 
@@ -291,6 +349,30 @@ defmodule MmentumWeb.MCPSetupLiveTest do
              "scopes" => ["mmentum:read"],
              "redirectUri" => "http://localhost:19876/oauth/callback"
            }
+
+    assert has_element?(view, "#client-setup-note", "Consumer accounts use Antigravity CLI")
+  end
+
+  test "Antigravity keeps its own manual OAuth path without inventing a secret-free configuration", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/users/connections/new?client=antigravity")
+
+    assert has_element?(view, "#client-guide-title", "Set up Antigravity CLI")
+    assert has_element?(view, "#manual-oauth-required")
+    assert has_element?(view, "#manual-setup[open]")
+    assert has_element?(view, "#manual-setup", "~/.gemini/config/mcp_config.json")
+    assert has_element?(view, "#manual-setup", "serverUrl")
+    assert has_element?(view, "#manual-setup", "open /mcp")
+    refute has_element?(view, "#manual-setup li code")
+    refute has_element?(view, "#agent-setup-prompt")
+    refute has_element?(view, "#install-client")
+
+    clients = Application.fetch_env!(:mmentum, :oauth_clients)
+    Application.put_env(:mmentum, :oauth_clients, Enum.reject(clients, &(&1["setup_client"] == "antigravity")))
+    render_patch(view, ~p"/users/connections/new?client=cursor")
+    render_patch(view, ~p"/users/connections/new?client=antigravity")
+    assert has_element?(view, "#registration-required")
+    refute has_element?(view, "#manual-oauth-required")
+    refute has_element?(view, "#agent-setup-prompt")
   end
 
   test "Codex configuration uses the exact registered endpoint-specific callback", %{conn: conn} do
@@ -348,12 +430,19 @@ defmodule MmentumWeb.MCPSetupLiveTest do
 
     {:ok, view, _html} = live(conn, ~p"/users/connections/new?client=opencode")
     assert has_element?(view, "#callback-required")
+    client = MCPClientGuides.find("opencode")
+    registration = Enum.find(Application.fetch_env!(:mmentum, :oauth_clients), &(&1["setup_client"] == client.key))
+
+    assert %Guide{state: :callback_required, agent_prompt: nil} =
+             MCPClientGuides.build(client, OAuth.config().audience, registration)
+
     refute has_element?(view, "#registration-required")
     refute has_element?(view, "#setup-step-1")
   end
 
   test "Notion explains its registration limitation instead of promising a URL-only connection", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/users/connections/new?client=notion")
+    assert has_element?(view, "#client-guide-title", "Set up Notion Custom Agents")
     assert has_element?(view, "#client-setup-note", "Notion requires a registration arrangement")
     refute has_element?(view, "#install-client")
   end

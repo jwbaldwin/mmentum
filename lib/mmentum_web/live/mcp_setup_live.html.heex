@@ -61,7 +61,7 @@
       </.text_link>
     </div>
     <div
-      :if={@guide.callback_missing?}
+      :if={@guide.state == :callback_required}
       id="callback-required"
       class="mt-5 rounded-control bg-zinc-100 p-4 dark:bg-zinc-900"
     >
@@ -71,7 +71,7 @@
       </p>
     </div>
     <div
-      :if={is_nil(@guide.registration)}
+      :if={@guide.state == :registration_required}
       id="registration-required"
       class="mt-5 rounded-control bg-zinc-100 p-4 dark:bg-zinc-900"
     >
@@ -83,6 +83,17 @@
     <p :if={@guide.note} id="client-setup-note" class="mt-5 text-sm leading-6 text-muted dark:text-zinc-400">
       {@guide.note}
     </p>
+
+    <div
+      :if={@guide.state == :manual_oauth_required}
+      id="manual-oauth-required"
+      class="mt-5 rounded-control bg-zinc-100 p-4 dark:bg-zinc-900"
+    >
+      <p class="text-sm font-medium">Manual OAuth setup required</p>
+      <p class="mt-1 text-sm leading-6 text-muted dark:text-zinc-400">
+        Ask your administrator to configure this app's public OAuth client before connecting.
+      </p>
+    </div>
 
     <div :if={@guide.install_url || @guide.agent_prompt} class="mt-5">
       <div class="flex flex-wrap items-center gap-3">

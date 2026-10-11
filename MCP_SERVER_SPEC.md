@@ -41,7 +41,7 @@ All OAuth routes, including discovery, require HTTPS. MCP requests require a val
 
 Register public clients through `OAUTH_PUBLIC_CLIENTS_JSON`. Callback addresses must use HTTPS, except that HTTP is allowed for `localhost`, `127.0.0.1`, and `::1`. Startup rejects callbacks without a host or with userinfo or a fragment. Authorization still requires an exact match to a registered address. Dynamic registration and Client ID Metadata Documents are not implemented.
 
-The browser setup page uses PlanetScale's client choices as its starting point at `/users/connections/new`, with ChatGPT and Pi added and Claude Managed Agents omitted. An optional `setup_client` key links an existing public registration to its client-specific guide. This is presentation metadata, not a new registration or authorization mechanism. See [`docs/MCP_SETUP.md`](docs/MCP_SETUP.md) for keys, callback requirements, and compatibility limits.
+The browser setup page uses PlanetScale's client choices as its starting point at `/users/connections/new`, with ChatGPT, native Pi, and Antigravity CLI added and Claude Managed Agents omitted. Antigravity remains a manual OAuth guide without generated configuration. An optional `setup_client` key links an existing public registration to its client-specific guide. This is presentation metadata, not a new registration or authorization mechanism. See [`docs/MCP_SETUP.md`](docs/MCP_SETUP.md) for keys, callback requirements, and compatibility limits.
 
 ## Client compatibility
 

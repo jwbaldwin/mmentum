@@ -74,10 +74,11 @@ defmodule Mmentum.OAuthRedirectConfigTest do
     end
   end
 
-  test "ChatGPT and Pi setup mappings are available, while the retired guide cannot be mapped" do
+  test "ChatGPT, Pi and Antigravity setup mappings are available, while the retired guide cannot be mapped" do
     for {key, redirect} <- [
           {"chatgpt", "https://chatgpt.com/connector/oauth/test"},
-          {"pi", "http://localhost:19879/callback"}
+          {"pi", "http://localhost:19879/callback"},
+          {"antigravity", "https://antigravity.google/oauth-callback"}
         ] do
       client = %{"id" => key <> "-public", "name" => key, "setup_client" => key, "redirect_uris" => [redirect]}
       System.put_env("OAUTH_PUBLIC_CLIENTS_JSON", Jason.encode!([client]))

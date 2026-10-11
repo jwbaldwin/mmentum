@@ -19,7 +19,7 @@ defmodule MmentumWeb.MCPSetupLive do
   def handle_params(params, _uri, socket) do
     key = Map.get(params, "client", "cursor")
 
-    case Enum.find(socket.assigns.clients, &(&1.key == key)) do
+    case MCPClientGuides.find(key) do
       nil ->
         {:noreply, push_patch(socket, to: ~p"/users/connections/new", replace: true)}
 

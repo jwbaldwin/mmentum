@@ -2,25 +2,20 @@ defmodule MmentumWeb.MCPComponents do
   @moduledoc false
   use MmentumWeb, :html
 
-  @client_marks %{
-    "cursor" => {"cursor-light.svg", "cursor-dark.svg"},
-    "vscode" => {"vscode.svg", "vscode.svg"},
-    "claude-code" => {"claude.svg", "claude.svg"},
-    "opencode" => {"opencode-light.svg", "opencode-dark.svg"},
-    "codex" => {"codex-light.svg", "codex-dark.svg"},
-    "chatgpt" => {"codex-light.svg", "codex-dark.svg"},
-    "claude" => {"claude.svg", "claude.svg"},
-    "gemini" => {"gemini-cli.svg", "gemini-cli.svg"},
-    "amp" => {"amp.svg", "amp.svg"},
-    "notion" => {"notion.svg", "notion.svg"},
-    "pi" => {"pi.svg", "pi.svg"}
-  }
+  alias MmentumWeb.MCPClientGuides
+  alias MmentumWeb.MCPClientGuides.Client
 
   attr :client_key, :string, default: nil
   attr :class, :string, default: "h-6 w-6"
 
   def client_logo(assigns) do
-    assigns = assign(assigns, :marks, @client_marks[assigns.client_key])
+    marks =
+      case MCPClientGuides.find(assigns.client_key) do
+        %Client{logos: logos} -> logos
+        nil -> nil
+      end
+
+    assigns = assign(assigns, :marks, marks)
 
     ~H"""
     <span aria-hidden="true" class={[@class, "inline-flex flex-none items-center justify-center"]}>

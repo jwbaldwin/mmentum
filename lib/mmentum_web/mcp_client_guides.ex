@@ -1,33 +1,38 @@
 defmodule MmentumWeb.MCPClientGuides do
   @moduledoc "Owns client-specific MCP setup instructions and public configuration examples"
 
+  alias MmentumWeb.MCPClientGuides.Client
+  alias MmentumWeb.MCPClientGuides.Guide
+  alias MmentumWeb.MCPClientGuides.Step
+
   @clients [
-    %{key: "cursor", name: "Cursor"},
-    %{key: "vscode", name: "VS Code"},
-    %{key: "claude-code", name: "Claude Code"},
-    %{key: "opencode", name: "OpenCode"},
-    %{key: "codex", name: "Codex CLI"},
-    %{key: "chatgpt", name: "ChatGPT"},
-    %{key: "claude", name: "Claude"},
-    %{key: "gemini", name: "Gemini CLI"},
-    %{key: "amp", name: "Amp CLI"},
-    %{key: "notion", name: "Notion"},
-    %{key: "pi", name: "Pi"},
-    %{key: "other", name: "Other clients"}
+    %Client{key: "cursor", name: "Cursor", logos: {"cursor-light.svg", "cursor-dark.svg"}},
+    %Client{key: "vscode", name: "VS Code", logos: {"vscode.svg", "vscode.svg"}},
+    %Client{key: "claude-code", name: "Claude Code", logos: {"claude.svg", "claude.svg"}},
+    %Client{key: "opencode", name: "OpenCode", logos: {"opencode-light.svg", "opencode-dark.svg"}},
+    %Client{key: "codex", name: "Codex CLI", logos: {"codex-light.svg", "codex-dark.svg"}},
+    %Client{key: "chatgpt", name: "ChatGPT", logos: {"codex-light.svg", "codex-dark.svg"}},
+    %Client{key: "claude", name: "Claude", logos: {"claude.svg", "claude.svg"}},
+    %Client{key: "antigravity", name: "Antigravity CLI", logos: {"antigravity.svg", "antigravity.svg"}},
+    %Client{key: "gemini", name: "Gemini CLI", logos: {"gemini-cli.svg", "gemini-cli.svg"}},
+    %Client{key: "amp", name: "Amp CLI", logos: {"amp.svg", "amp.svg"}},
+    %Client{key: "notion", name: "Notion Custom Agents", logos: {"notion.svg", "notion.svg"}},
+    %Client{key: "pi", name: "Pi", logos: {"pi.svg", "pi.svg"}},
+    %Client{key: "other", name: "Other clients"}
   ]
 
+  @spec list() :: [Client.t()]
   def list, do: @clients
 
-  def build(client, server_url, registration) do
-    guide = instructions(client.key, server_url, registration)
+  @spec find(String.t() | nil) :: Client.t() | nil
+  def find(key), do: Enum.find(@clients, &(&1.key == key))
 
-    Map.merge(guide, %{
-      registration: registration,
-      agent_prompt: agent_prompt(client, guide),
-      callback_missing?:
-        not is_nil(registration) and client.key in ["claude-code", "opencode", "gemini", "pi"] and
-          is_nil(hd(guide.steps).code)
-    })
+  @spec build(Client.t(), String.t(), Guide.registration() | nil) :: Guide.t()
+  def build(%Client{} = client, server_url, registration) do
+    guide = instructions(client.key, server_url, registration)
+    state = if is_nil(registration), do: :registration_required, else: guide.state
+    guide = %{guide | registration: registration, state: state}
+    %{guide | agent_prompt: agent_prompt(client, guide)}
   end
 
   defp instructions("cursor", server_url, registration) do
@@ -43,7 +48,8 @@ defmodule MmentumWeb.MCPClientGuides do
         })
       end)
 
-    %{
+    %Guide{
+      agent_setup?: true,
       steps: [
         step(
           "Add Mmentum to Cursor",
@@ -78,7 +84,8 @@ defmodule MmentumWeb.MCPClientGuides do
         })
       end)
 
-    %{
+    %Guide{
+      agent_setup?: true,
       steps: [
         step(
           "Add the server",
@@ -114,7 +121,9 @@ defmodule MmentumWeb.MCPClientGuides do
         "claude mcp add-json mmentum " <> shell_quote(configuration)
       end
 
-    %{
+    %Guide{
+      agent_setup?: true,
+      state: if(command, do: :ready, else: :callback_required),
       steps: [
         step(
           "Add the server",
@@ -159,7 +168,9 @@ defmodule MmentumWeb.MCPClientGuides do
         })
       end
 
-    %{
+    %Guide{
+      agent_setup?: true,
+      state: if(configuration, do: :ready, else: :callback_required),
       steps: [
         step(
           "Add the server",
@@ -189,7 +200,8 @@ defmodule MmentumWeb.MCPClientGuides do
           "[mcp_servers.mmentum.oauth]\nclient_id = #{json(client["id"])}\ncallback_url = #{json(callback)}"
       end)
 
-    %{
+    %Guide{
+      agent_setup?: true,
       steps: [
         step(
           "Add the server",
@@ -213,7 +225,7 @@ defmodule MmentumWeb.MCPClientGuides do
   end
 
   defp instructions("claude", _server_url, registration) do
-    %{
+    %Guide{
       steps: [
         step(
           "Add a custom connector",
@@ -258,7 +270,9 @@ defmodule MmentumWeb.MCPClientGuides do
         })
       end
 
-    %{
+    %Guide{
+      agent_setup?: true,
+      state: if(configuration, do: :ready, else: :callback_required),
       steps: [
         step(
           "Add the server",
@@ -272,7 +286,7 @@ defmodule MmentumWeb.MCPClientGuides do
         )
       ],
       install_url: nil,
-      note: nil,
+      note: "For enterprise or paid API access. Consumer accounts use Antigravity CLI.",
       requirements:
         "Register a fixed http://localhost:PORT/oauth/callback. The configuration uses that exact callback.",
       docs_url: "https://geminicli.com/docs/tools/mcp-server/"
@@ -280,7 +294,7 @@ defmodule MmentumWeb.MCPClientGuides do
   end
 
   defp instructions("amp", server_url, _registration) do
-    %{
+    %Guide{
       steps: [
         step(
           "Add the server",
@@ -300,8 +314,31 @@ defmodule MmentumWeb.MCPClientGuides do
     }
   end
 
+  defp instructions("antigravity", _server_url, _registration) do
+    %Guide{
+      state: :manual_oauth_required,
+      steps: [
+        step(
+          "Use Antigravity's MCP settings",
+          "Global servers live in ~/.gemini/config/mcp_config.json; project servers live in .agents/mcp_config.json. Remote servers use serverUrl, not httpUrl."
+        ),
+        step(
+          "Configure public OAuth",
+          "Ask your administrator to configure a pre-registered public OAuth client. Mmentum does not issue client secrets or register clients automatically."
+        ),
+        step(
+          "Authenticate",
+          "In agy, open /mcp, select Mmentum, and choose Authenticate. Approve access in your browser and follow the CLI's instructions to finish."
+        )
+      ],
+      requirements:
+        "Register https://antigravity.google/oauth-callback. Google's manual OAuth example includes a client secret; use an administrator-managed public-client setup, not that confidential-client example.",
+      docs_url: "https://antigravity.google/docs/mcp?tab=cli"
+    }
+  end
+
   defp instructions("notion", _server_url, _registration) do
-    %{
+    %Guide{
       steps: [
         step("Open your Custom Agent", "Settings → Tools & Access → Add connection → Custom MCP server."),
         step(
@@ -318,7 +355,7 @@ defmodule MmentumWeb.MCPClientGuides do
   end
 
   defp instructions("chatgpt", _server_url, registration) do
-    %{
+    %Guide{
       steps: [
         step(
           "Add a custom server",
@@ -367,11 +404,13 @@ defmodule MmentumWeb.MCPClientGuides do
         end
       end)
 
-    %{
+    %Guide{
+      agent_setup?: true,
+      state: if(configuration, do: :ready, else: :callback_required),
       steps: [
         step(
           "Configure native Pi",
-          "Merge this into Pi's MCP config. Requires Pi 1.1 or later without pi-mcp-adapter.",
+          "Merge this into Pi's native MCP config.",
           configuration,
           "~/.pi/agent/mcp.json"
         ),
@@ -383,7 +422,7 @@ defmodule MmentumWeb.MCPClientGuides do
         )
       ],
       install_url: nil,
-      note: "Requires native MCP in Pi 1.1 or later, without pi-mcp-adapter.",
+      note: "Use Pi 0.99 or later without pi-mcp-adapter.",
       requirements:
         "Register an HTTP loopback callback with an explicit fixed port other than 80 and no query parameters. Native callbackUrl preserves that URI; missing/default ports can change it. Older pi-mcp-adapter uses redirectUri instead.",
       docs_url: "https://github.com/earendil-works/pi/blob/v1.1.0/packages/coding-agent/docs/mcp.md"
@@ -391,7 +430,7 @@ defmodule MmentumWeb.MCPClientGuides do
   end
 
   defp instructions("other", _server_url, registration) do
-    %{
+    %Guide{
       steps: [
         step(
           "Add a remote server",
@@ -416,38 +455,36 @@ defmodule MmentumWeb.MCPClientGuides do
     }
   end
 
-  defp agent_prompt(client, guide) do
-    first_step = hd(guide.steps)
+  defp agent_prompt(
+         client,
+         %Guide{state: :ready, agent_setup?: true, steps: [installation, authentication | _]} = guide
+       ) do
+    installation_steps =
+      if installation.label == "Terminal" do
+        "Run this command:\n#{installation.code}"
+      else
+        "Merge this configuration into #{installation.label}, preserving existing servers:\n#{installation.code}"
+      end
 
-    if client.key in ["cursor", "vscode", "claude-code", "opencode", "codex", "gemini", "pi"] and first_step.code do
-      installation =
-        if first_step.label == "Terminal" do
-          "Run this command:"
-        else
-          "Merge this configuration into #{first_step.label}, preserving existing servers:"
-        end
+    authentication_steps =
+      [authentication.description, authentication.code] |> Enum.reject(&is_nil/1) |> Enum.join("\n")
 
-      authentication = Enum.at(guide.steps, 1)
+    """
+    Set up Mmentum in #{client.name}.
+    #{guide.note}
 
-      authentication_steps =
-        [authentication.description, authentication.code] |> Enum.reject(&is_nil/1) |> Enum.join("\n")
+    #{installation_steps}
 
-      """
-      Set up Mmentum in #{client.name}.
-      #{guide.note}
-
-      #{installation}
-      #{first_step.code}
-
-      #{authentication_steps}
-      Let me complete OAuth approval in my browser. Do not ask me to paste tokens or client secrets.
-      After approval, call list_habits to show my habits and current progress. Do not change my habits.
-      """
-    end
+    #{authentication_steps}
+    Let me complete OAuth approval in my browser. Do not ask me to paste tokens or client secrets.
+    After approval, call list_habits to show my habits and current progress. Do not change my habits.
+    """
   end
 
+  defp agent_prompt(_client, _guide), do: nil
+
   defp step(title, description, code \\ nil, label \\ nil) do
-    %{title: title, description: description, code: code, label: label}
+    %Step{title: title, description: description, code: code, label: label}
   end
 
   defp configuration(nil, _build), do: nil

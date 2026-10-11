@@ -1,6 +1,6 @@
 # MCP client marks
 
-Official publisher assets collected on 2026-10-09 for identifying clients in
+Official publisher assets collected on 2026-10-09 and 2026-10-10 for identifying clients in
 Mmentum's MCP setup guide. These marks belong to their respective owners. They
 are not Mmentum branding and do not imply partnership, sponsorship or endorsement.
 No third-party icon packs, traced logos or placeholder artwork are included.
@@ -24,6 +24,8 @@ ratio and built-in clear space; render with `object-fit: contain`, not cropping.
   inversion is technically suitable, but the supplied official variants avoid
   altering the files or their prescribed clear space.
 - ChatGPT shares those official OpenAI Blossom variants.
+- Antigravity CLI: `antigravity.svg`; official full-color transparent mark,
+  unchanged on both themes. Do not invert.
 - Gemini CLI: `gemini-cli.svg`; official full-color terminal icon with its
   built-in dark background, suitable on both themes. Do not invert or replace
   its gradient with current Gemini model colors.
@@ -125,6 +127,17 @@ ratio and built-in clear space; render with `object-fit: contain`, not cropping.
   its affiliates. No separate public brand kit or unrestricted asset license
   was found. Keep this official icon unchanged and limited to identification;
   sourcing it does not establish permission for other promotional uses.
+
+### Antigravity CLI
+
+- Publisher press page: https://antigravity.google/press
+- Exact vector: https://antigravity.google/assets/image/brand/antigravity-icon__full-color.svg
+- Terms: https://antigravity.google/terms
+- Copied byte-for-byte, preserving the full-color mark, padding, and aspect ratio.
+  The press page supplies the asset but no separate unrestricted redistribution
+  license. Google retains its marks; this identifies the client, not an endorsement.
+- Retrieved October 10, 2026. SHA-256:
+  `d775965ea1f8060538c15f758a3e22487317211fcb6051333b5e023f35aa726f`.
 
 ### Notion
 

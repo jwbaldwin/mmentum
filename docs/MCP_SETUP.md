@@ -6,7 +6,15 @@ The prompt is self-contained: the agent does not need a Mmentum session to read 
 
 Client marks use official publisher assets, shared by setup, consent, and Connected apps. Sources and usage limits are recorded in [`priv/static/images/mcp-clients/README.md`](../priv/static/images/mcp-clients/README.md). ChatGPT and Codex share the official OpenAI Blossom; Codex's extension uses this mark. James reviewed Anthropic's terms and approved this integration's logo use on October 9, 2026.
 
-The client list builds on PlanetScale's choices: Cursor, VS Code, Claude Code, Claude web/desktop, OpenCode, Codex CLI, ChatGPT, Gemini CLI, Amp CLI, Notion, Pi, and other remote clients. Claude Managed Agents was removed at James's request.
+The client list builds on PlanetScale's choices: Cursor, VS Code, Claude Code, Claude web/desktop, OpenCode, Codex CLI, ChatGPT, Antigravity CLI, Gemini CLI, Amp CLI, Notion Custom Agents, Pi, and other remote clients. Claude Managed Agents was removed at James's request.
+
+## Code ownership
+
+`MmentumWeb.MCPClientGuides` keeps the ordered client catalog and client-specific instruction clauses together. Its `Client` structs contain each key, display name, and light/dark logo filenames. Setup, consent, and Connected apps all resolve logos through this catalog; there is no second image registry.
+
+`build/3` returns a `Guide` containing ordered `Step` structs. Its state is `:ready`, `:registration_required`, `:callback_required`, or `:manual_oauth_required`. Each callback-sensitive clause selects its state when building the configuration; the template does not infer readiness from missing step text. A missing registration takes precedence over other prerequisites. Agent-assisted guides put installation and authentication first, and a ready guide builds its prompt from those steps. Manual guides never gain an agent prompt just because they contain a client ID.
+
+`MCPSetupLive` selects a known client from the URL, loads its mapped registration, and passes it to the catalog. One HEEx template renders every guide. These are web presentation structs, not new authentication or domain boundaries; they do not register clients or validate tokens.
 
 ## Link an existing registration to its guide
 
@@ -41,14 +49,15 @@ The page builds snippets from the configured MCP audience, public client ID, and
 - **OpenCode V2 (`opencode`):** a fixed `http://127.0.0.1:PORT/callback`. The generated `mcp.servers` configuration includes the exact redirect and callback port.
 - **Codex CLI (`codex`):** register the exact callback printed by `codex mcp add` with a public client ID. It may include an endpoint-specific path. The guide uses the registration's first callback; put the Codex callback first.
 - **Claude web/desktop (`claude`):** `https://claude.ai/api/mcp/auth_callback`. Use a remote custom connector and its own-client OAuth option.
-- **Gemini CLI (`gemini`):** a fixed `http://localhost:PORT/oauth/callback`.
+- **Antigravity CLI (`antigravity`):** documented callback `https://antigravity.google/oauth-callback`. Global configuration lives in `~/.gemini/config/mcp_config.json`, or `.agents/mcp_config.json` for a project; remote entries use `serverUrl`, not Gemini CLI's `httpUrl`. In `agy`, `/mcp` opens the manager and its Authenticate action. The guide remains manual even with a mapped registration: Google's manual OAuth example includes a secret, whereas Mmentum's clients are public. It does not generate a secret, copyable OAuth configuration, or agent setup prompt. Mapping a registration alone does not resolve this client-side OAuth requirement.
+- **Gemini CLI (`gemini`):** a fixed `http://localhost:PORT/oauth/callback`. Google retains Gemini CLI for enterprise and paid API access; consumer accounts use Antigravity CLI.
 - **Amp CLI (`amp`):** register `http://localhost:8976/oauth/callback` for manual OAuth setup.
-- **Notion (`notion`):** arrange pre-registration with Notion. Its Custom Agents flow does not document an arbitrary user-supplied client ID. A URL alone cannot connect it to this server.
+- **Notion Custom Agents (`notion`):** arrange pre-registration with Notion. Its Custom Agents flow does not document an arbitrary user-supplied client ID. A URL alone cannot connect it to this server.
 - **ChatGPT (`chatgpt`):** copy the exact redirect URI from the MCP server's management page in ChatGPT. Callback-specific and stable redirect modes exist; do not substitute a universal callback. Use OAuth with the pre-registered public client ID, not CIMD or DCR.
-- **Pi (`pi`):** the guide targets native MCP in Pi 1.1 or later, without the `pi-mcp-adapter` extension. Register a fixed HTTP callback on `localhost`, `127.0.0.1`, or `::1`, including an explicit nonzero port other than 80 and no query parameters. Pi normalizes port 80 and rejects query-bearing callbacks. Generated `oauth.callbackUrl` preserves the exact URI in `~/.pi/agent/mcp.json`; login uses `pi mcp login mmentum`. A missing or unsuitable callback withholds the configuration and agent prompt.
+- **Pi (`pi`):** the guide targets native MCP introduced in Pi 0.99, without the `pi-mcp-adapter` extension. The [0.99 guide](https://github.com/earendil-works/pi/blob/v0.99.0/packages/coding-agent/docs/mcp.md) documents the same public-client and callback settings used here. Register a fixed HTTP callback on `localhost`, `127.0.0.1`, or `::1`, including an explicit nonzero port other than 80 and no query parameters. Pi normalizes port 80 and rejects query-bearing callbacks. Generated `oauth.callbackUrl` preserves the exact URI in `~/.pi/agent/mcp.json`; login uses `pi mcp login mmentum`. A missing or unsuitable callback withholds the configuration and agent prompt.
 - **Other (`other`):** requires Streamable HTTP and pre-registered public OAuth support, with an exactly registered callback.
 
-OpenCode, Claude Code, and Gemini snippets are withheld if the registration lacks their documented loopback callback shape. Claude Code also requires a callback without query parameters, since its port-only setting cannot reproduce them. The page shows a callback correction message instead.
+OpenCode, Claude Code, Gemini, and Pi snippets are withheld if the registration lacks their supported loopback callback shape. Claude Code also requires a callback without query parameters, since its port-only setting cannot reproduce them. The page shows a callback correction message instead.
 
 Scope configuration requests `mmentum:read` where the client exposes that setting. VS Code and Claude connectors do not expose a documented override, and Codex can prefer the server's advertised scopes. The approval page always shows the actual requested permissions. Write tools are not currently available.
 
