@@ -10,8 +10,6 @@ defmodule Mmentum.MCP.Versions.V2025_11_25.Server do
   alias Mmentum.MCP.Versions.V2025_11_25.Response
   alias Mmentum.Tools
 
-  require Logger
-
   def protocol_version, do: "2025-11-25"
 
   def handle(request, headers, context) do
@@ -22,8 +20,6 @@ defmodule Mmentum.MCP.Versions.V2025_11_25.Server do
   end
 
   defp dispatch(%{"id" => id, "method" => method} = request, context) do
-    Logger.info("MCP: Handling #{method} request")
-
     case method do
       "initialize" -> {200, Response.initialize(id, protocol_version())}
       "ping" -> {200, Response.result(id, %{})}

@@ -26,7 +26,7 @@ config :excellent_migrations, start_after: "20260906023636"
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
+  metadata: [:request_id, :mcp_method, :mcp_tool, :mcp_client, :mcp_protocol, :mcp_outcome, :mcp_duration_us]
 
 config :mmentum, AttestoPhoenix.Config,
   keystore: Attesto.Keystore.Static,

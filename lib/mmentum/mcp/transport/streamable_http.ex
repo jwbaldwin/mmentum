@@ -5,6 +5,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTP do
 
   import Plug.Conn
 
+  alias Mmentum.MCP.Usage
   alias Mmentum.MCP.Versions
   alias Plug.Conn.Utils
 
@@ -64,7 +65,7 @@ defmodule Mmentum.MCP.Transport.StreamableHTTP do
       now: DateTime.utc_now()
     }
 
-    case server.handle(request, conn.req_headers, context) do
+    case Usage.invoke(server, request, conn.req_headers, context, conn.assigns.attesto_mcp_claims) do
       {202, nil} -> conn |> send_resp(202, "") |> halt()
       {status, response} -> send_json(conn, status, response)
     end
