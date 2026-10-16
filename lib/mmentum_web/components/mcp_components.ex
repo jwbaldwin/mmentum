@@ -40,8 +40,9 @@ defmodule MmentumWeb.MCPComponents do
       id={@id}
       phx-hook="CopyText"
       data-copy-idle-label="Copy"
-      class="min-w-0 overflow-hidden rounded-control border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/50"
+      class="relative min-w-0 rounded-control border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/50"
     >
+      <.copy_glow />
       <div class="flex items-center justify-between gap-3 border-b border-zinc-200 px-4 py-2 dark:border-zinc-800">
         <span class="min-w-0 truncate text-xs font-medium text-muted dark:text-zinc-400">{@label}</span>
         <.button
@@ -58,7 +59,7 @@ defmodule MmentumWeb.MCPComponents do
         </.button>
       </div>
       <pre class={[
-        "overflow-x-auto p-4 text-xs leading-6 text-zinc-800 dark:text-zinc-200 sm:text-sm",
+        "overflow-x-auto rounded-b-control p-4 text-xs leading-6 text-zinc-800 dark:text-zinc-200 sm:text-sm",
         !@multiline && "whitespace-pre-wrap [overflow-wrap:anywhere]"
       ]}><code data-copy-content>{@text}</code></pre>
       <p data-copy-status role="status" class="sr-only"></p>
@@ -73,9 +74,13 @@ defmodule MmentumWeb.MCPComponents do
   def copy_action(assigns) do
     ~H"""
     <div id={@id} phx-hook="CopyText" data-copy-idle-label={@label} class="min-w-0 max-w-full">
-      <.button id={"#{@id}-copy"} type="button" data-copy-button>
+      <.button id={"#{@id}-copy"} type="button" class="relative" data-copy-button>
+        <.copy_glow />
         <.icon name="hero-square-2-stack" class="h-4 w-4" />
-        <span data-copy-label>{@label}</span>
+        <span class="grid">
+          <span aria-hidden="true" class="invisible col-start-1 row-start-1">{@label}</span>
+          <span data-copy-label class="col-start-1 row-start-1">{@label}</span>
+        </span>
       </.button>
       <p data-copy-status role="status" class="sr-only"></p>
       <pre
@@ -84,6 +89,15 @@ defmodule MmentumWeb.MCPComponents do
         class="mt-3 overflow-x-auto rounded-control border border-zinc-200 p-4 text-xs leading-6 dark:border-zinc-800"
       ><code data-copy-content>{@text}</code></pre>
     </div>
+    """
+  end
+
+  defp copy_glow(assigns) do
+    ~H"""
+    <svg data-copy-glow class="copy-glow" aria-hidden="true" focusable="false">
+      <path pathLength="1" />
+      <path pathLength="1" />
+    </svg>
     """
   end
 

@@ -18,6 +18,8 @@ The client list builds on PlanetScale's choices: Cursor, VS Code, Claude Code, C
 
 Desktop uses a grid of labeled client marks. Mobile keeps a native select with the selected client's mark inside the control; the mark updates from the same server-owned client selection. It is decorative and ignores pointer events, so it does not intercept taps or replace the select's native keyboard behavior. The heading supplies the accessible label. Other clients uses the generic link icon.
 
+Successful pointer-triggered copies show a brief orange edge glow: two highlights leave the bottom-left together and meet at the top-right. `CopyText` measures the copied block or prompt button, animates two equal-length SVG paths for 720 ms, and cancels them on retry, client change, or hook destruction. The prompt button reserves its label width so confirmation does not move adjacent controls. Keyboard and reduced-motion users get the same immediate text and screen-reader confirmation without the sweep. Failed copies retain the manual-copy fallback and never show the success glow.
+
 ## Link an existing registration to its guide
 
 Mmentum still accepts only pre-registered public OAuth clients. Add the optional `setup_client` field to an existing entry in `OAUTH_PUBLIC_CLIENTS_JSON` to make its public configuration available on the corresponding setup page:

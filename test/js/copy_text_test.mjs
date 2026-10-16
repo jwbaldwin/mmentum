@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import {test} from "node:test"
 import CopyText from "../../assets/js/hooks/copy_text.js"
 
-function mountCopy(writeText, idleLabel = "Copy") {
+function mountCopy(writeText, idleLabel = "Copy", reducedMotion = false) {
   const classes = new Set(["sr-only"])
   const status = {
     textContent: "",
@@ -15,12 +15,26 @@ function mountCopy(writeText, idleLabel = "Copy") {
   const label = {textContent: idleLabel}
   const fallback = {hidden: true}
   const button = {disabled: false}
+  const animations = []
+  const paths = Array.from({length: 2}, () => ({
+    setAttribute() {},
+    animate(keyframes, options) {
+      const animation = {keyframes, options, cancelled: false, cancel() {this.cancelled = true}}
+      animations.push(animation)
+      return animation
+    }
+  }))
+  const glow = {
+    parentElement: {clientWidth: 400, clientHeight: 120},
+    querySelectorAll: () => paths
+  }
   const elements = {
     "[data-copy-content]": content,
     "[data-copy-label]": label,
     "[data-copy-status]": status,
     "[data-copy-button]": button,
-    "[data-copy-fallback]": idleLabel === "Copy" ? null : fallback
+    "[data-copy-fallback]": idleLabel === "Copy" ? null : fallback,
+    "[data-copy-glow]": glow
   }
   const listeners = new Map()
   const timers = new Map()
@@ -29,7 +43,9 @@ function mountCopy(writeText, idleLabel = "Copy") {
   Object.defineProperty(globalThis, "navigator", {configurable: true, value: {clipboard: {writeText}}})
   globalThis.window = {
     setTimeout: callback => {timers.set(++timerId, callback); return timerId},
-    clearTimeout: id => timers.delete(id)
+    clearTimeout: id => timers.delete(id),
+    matchMedia: () => ({matches: reducedMotion}),
+    getComputedStyle: () => ({borderTopLeftRadius: "10px"})
   }
 
   const hook = {
@@ -45,8 +61,8 @@ function mountCopy(writeText, idleLabel = "Copy") {
   hook.mounted()
 
   return {
-    hook, content, label, status, button, classes, timers, listeners, fallback,
-    click: () => listeners.get("click")({target: {closest: () => button}})
+    hook, content, label, status, button, classes, timers, listeners, fallback, animations,
+    click: (detail = 1) => listeners.get("click")({detail, target: {closest: () => button}})
   }
 }
 
@@ -58,9 +74,11 @@ test("copies the exact text and resets its success feedback", async () => {
   assert.equal(copy.label.textContent, "Copied")
   assert.equal(copy.button.disabled, false)
   assert.equal(copy.status.textContent, "Copied to clipboard")
+  assert.equal(copy.animations.length, 2)
   for (const callback of [...copy.timers.values()]) callback()
   assert.equal(copy.label.textContent, "Copy")
   assert.equal(copy.status.textContent, "")
+  assert.ok(copy.animations.every(animation => animation.cancelled))
   copy.hook.destroyed()
 })
 
@@ -71,6 +89,7 @@ test("clipboard rejection leaves a visible manual-copy instruction", async () =>
   assert.equal(copy.button.disabled, false)
   assert.equal(copy.classes.has("sr-only"), false)
   assert.match(copy.status.textContent, /Select the text/)
+  assert.equal(copy.animations.length, 0)
   copy.hook.destroyed()
 })
 
@@ -110,7 +129,35 @@ test("changing clients ignores stale clipboard completion and resets the button"
   assert.equal(copy.label.textContent, "Copy")
   assert.equal(copy.status.textContent, "")
   assert.equal(copy.button.disabled, false)
+  assert.equal(copy.animations.length, 0)
   copy.hook.destroyed()
+})
+
+test("reduced motion and keyboard copying keep the confirmation without an edge sweep", async () => {
+  for (const {reducedMotion, detail} of [{reducedMotion: true, detail: 1}, {reducedMotion: false, detail: 0}]) {
+    const copy = mountCopy(async () => {}, "Copy", reducedMotion)
+    await copy.click(detail)
+    assert.equal(copy.label.textContent, "Copied")
+    assert.equal(copy.status.textContent, "Copied to clipboard")
+    assert.equal(copy.animations.length, 0)
+    copy.hook.destroyed()
+  }
+})
+
+test("repeated copies replace the edge sweep and client changes cancel it", async () => {
+  const copy = mountCopy(async () => {})
+  await copy.click()
+  const first = [...copy.animations]
+  await copy.click()
+  assert.ok(first.every(animation => animation.cancelled))
+  assert.equal(copy.hook.glowAnimations.length, 2)
+  copy.content.textContent = "different client"
+  copy.hook.updated()
+  assert.ok(copy.animations.every(animation => animation.cancelled))
+  assert.equal(copy.hook.glowAnimations.length, 0)
+  await copy.click()
+  copy.hook.destroyed()
+  assert.ok(copy.animations.every(animation => animation.cancelled))
 })
 
 test("destroying the hook removes its listener and ignores pending completion", async () => {

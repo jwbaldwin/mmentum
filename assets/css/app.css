@@ -5,6 +5,7 @@
 @import "./components/tooltip.css";
 @import "./components/toast.css";
 @import "./components/accessibility.css";
+@import "./components/copy-glow.css";
 
 @plugin "@tailwindcss/forms";
 
