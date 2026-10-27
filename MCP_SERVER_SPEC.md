@@ -2,6 +2,8 @@
 
 The MCP server milestone is complete, with OpenCode as the primary supported client.
 
+The next proposed milestone is [MCP Apps and ChatGPT Plugin Extensions](docs/PLAN_MCP_APPS.md). The module responsibilities and pseudocode are ready for review; the UI is not implemented.
+
 ## Protocol implementation
 
 Mmentum supports MCP `2026-07-28` and `2025-11-25` at the same `/mcp` endpoint, including discovery and execution of `list_habits`, `get_habit`, `create_habit`, `update_habit`, and `manage_habit_completions`. Their arguments and behavior are listed in [`mcp-tools.md`](mcp-tools.md).
