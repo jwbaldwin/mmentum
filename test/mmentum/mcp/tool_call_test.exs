@@ -1,6 +1,8 @@
 defmodule Mmentum.MCP.ToolCallTest do
   use MmentumWeb.ConnCase, async: true
 
+  import ExUnit.CaptureLog
+
   alias Mmentum.OAuthFixtures
 
   setup do
@@ -15,7 +17,12 @@ defmodule Mmentum.MCP.ToolCallTest do
     test "#{version} executes the owned habit query and returns structured and text results", %{conn: conn, user: user} do
       habit = Mmentum.HabitsFixtures.habit_fixture(%{user: user})
       Mmentum.HabitsFixtures.habit_fixture()
-      result = conn |> call_tool(@version, %{"name" => "list_habits"}) |> json_response(200) |> Map.fetch!("result")
+
+      {result, log} =
+        with_log(fn ->
+          conn |> call_tool(@version, %{"name" => "list_habits"}) |> json_response(200) |> Map.fetch!("result")
+        end)
+
       assert result["isError"] == false
       assert %{"habits" => [%{"id" => id, "current_completions" => 0}]} = result["structuredContent"]
       assert id == habit.id
@@ -26,6 +33,16 @@ defmodule Mmentum.MCP.ToolCallTest do
       assert {:ok, _habits} = schema |> Zoi.from_json_schema() |> Zoi.parse(result["structuredContent"])
       assert schema["additionalProperties"] == false
       assert "max_completions" in schema["properties"]["habits"]["items"]["required"]
+
+      assert log =~ "mcp_request_completed"
+      assert log =~ "mcp_method=tools/call"
+      assert log =~ "mcp_tool=list_habits"
+      assert log =~ "mcp_protocol=#{@version}"
+      assert log =~ "mcp_client=unknown"
+      assert log =~ "mcp_outcome=success"
+      assert log =~ ~r/mcp_duration_us=\d+/
+      refute log =~ habit.name
+      refute log =~ user.email
     end
 
     test "#{version} distinguishes malformed calls from tool input errors", %{conn: conn} do
@@ -33,11 +50,16 @@ defmodule Mmentum.MCP.ToolCallTest do
         assert %{"error" => %{"code" => -32_602}} = conn |> call_tool(@version, params) |> json_response(400)
       end
 
-      result =
-        conn |> call_tool(@version, %{"name" => "list_habits", "arguments" => %{"user_id" => 1}}) |> json_response(200)
+      {result, log} =
+        with_log(fn ->
+          conn
+          |> call_tool(@version, %{"name" => "list_habits", "arguments" => %{"user_id" => 1}})
+          |> json_response(200)
+        end)
 
       assert result["result"]["isError"]
       refute Map.has_key?(result["result"], "structuredContent")
+      assert log =~ "mcp_outcome=tool_error"
     end
   end
 

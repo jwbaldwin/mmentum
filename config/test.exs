@@ -3,8 +3,10 @@ import Config
 # Only in tests, remove the complexity from the password hashing algorithm
 config :bcrypt_elixir, :log_rounds, 1
 
-# Print only warnings and errors during test
-config :logger, level: :warning
+config :logger, :default_handler, level: :warning
+
+# Keep info events available to CaptureLog without printing them during tests
+config :logger, level: :info
 
 # In test we don't send emails.
 config :mmentum, Mmentum.Mailer, adapter: Swoosh.Adapters.Test
