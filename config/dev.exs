@@ -1,7 +1,7 @@
 import Config
 
-# Do not include metadata nor timestamps in development logs
-config :logger, :console, format: "[$level] $message\n"
+# Omit timestamps while keeping request and MCP metadata visible
+config :logger, :default_formatter, format: "$metadata[$level] $message\n"
 
 # Configure your database
 config :mmentum, Mmentum.Repo,

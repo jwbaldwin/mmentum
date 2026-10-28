@@ -8,6 +8,9 @@ defmodule Mmentum.Tools do
 
   @tool_modules [Mmentum.Tools.ListHabits]
 
+  @spec names() :: [String.t()]
+  def names, do: Enum.map(@tool_modules, & &1.name())
+
   @spec definitions() :: [map()]
   def definitions do
     Enum.map(@tool_modules, &Tool.definition/1)

@@ -11,8 +11,6 @@ defmodule Mmentum.MCP.Versions.V2026_07_28.Server do
   alias Mmentum.MCP.Versions.V2026_07_28.Response
   alias Mmentum.Tools
 
-  require Logger
-
   @protocol_version "2026-07-28"
 
   def protocol_version, do: @protocol_version
@@ -25,8 +23,6 @@ defmodule Mmentum.MCP.Versions.V2026_07_28.Server do
   end
 
   defp dispatch(%{"id" => id, "method" => method} = request, context) do
-    Logger.info("MCP: Handling #{method} request")
-
     case method do
       "server/discover" -> server_discover(id)
       "tools/list" -> tools_list(id)
