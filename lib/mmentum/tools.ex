@@ -6,7 +6,13 @@ defmodule Mmentum.Tools do
   alias Mmentum.Tools.Context
   alias Mmentum.Tools.Tool
 
-  @tool_modules [Mmentum.Tools.ListHabits]
+  @tool_modules [
+    Mmentum.Tools.ListHabits,
+    Mmentum.Tools.GetHabit,
+    Mmentum.Tools.CreateHabit,
+    Mmentum.Tools.UpdateHabit,
+    Mmentum.Tools.ManageHabitCompletions
+  ]
 
   @spec names() :: [String.t()]
   def names, do: Enum.map(@tool_modules, & &1.name())

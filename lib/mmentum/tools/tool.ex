@@ -22,6 +22,36 @@ defmodule Mmentum.Tools.Tool do
 
   @optional_callbacks annotations: 0
 
+  @doc "Accepts positive IDs within the database's integer range"
+  @spec id_schema() :: Zoi.schema()
+  def id_schema, do: Zoi.integer(gte: 1, lte: 9_223_372_036_854_775_807)
+
+  @doc "Validates tool arguments and returns field-specific, client-safe errors"
+  @spec parse_arguments(Zoi.schema(), arguments()) :: {:ok, map()} | {:error, :invalid_arguments, String.t()}
+  def parse_arguments(schema, arguments) do
+    case Zoi.parse(schema, arguments) do
+      {:ok, parsed} -> {:ok, parsed}
+      {:error, errors} -> {:error, :invalid_arguments, Zoi.prettify_errors(errors)}
+    end
+  end
+
+  @doc "Turns rejected habit changes into field messages without exposing storage details"
+  @spec validation_error(Ecto.Changeset.t()) :: {:error, :invalid_arguments, String.t()}
+  def validation_error(%Ecto.Changeset{} = changeset) do
+    messages =
+      changeset
+      |> Ecto.Changeset.traverse_errors(fn {message, options} ->
+        Enum.reduce(options, message, fn {key, value}, message ->
+          String.replace(message, "%{#{key}}", to_string(value))
+        end)
+      end)
+      |> Enum.sort_by(fn {field, _messages} -> field end)
+      |> Enum.flat_map(fn {field, messages} -> Enum.map(messages, &"#{field}: #{&1}") end)
+      |> Enum.join("; ")
+
+    {:error, :invalid_arguments, messages}
+  end
+
   @doc "Returns the MCP definition exposed for a tool module"
   @spec definition(module()) :: map()
   def definition(tool_module) do

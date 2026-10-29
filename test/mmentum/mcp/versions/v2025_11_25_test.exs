@@ -29,11 +29,11 @@ defmodule Mmentum.MCP.Versions.V2025_11_25Test do
 
     assert %{"id" => "ping", "result" => %{}} = json_response(send_legacy(conn, request("ping", "ping")), 200)
     assert %{"id" => 2, "result" => result} = json_response(send_legacy(conn, request("tools/list", 2)), 200)
-    assert %{"tools" => [%{"name" => "list_habits"}]} = result
+    assert %{"tools" => [%{"name" => "list_habits"} | _]} = result
   end
 
   test "advertises both versions and keeps their results separate for the same caller", %{conn: conn} do
-    assert %{"tools" => [%{"name" => "list_habits"}]} =
+    assert %{"tools" => [%{"name" => "list_habits"} | _]} =
              json_response(send_legacy(conn, request("tools/list", 1)), 200)["result"]
 
     modern =
@@ -55,7 +55,7 @@ defmodule Mmentum.MCP.Versions.V2025_11_25Test do
     assert "2026-07-28" in result["supportedVersions"]
     assert result["resultType"] == "complete"
 
-    assert %{"tools" => [%{"name" => "list_habits"}]} =
+    assert %{"tools" => [%{"name" => "list_habits"} | _]} =
              json_response(send_legacy(conn, request("tools/list", 3)), 200)["result"]
   end
 
